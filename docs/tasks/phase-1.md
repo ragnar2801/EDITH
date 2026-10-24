@@ -13,7 +13,7 @@
 
 | ID | Task | Kind | Owner | Status | Depends on |
 |----|------|------|-------|--------|------------|
-| T1-01 | Foundation: app skeleton running on Windows | Infra | Claude | todo | — |
+| T1-01 | Foundation: app skeleton running on Windows | Infra | Claude | doing | — |
 | T1-02 | Instruments: find any stock, fund or ETF | Feature | Claude | todo | T1-01 |
 | T1-03 | Holdings: record what I own | Feature | Claude | todo | T1-02 |
 | T1-04 | Cash and remittances, with LRS totals | Feature | Claude | todo | T1-01 |
@@ -37,7 +37,7 @@ T1-04 can be built in parallel with T1-02 / T1-03. T1-07 and T1-09 can run in pa
 ---
 
 ## T1-01 · Foundation: app skeleton running on Windows
-`Infra` · Owner: Claude · Status: todo · Depends on: —
+`Infra` · Owner: Claude · Status: doing · Depends on: —
 
 **Goal:** a working, empty Friday I can start on my laptop: backend, database, frontend and tooling all wired, so every later task only adds features.
 
