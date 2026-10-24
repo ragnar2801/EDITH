@@ -64,6 +64,15 @@ Friday **advises**. I **execute** trades myself at my broker.
 | D-026 | 2026-10-24 | **Work is tracked in `docs/tasks/`**: a markdown tracker in the repo, one board per phase. Every open choice below the 100-foot view (libraries, data sources, data model, rule values) is a DECIDE task. Its outcome is logged here as a `D-###` | Works across sessions. Versioned with the code. Decisions made with evidence, one at a time | Active (tracker). Task shape revised by D-028 |
 | D-027 | 2026-10-24 | **Laptop OS: Windows, native** (not WSL2). Scheduler: **Windows Task Scheduler** with *run as soon as possible after a missed start* on and *only on AC power* off. Applied in T1-09 | My laptop. WSL2 stops when idle, so jobs inside it are unreliable. Task Scheduler catches up after sleep, like the backfill in D-022 | Active |
 | D-028 | 2026-10-24 | **Tasks are engineering tasks sized as features or infra slices** (about 10 per phase), each testable end to end. Decisions are made inside the task that needs them, not as separate tasks. Phase 1 board regenerated (version 2, 10 tasks) | Small decision-only tasks were overhead. Feature tasks are easier to test and show progress | Active |
+| D-029 | 2026-10-24 | **Python 3.14, managed by uv** (uv also installs Python and keeps a lockfile). Backend lint and format: ruff. No type checker yet (T1-01) | 3.14 has had a year for libraries to catch up on Windows. One tool for Python, packages and lockfile | Active |
+| D-030 | 2026-10-24 | **Backend framework: FastAPI** (T1-01) | Generates the OpenAPI schema the frontend client is built from. Pydantic validation. Well known to Claude | Active |
+| D-031 | 2026-10-24 | **Database layer: SQLAlchemy 2.0 (synchronous) + Alembic.** SQLite with WAL, foreign keys on, busy timeout. File at `data/friday.db` (T1-01) | Migrations across five phases are routine with Alembic. Sync code is simpler and a single SQLite file gains nothing from async | Active |
+| D-032 | 2026-10-24 | **Money, currency and time:** `Decimal` in Python, never `float` · stored as **text** through one custom column type (SQLite has no exact decimal) · sent as **strings** in JSON, JSON numbers rejected · precision: cash amounts 2 dp, prices and NAVs 4, units 8, FX rates 6; full precision in maths, rounding only for display · currencies as ISO codes (`INR`, `USD`) · timestamps stored in UTC and shown in IST · a market date belongs to its exchange (T1-01) | No floating-point money errors. No time-zone surprises with US closes landing on the next IST day | Active |
+| D-033 | 2026-10-24 | **Frontend tooling: Vite + React + TypeScript, npm, ESLint + Prettier** (T1-01) | Plain single-page app, since FastAPI is the server. npm comes with Node, so nothing extra to install on Windows | Active |
+| D-034 | 2026-10-24 | **UI kit and app libraries: shadcn/ui + Tailwind CSS, TanStack Query, React Router** (T1-01) | Components live in the repo and look good. Query handles loading, caching and refresh | Active |
+| D-035 | 2026-10-24 | **API contract: REST under `/api/v1`.** TypeScript types generated from FastAPI's OpenAPI schema with openapi-typescript, called with openapi-fetch. Errors as RFC 9457 problem details (T1-01) | Backend and frontend types can't drift apart. Small, stable tools | Active |
+| D-036 | 2026-10-24 | **Repo layout and commands:** one repo with `backend/` and `frontend/` · **`just`** as the command runner (PowerShell on Windows) · server bound to **`127.0.0.1` only** · daily mode: one process at `http://localhost:8000` serving the built UI · dev mode: Vite at `:5173` proxying `/api` to the backend (T1-01) | `just` works on Windows, unlike `make`. Plain `.ps1` scripts are blocked by Windows' default policy. Portfolio not visible on the Wi-Fi | Active |
+| D-037 | 2026-10-24 | **Testing and CI: pytest (backend), Vitest (frontend), GitHub Actions on every push and pull request, on a Windows runner** (T1-01) | Tests matter most for the maths. Windows CI catches Windows-only problems early | Active |
 
 ---
 
@@ -407,7 +416,7 @@ friday/                       # repo root
 
 ### 3.14 Tech stack (proposals)
 
-> Only D-023 (React + Python backend) is decided. Everything in this section is a **proposal** and an input to the Phase 1 tasks (mostly T1-01). Final picks are logged in section 2 as they're made.
+> **Decided in T1-01:** D-029 to D-037 (these override anything below that differs, e.g. npm instead of pnpm). Rows not covered by those decisions (charts, forms, tables, data libraries) are still **proposals** for later Phase 1 tasks.
 
 ```
 React app (Vite + TypeScript) ──HTTP/JSON──► FastAPI (api/) ──► core/ ──► SQLite
@@ -494,6 +503,7 @@ React app (Vite + TypeScript) ──HTTP/JSON──► FastAPI (api/) ──► 
 | v1.2 (tasks) | 2026-10-24 | D-026: task tracker in `docs/tasks/` with the Phase 1 board (44 tasks: 23 DECIDE, 18 BUILD, 3 VERIFY). D-023 narrowed to React + Python backend. D-024 and D-025 withdrawn into tasks. Data sources in D-012 and 3.12 are now candidates. Added root `CLAUDE.md` with the session routine |
 | v1.2 (OS) | 2026-10-24 | D-027: Windows (native) + Task Scheduler |
 | v1.2 (board v2) | 2026-10-24 | D-028: Phase 1 board regenerated as 10 feature/infra tasks with decisions inside each task. References to the first draft's task IDs updated |
+| v1.2 (T1-01 decisions) | 2026-10-24 | D-029 to D-037: Python 3.14 + uv + ruff, FastAPI, SQLAlchemy 2 + Alembic on SQLite, money/time conventions, Vite + React + TS + npm, shadcn/ui + Tailwind + TanStack Query + React Router, OpenAPI-generated client, `just` + localhost-only server, pytest + Vitest + Windows CI |
 
 ---
 

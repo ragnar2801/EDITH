@@ -50,16 +50,16 @@ T1-04 can be built in parallel with T1-02 / T1-03. T1-07 and T1-09 can run in pa
 - Lint, format and tests on both sides; CI decision
 - `CLAUDE.md` gets the dev conventions (money, time, layout) from the decisions below
 
-**Decisions** (each logged as a `D-###` in `agents.md`)
-- Python version and package manager (candidates: 3.12 / 3.13 · uv / Poetry / pip + venv)
-- Backend framework (candidates: FastAPI / Litestar / Flask; must produce an OpenAPI schema)
-- Database access and migrations (candidates: SQLAlchemy 2 + Alembic / SQLModel / raw SQL + simple migrations)
-- Money, currency and time conventions (`Decimal` vs integer minor units; amounts as strings in JSON; UTC storage, IST display; market date per exchange; decimal places for prices, NAVs, units, FX)
-- Frontend tooling (candidates: Vite / Next.js · TypeScript · pnpm / npm · ESLint + Prettier / Biome)
-- UI kit, data fetching and routing (candidates: shadcn/ui + Tailwind / Mantine / MUI · TanStack Query / SWR · React Router / TanStack Router)
-- API contract (candidate: REST + OpenAPI + generated TypeScript client; `/api/v1`; error format)
-- Repo layout and task runner (Windows-friendly: justfile / package scripts / PowerShell; no `make` by default, D-027)
-- Testing and CI (pytest; Vitest or none in Phase 1; GitHub Actions or local only)
+**Decisions** (approved 2026-10-24)
+- Decided: Python **3.14**, managed by **uv**; backend lint/format with **ruff**; no type checker yet (D-029)
+- Decided: **FastAPI** (D-030)
+- Decided: **SQLAlchemy 2.0 (sync) + Alembic**; SQLite with WAL, foreign keys, busy timeout; `data/friday.db` (D-031)
+- Decided: money as `Decimal`, stored as text, sent as JSON strings (numbers rejected); 2 / 4 / 8 / 6 decimal places for amounts / prices and NAVs / units / FX; UTC storage, IST display; market date per exchange (D-032)
+- Decided: **Vite + React + TypeScript**, **npm**, **ESLint + Prettier** (D-033)
+- Decided: **shadcn/ui + Tailwind**, **TanStack Query**, **React Router** (D-034)
+- Decided: REST under `/api/v1`, **openapi-typescript + openapi-fetch**, RFC 9457 problem details (D-035)
+- Decided: `backend/` + `frontend/`, **`just`** (PowerShell on Windows), server on `127.0.0.1:8000`, Vite dev server on `:5173` (D-036)
+- Decided: **pytest**, **Vitest**, **GitHub Actions on a Windows runner** (D-037)
 
 **Done when**
 - On a fresh clone on Windows, the documented setup + run commands open Friday at `localhost` showing the app shell and "backend: ok"
