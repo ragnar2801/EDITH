@@ -514,6 +514,7 @@ React app (Vite + TypeScript) ──HTTP/JSON──► FastAPI (api/) ──► 
 | v1.2 (OS) | 2026-10-24 | D-027: Windows (native) + Task Scheduler |
 | v1.2 (board v2) | 2026-10-24 | D-028: Phase 1 board regenerated as 10 feature/infra tasks with decisions inside each task. References to the first draft's task IDs updated |
 | v1.2 (T1-01 decisions) | 2026-10-24 | D-029 to D-037: Python 3.14 + uv + ruff, FastAPI, SQLAlchemy 2 + Alembic on SQLite, money/time conventions, Vite + React + TS + npm, shadcn/ui + Tailwind + TanStack Query + React Router, OpenAPI-generated client, `just` + localhost-only server, pytest + Vitest + Windows CI |
+| v1.2 (T1-01 done) | 2026-10-24 | T1-01 built: app skeleton (backend, frontend, `just` commands, Windows CI green). Project layout in 3.13 updated to match |
 
 ---
 

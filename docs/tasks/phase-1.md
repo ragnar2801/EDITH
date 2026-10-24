@@ -5,7 +5,7 @@
 > **Already fixed:** React frontend + Python backend (D-023) · SQLite on the laptop (D-013) · free data only (D-012) · scheduled fetch + backfill (D-022) · Windows + Task Scheduler (D-027).
 > Everything else is decided **inside the task that needs it** (see each task's *Decisions* list). How this board works: [`README.md`](README.md)
 
-**Board version:** 2 (regenerated 2026-10-24 as feature-sized tasks; the first draft's IDs are void) · **Done:** 0 / 10
+**Board version:** 2 (regenerated 2026-10-24 as feature-sized tasks; the first draft's IDs are void) · **Done:** 1 / 10
 
 ---
 
@@ -13,7 +13,7 @@
 
 | ID | Task | Kind | Owner | Status | Depends on |
 |----|------|------|-------|--------|------------|
-| T1-01 | Foundation: app skeleton running on Windows | Infra | Claude | doing | — |
+| T1-01 | Foundation: app skeleton running on Windows | Infra | Claude | done | — |
 | T1-02 | Instruments: find any stock, fund or ETF | Feature | Claude | todo | T1-01 |
 | T1-03 | Holdings: record what I own | Feature | Claude | todo | T1-02 |
 | T1-04 | Cash and remittances, with LRS totals | Feature | Claude | todo | T1-01 |
@@ -37,7 +37,7 @@ T1-04 can be built in parallel with T1-02 / T1-03. T1-07 and T1-09 can run in pa
 ---
 
 ## T1-01 · Foundation: app skeleton running on Windows
-`Infra` · Owner: Claude · Status: doing · Depends on: —
+`Infra` · Owner: Claude · Status: done · Depends on: —
 
 **Goal:** a working, empty Friday I can start on my laptop: backend, database, frontend and tooling all wired, so every later task only adds features.
 
@@ -65,7 +65,8 @@ T1-04 can be built in parallel with T1-02 / T1-03. T1-07 and T1-09 can run in pa
 - Built: backend (FastAPI, SQLite + Alembic baseline, exact money/time types, problem-details errors, UI serving, `friday` CLI), frontend (Vite + React + TS, shadcn/ui, TanStack Query, React Router, app shell with Phase 1 pages, backend status badge, generated API client, `formatMoney`), `justfile`, `scripts/dev.py`, `scripts/smoke.py`, Windows CI, README, `CLAUDE.md` conventions
 - Verified on Linux: `just setup`, `just lint`, `just test` (backend 20 tests, frontend 7 tests), `just smoke`, and screenshots of the running app (desktop and phone width)
 - Notes: Vite's template now ships oxlint; replaced with ESLint as decided (D-033). TypeScript pinned to 5.9 because openapi-typescript doesn't support TypeScript 6 yet. shadcn's registry is blocked from the build environment, so the shadcn setup and components (button, card, badge) were added by hand from shadcn's source; `npx shadcn add` works normally on the laptop
-- Waiting on: Windows CI run
+- Windows CI passed on a fresh `windows-latest` clone (run #1, https://github.com/ragnar2801/EDITH/actions/runs/40106787128): `just setup`, `lint`, `test`, `api-check` and `smoke` (real server, health ok, UI served)
+- Worth doing once on my laptop: `just setup` then `just run`, and open http://localhost:8000
 
 **Done when**
 - On a fresh clone on Windows, the documented setup + run commands open Friday at `localhost` showing the app shell and "backend: ok"
