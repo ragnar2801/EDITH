@@ -37,7 +37,8 @@
 | **Not yet** | Any AI, watchers, alerts, catch-up logic beyond backfill |
 | **Journeys** | J1 (without research), J7 (totals only) |
 | **Done when** | All my real holdings are in, prices update daily by themselves, and the numbers match my broker statements |
-| **Stack** | React + FastAPI (D-023), details in `agents.md` 3.14 |
+| **Stack** | React + Python backend (D-023). Everything else is decided in this phase's DECIDE tasks |
+| **Tasks** | [`tasks/phase-1.md`](tasks/phase-1.md) |
 
 ## Phase 2: Research on demand ("ask Friday about a stock")
 
@@ -72,7 +73,7 @@
 | **Not yet** | Claude runs by itself |
 | **Journeys** | J4 (cash flagged), J5 (alert, research by hand), J9 (for Python jobs), J10 (daily grading) |
 | **Done when** | Two weeks with no missed or duplicated jobs, and alerts that are useful rather than noisy |
-| **Needs from me** | Laptop OS |
+| **Needs from me** | Nothing new (laptop OS is decided in T1-01) |
 
 ## Phase 4b: Automatic AI runs ("Friday thinks on its own")
 
@@ -121,7 +122,7 @@ Full Tax Agent · screener / idea scout and external tips (D-007) · technical a
 
 | Phase | Decision | Open question in `agents.md` |
 |-------|----------|------------------------------|
-| 1 | ~~Tech stack~~ → decided (D-023) | #4 (resolved) |
+| 1 | Stack details, data sources, data model, rule values, laptop OS → DECIDE tasks in [`tasks/phase-1.md`](tasks/phase-1.md) | #4, #8 |
 | 3 | Policy numbers (target mix, max loss, limits) | #2 |
-| 4a | Laptop OS | #8 |
+| 4a | ~~Laptop OS~~ → moved to Phase 1 (T1-01) | #8 |
 | 4b | Subscription login vs API key | #1 |

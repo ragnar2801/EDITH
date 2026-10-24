@@ -36,7 +36,7 @@
 
    Web UI (React)
         │
-   API (FastAPI) ──► Database (one file) ◄── Python jobs (prices, maths, watchers)
+   API (Python)  ──► Database (one file) ◄── Python jobs (prices, maths, watchers)
                           ▲                        ▲
                           │                        │
                  Friday tool service          friday tick (every 15 min)
@@ -52,7 +52,7 @@
 | Part | Plain-English job |
 |---|---|
 | **Web UI (React)** | Where I enter holdings and cash, and read suggestions and the weekly letter |
-| **API (FastAPI)** | The UI's only way to read or change data. Uses the same core code as the jobs and the tool service |
+| **API (Python backend)** | The UI's only way to read or change data. Uses the same core code as the jobs and the tool service |
 | **Database** | One SQLite file holding everything: holdings, prices, research notes, suggestions |
 | **Python jobs** | Download free data (NSE, AMFI, Yahoo, SEC EDGAR, FRED) and do all the calculations |
 | **`friday tick`** | The heartbeat. Every 15 minutes it asks "what's due?" and runs it |
