@@ -5,7 +5,7 @@
 > **Fixed so far:** React frontend + Python backend (D-023), SQLite on the laptop (D-013), free data only (D-012), cron + backfill (D-022). **Everything else is decided in the DECIDE tasks below.**
 > How this board works: [`README.md`](README.md)
 
-**Last updated:** 2026-10-24
+**Last updated:** 2026-10-24 · **Done:** 1 / 44
 
 ---
 
@@ -15,7 +15,7 @@
 
 | ID | Task | Type | Owner | Status | Depends on |
 |----|------|------|-------|--------|------------|
-| T1-01 | Laptop OS and scheduler | DECIDE | me | doing | — |
+| T1-01 | Laptop OS and scheduler | DECIDE | me | done | — |
 | T1-02 | Backend tooling (Python version, packages, lint, types) | DECIDE | both | todo | — |
 | T1-03 | Backend web framework | DECIDE | both | todo | — |
 | T1-04 | Database access and migrations | DECIDE | both | todo | T1-03 |
@@ -92,13 +92,13 @@
 ## M1 — Foundations
 
 ### T1-01 · Laptop OS and scheduler
-`DECIDE` · Owner: me · Status: doing · Depends on: —
+`DECIDE` · Owner: me · Status: done · Depends on: —
 
 - **Question:** which OS does Friday run on, and which scheduler runs the daily jobs?
 - **Options:** macOS (cron, or launchd, which runs a missed job once after wake) · Windows (Task Scheduler with "run as soon as possible after a missed start") · Linux (cron, or systemd timers with `Persistent=true`)
 - **Note:** pulled forward from Phase 4a because Phase 1 cron (D-022) depends on it.
 - **Done when:** OS and scheduler chosen, logged as D-###.
-- **Outcome:** —
+- **Outcome (2026-10-24, D-027):** **Windows**, running natively (not inside WSL2: the WSL2 Linux VM shuts down when idle, so its jobs would be unreliable). Scheduler: **Windows Task Scheduler** with *Run task as soon as possible after a scheduled start is missed* turned on, so a job missed during sleep runs once on wake. Details for T1-32: turn **off** *Start the task only if the computer is on AC power* (default is on, which would skip runs on battery); run only when I'm logged on (no stored password needed). Knock-on: T1-10 should prefer a cross-platform task runner (Windows has no `make` by default).
 
 ### T1-02 · Backend tooling
 `DECIDE` · Owner: both · Status: todo · Depends on: —
@@ -181,7 +181,7 @@
 `DECIDE` · Owner: both · Status: todo · Depends on: T1-02, T1-06
 
 - **Question:** folder structure, and how I run Friday day to day vs while developing.
-- **Options:** one repo with `backend/` and `frontend/` (current proposal in `agents.md` 3.13) vs other splits · daily use: one process that serves the built UI vs two processes · dev: Vite dev server proxying to the backend · task runner (Makefile / justfile / package scripts) · `.env` handling · `data/` and `logs/` git-ignored
+- **Options:** one repo with `backend/` and `frontend/` (current proposal in `agents.md` 3.13) vs other splits · daily use: one process that serves the built UI vs two processes · dev: Vite dev server proxying to the backend · task runner (justfile / package scripts / PowerShell scripts; `make` isn't available on Windows by default, D-027) · `.env` handling · `data/` and `logs/` git-ignored
 - **Done when:** layout and commands logged as D-###, and `agents.md` 3.13 layout updated.
 - **Outcome:** —
 
@@ -361,7 +361,7 @@ Each task here includes a **test fetch**: a throwaway script that pulls a few re
 ### T1-32 · Scheduling: cron entries + "Refresh prices"
 `BUILD` · Owner: both · Status: todo · Depends on: T1-28, T1-29, T1-30, T1-31, T1-01
 
-- **Scope:** scheduler entries for the OS chosen in T1-01 (times from `agents.md` 3.4), install/uninstall instructions, a "Refresh prices" endpoint that runs the same jobs.
+- **Scope:** Windows Task Scheduler tasks (D-027; times from `agents.md` 3.4) with *run as soon as possible after a missed start* on and *only on AC power* off, created by a script with install/uninstall, plus a "Refresh prices" endpoint that runs the same jobs.
 - **Done when:** jobs run on schedule on my laptop; the button works.
 
 ### T1-33 · Calculations: valuation, P&L, allocation

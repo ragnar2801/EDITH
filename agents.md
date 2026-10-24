@@ -62,6 +62,7 @@ Friday **advises**. I **execute** trades myself at my broker.
 | D-024 | 2026-10-24 | Frontend: Vite + React + TypeScript (no Next.js), pnpm, API client generated from OpenAPI, TanStack Query/Table, React Hook Form + Zod, shadcn/ui + Tailwind, ECharts + Lightweight Charts. Details in 3.14 | Standard, well-supported choices. Generated client keeps types in sync | Withdrawn → decided in tasks T1-06 to T1-09 |
 | D-025 | 2026-10-24 | Backend: Python 3.12+, uv, FastAPI, SQLAlchemy 2 + Alembic, Pydantic v2, SQLite (WAL), pandas, yfinance, httpx, pyxirr, pytest, ruff. Shared `core/` package. Money as `Decimal`, sent as strings in JSON. Details in 3.14 | One logic layer for UI, jobs and Claude. No floating-point money errors | Withdrawn → decided in tasks T1-02 to T1-05 and T1-11 |
 | D-026 | 2026-10-24 | **Work is tracked in `docs/tasks/`**: a markdown tracker in the repo, one board per phase. Every open choice below the 100-foot view (libraries, data sources, data model, rule values) is a DECIDE task. Its outcome is logged here as a `D-###` | Works across sessions. Versioned with the code. Decisions made with evidence, one at a time | Active |
+| D-027 | 2026-10-24 | **Laptop OS: Windows, native** (not WSL2). Scheduler: **Windows Task Scheduler** with *run as soon as possible after a missed start* on and *only on AC power* off (T1-01) | My laptop. WSL2 stops when idle, so jobs inside it are unreliable. Task Scheduler catches up after sleep, like the backfill in D-022 | Active |
 
 ---
 
@@ -472,7 +473,7 @@ React app (Vite + TypeScript) ──HTTP/JSON──► FastAPI (api/) ──► 
 5. **Notification channel** for urgent items: in-app only for v1, or also desktop notifications?
 6. **Where the screener/tips come from** when we build them: own screens, a newsletter, another agent?
 7. **Existing US holdings:** which broker and platform? Affects how I enter lots and FX rates historically.
-8. **Laptop OS:** macOS, Windows or Linux? → task T1-01 (pulled into Phase 1 for cron)
+8. ~~**Laptop OS**~~ → Windows, Task Scheduler (D-027)
 
 ### Resolved
 - ~~Tax residency~~ → D-010 · ~~Data budget~~ → D-012 · ~~Hosting~~ → D-013 · ~~Benchmarks / target~~ → D-011 (IPS details still open) · ~~Which LLM~~ → D-016 · ~~Agent framework~~ → D-016 (Claude Code)
@@ -490,6 +491,7 @@ React app (Vite + TypeScript) ──HTTP/JSON──► FastAPI (api/) ──► 
 | v1.2 (phases) | 2026-10-24 | Decisions D-021 (build phases 1, 2, 3, 4a, 4b, 5) and D-022 (cron + backfill in Phase 1). Added `docs/phases.md` |
 | v1.2 (stack) | 2026-10-24 | Decisions D-023 (React + FastAPI), D-024 (frontend picks), D-025 (backend picks). Added section 3.14. Project layout split into `backend/` and `frontend/` |
 | v1.2 (tasks) | 2026-10-24 | D-026: task tracker in `docs/tasks/` with the Phase 1 board (44 tasks: 23 DECIDE, 18 BUILD, 3 VERIFY). D-023 narrowed to React + Python backend. D-024 and D-025 withdrawn into tasks. Data sources in D-012 and 3.12 are now candidates. Added root `CLAUDE.md` with the session routine |
+| v1.2 (T1-01) | 2026-10-24 | D-027: Windows (native) + Task Scheduler |
 
 ---
 
