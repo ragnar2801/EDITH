@@ -3,7 +3,7 @@
 > Living design doc for **Friday**, a personal stock analyst / portfolio manager.
 > This file is the memory for brainstorming sessions: decisions, the current plan, open questions and ideas for later.
 > Update it every session. Never delete history. Supersede it (see [How to use this file](#how-to-use-this-file)).
-> Plain-language overview and user journeys: [`docs/architecture.md`](docs/architecture.md).
+> Plain-language overview and user journeys: [`docs/architecture.md`](docs/architecture.md). Build phases: [`docs/phases.md`](docs/phases.md).
 
 **Current plan:** v1.2 · **Last updated:** 2026-10-24
 
@@ -56,6 +56,8 @@ Friday **advises**. I **execute** trades myself at my broker.
 | D-018 | 2026-10-24 | **Scheduling:** one OS scheduler entry runs `friday tick` every 15 min. The tick decides what's due, runs Python jobs, and starts `claude -p "/<skill>"` for LLM jobs. Manual runs: `claude` in the project, then `/<skill>` | OS-agnostic, handles catch-up and dedupe itself, no app needs to stay open | Proposed |
 | D-019 | 2026-10-24 | **Hard rules are enforced in code** inside the MCP server (`create_suggestion` runs Risk Guard checks before saving). Only the CIO subagent is allowed the `create_suggestion` tool | An LLM can't talk its way past a rule. Web content can't inject a suggestion | Proposed |
 | D-020 | 2026-10-24 | Unattended runs use `--permission-mode dontAsk` with an allowlist (Friday MCP tools, web search/fetch, read). Anything else is denied, never prompted | Nobody is there to answer prompts at 3 a.m. | Proposed |
+| D-021 | 2026-10-24 | **Build in phases:** 1 Tracker → 2 Research on demand → 3 Suggestions on demand → 4a Watchers & alerts → 4b Automatic AI runs → 5 Wider view & feedback. Details in `docs/phases.md` | Data before AI. AI run by hand before it runs unattended. Every phase is usable on its own | Active |
+| D-022 | 2026-10-24 | **Phase 1 schedules fetchers with plain cron** (or the OS equivalent). Each fetcher backfills every date missed since its last success. `friday tick` (D-018) takes over in Phase 4a | Simplest thing that works. Backfill covers runs skipped while the laptop sleeps | Active |
 
 ---
 
@@ -68,6 +70,7 @@ Friday **advises**. I **execute** trades myself at my broker.
 - Portfolio view: allocation, P&L, XIRR, drift vs target, benchmark comparison (INR and USD)
 - Suggestions tab: ranked suggestions with accept, reject and snooze, plus history and scoring
 - The v1 agents in 3.3
+- Built in phases (D-021): see [`docs/phases.md`](docs/phases.md)
 
 **Not in v1** (see [Roadmap](#4-roadmap--parking-lot))
 - Broker or CAS sync, auto-trading, screener or idea discovery, external tips, technical and sentiment agents, intraday alerts, full tax agent, multi-user
@@ -426,6 +429,7 @@ friday/
 | v1.1 | 2026-10-24 | Decisions D-010 to D-015 (LRS resident, return target, free data, laptop-local, urgency policy, index baseline). Full system design: runtime components, 22-component roster by layer, IST timeline, event table, laptop resilience, LLM load estimate. Added LRS & Tax Ledger (P4), Data Health (W5), Orchestrator and Housekeeper. Data sources decided |
 | v1.2 | 2026-10-24 | Decisions D-016 to D-020: Friday as a Claude Code project (subagents, skills, local MCP server), Python for non-LLM work, `friday tick` + `claude -p` scheduling, hard rules in code, locked-down unattended permissions. Added section 3.13 |
 | v1.2 (docs) | 2026-10-24 | Added `docs/architecture.md`: plain-language overview of the v1.2 architecture and user journeys J1–J10. No design change |
+| v1.2 (phases) | 2026-10-24 | Decisions D-021 (build phases 1, 2, 3, 4a, 4b, 5) and D-022 (cron + backfill in Phase 1). Added `docs/phases.md` |
 
 ---
 

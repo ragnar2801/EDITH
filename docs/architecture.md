@@ -1,7 +1,7 @@
 # Friday — Architecture Overview
 
 > Plain-language overview of the **target architecture** (plan v1.2) and the user journeys it supports.
-> Decisions, detailed tables and open questions live in [`agents.md`](../agents.md). Decision IDs (`D-###`) and component IDs (`R1`, `C1`, …) refer to that file.
+> Decisions, detailed tables and open questions live in [`agents.md`](../agents.md). Build order: [`phases.md`](phases.md). Decision IDs (`D-###`) and component IDs (`R1`, `C1`, …) refer to that file.
 
 **Matches plan:** v1.2 · **Last updated:** 2026-10-24
 
