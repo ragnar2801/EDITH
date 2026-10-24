@@ -5,7 +5,7 @@
 > **Already fixed:** React frontend + Python backend (D-023) · SQLite on the laptop (D-013) · free data only (D-012) · scheduled fetch + backfill (D-022) · Windows + Task Scheduler (D-027).
 > Everything else is decided **inside the task that needs it** (see each task's *Decisions* list). How this board works: [`README.md`](README.md)
 
-**Board version:** 2 (regenerated 2026-10-24 as feature-sized tasks; the first draft's IDs are void) · **Done:** 1 / 11
+**Board version:** 2 (regenerated 2026-10-24 as feature-sized tasks; the first draft's IDs are void) · **Done:** 2 / 11
 
 ---
 
@@ -14,7 +14,7 @@
 | ID | Task | Kind | Owner | Status | Depends on |
 |----|------|------|-------|--------|------------|
 | T1-01 | Foundation: app skeleton running on Windows | Infra | Claude | done | — |
-| T1-02 | Instruments: find any stock, fund or ETF | Feature | Claude | doing | T1-01 |
+| T1-02 | Instruments: find any stock, fund or ETF | Feature | Claude | done | T1-01 |
 | T1-03 | Holdings: record what I own | Feature | Claude | todo | T1-02 |
 | T1-04 | Cash and remittances, with LRS totals | Feature | Claude | todo | T1-01 |
 | T1-05 | India market data: stock prices and fund NAVs, with backfill | Feature | Claude | todo | T1-02 |
@@ -77,7 +77,7 @@ T1-04 can be built in parallel with T1-02 / T1-03. T1-07 and T1-09 can run in pa
 ---
 
 ## T1-02 · Instruments: find any stock, fund or ETF
-`Feature` · Owner: Claude · Status: doing · Depends on: T1-01
+`Feature` · Owner: Claude · Status: done · Depends on: T1-01
 
 **Goal:** every instrument I could hold or watch is known to Friday, with the right type, exchange, currency and asset class, and I can find it by typing part of its name.
 
@@ -101,6 +101,8 @@ T1-04 can be built in parallel with T1-02 / T1-03. T1-07 and T1-09 can run in pa
 - Done-when searches on the live data: "infos" → NSE INFY (stock, NSE, INR, equity; the NYSE ADR in USD also listed); "parag parikh flexi" → AMFI 122639 Direct Growth (mutual fund, INR, equity) with its 3 other plans; "QQQ" → NASDAQ QQQ (ETF, USD, equity). Also "zomato" → ETERNAL, NIFTYBEES carries its AMFI scheme
 - Tests: 138 backend (parsers on byte-for-byte slices of the real files, classification table, refresh scenarios: renames, splits, reused symbols, delistings, bad downloads, overrides) and 17 frontend. `just lint`, `just test`, `just api-check`, `just smoke` pass on Linux; screenshots checked at desktop and phone width, light and dark
 - Known limits: US ETFs are classified by name only (e.g. a US "multi-asset" ETF shows as equity; fix with an override). US ticker changes are matched only when `FRIDAY_SEC_USER_AGENT` is set (CIK). BSE-only stocks aren't listed (T1-11)
+- Windows CI passed (run #3, https://github.com/ragnar2801/EDITH/actions/runs/40110560643): `just setup`, `lint`, `test`, `api-check`, `smoke`, including SQLite FTS5 on Windows Python
+- Worth doing once on my laptop: `just instruments`, then search at http://localhost:8000/instruments
 
 **Done when**
 - Searching "infos", "parag parikh flexi" and "QQQ" finds the right instruments with correct type, exchange, currency and asset class
