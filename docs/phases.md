@@ -37,7 +37,7 @@
 | **Not yet** | Any AI, watchers, alerts, catch-up logic beyond backfill |
 | **Journeys** | J1 (without research), J7 (totals only) |
 | **Done when** | All my real holdings are in, prices update daily by themselves, and the numbers match my broker statements |
-| **Needs from me** | Tech stack choice |
+| **Stack** | React + FastAPI (D-023), details in `agents.md` 3.14 |
 
 ## Phase 2: Research on demand ("ask Friday about a stock")
 
@@ -121,7 +121,7 @@ Full Tax Agent · screener / idea scout and external tips (D-007) · technical a
 
 | Phase | Decision | Open question in `agents.md` |
 |-------|----------|------------------------------|
-| 1 | Tech stack | #4 |
+| 1 | ~~Tech stack~~ → decided (D-023) | #4 (resolved) |
 | 3 | Policy numbers (target mix, max loss, limits) | #2 |
 | 4a | Laptop OS | #8 |
 | 4b | Subscription login vs API key | #1 |

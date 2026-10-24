@@ -58,6 +58,9 @@ Friday **advises**. I **execute** trades myself at my broker.
 | D-020 | 2026-10-24 | Unattended runs use `--permission-mode dontAsk` with an allowlist (Friday MCP tools, web search/fetch, read). Anything else is denied, never prompted | Nobody is there to answer prompts at 3 a.m. | Proposed |
 | D-021 | 2026-10-24 | **Build in phases:** 1 Tracker → 2 Research on demand → 3 Suggestions on demand → 4a Watchers & alerts → 4b Automatic AI runs → 5 Wider view & feedback. Details in `docs/phases.md` | Data before AI. AI run by hand before it runs unattended. Every phase is usable on its own | Active |
 | D-022 | 2026-10-24 | **Phase 1 schedules fetchers with plain cron** (or the OS equivalent). Each fetcher backfills every date missed since its last success. `friday tick` (D-018) takes over in Phase 4a | Simplest thing that works. Backfill covers runs skipped while the laptop sleeps | Active |
+| D-023 | 2026-10-24 | **React frontend + Python (FastAPI) backend.** No Django | Clean split between UI and logic. API-first, so a phone app, other clients or integrations can reuse the same API later | Active |
+| D-024 | 2026-10-24 | Frontend: Vite + React + TypeScript (no Next.js), pnpm, API client generated from OpenAPI, TanStack Query/Table, React Hook Form + Zod, shadcn/ui + Tailwind, ECharts + Lightweight Charts. Details in 3.14 | Standard, well-supported choices. Generated client keeps types in sync | Proposed |
+| D-025 | 2026-10-24 | Backend: Python 3.12+, uv, FastAPI, SQLAlchemy 2 + Alembic, Pydantic v2, SQLite (WAL), pandas, yfinance, httpx, pyxirr, pytest, ruff. Shared `core/` package. Money as `Decimal`, sent as strings in JSON. Details in 3.14 | One logic layer for UI, jobs and Claude. No floating-point money errors | Proposed |
 
 ---
 
@@ -365,13 +368,14 @@ Notes:
 - The tick runs one Claude job at a time (a lock), so jobs never overlap and SQLite has a single writer.
 - The exit code and JSON output are logged to `job_runs`. A failed job is retried on the next tick, with backoff.
 
-#### Project layout (target)
+#### Project layout (target, see 3.14 for the stack)
 
 ```
-friday/
+friday/                       # repo root
 ├── agents.md                 # this design doc (memory for brainstorming)
 ├── CLAUDE.md                 # short rules loaded in every Claude session
 ├── .mcp.json                 # registers the local "friday" MCP server
+├── docs/                     # architecture.md, phases.md
 ├── .claude/
 │   ├── settings.json         # permission allowlist, hooks
 │   ├── agents/               # subagents (table above)
@@ -381,19 +385,70 @@ friday/
 │   │   └── policy/  valuation-framework/  fund-checklist/
 │   │       tax-india-lrs/  note-format/  suggestion-format/   # background know-how
 │   └── agent-memory/         # per-agent learnings
-├── friday/                   # Python package
-│   ├── mcp_server.py         # tools for Claude, enforces hard rules
-│   ├── db.py                 # SQLite schema and access
-│   ├── fetchers/             # nse, amfi, yahoo, edgar, fred, fx
-│   ├── calc/                 # xirr, drift, valuation, overlap, tax, lrs
-│   ├── watchers/             # W1–W3, W5
-│   ├── risk_rules.py         # hard rules (D-019)
-│   ├── scorekeeper.py
-│   └── orchestrator.py       # `friday tick`
-├── web/                      # UI (reads and writes SQLite through the backend)
+├── backend/                  # Python (D-025)
+│   ├── pyproject.toml        # managed with uv
+│   ├── friday/
+│   │   ├── core/             # ALL logic: models, db, calc (xirr, drift, lrs, tax),
+│   │   │                     #   fetchers, watchers, risk_rules (D-019), scorekeeper
+│   │   ├── api/              # FastAPI routers (thin; the UI's only way in)
+│   │   ├── jobs/             # cron entry points; later orchestrator (`friday tick`)
+│   │   └── mcp_server.py     # Phase 2: core functions as tools for Claude (thin)
+│   ├── migrations/           # Alembic
+│   └── tests/
+├── frontend/                 # React (D-024)
+│   ├── package.json          # pnpm, Vite, TypeScript
+│   └── src/                  # pages/, components/, api/ (generated client)
 ├── data/friday.db            # git-ignored
 └── logs/                     # git-ignored
 ```
+
+### 3.14 Tech stack (D-023 to D-025)
+
+```
+React app (Vite + TypeScript) ──HTTP/JSON──► FastAPI (api/) ──► core/ ──► SQLite
+                                                                  ▲
+                      jobs/ (cron in Phase 1, `friday tick` later) ┤
+                      mcp_server.py (Phase 2, for Claude) ─────────┘
+```
+
+#### Backend (Python)
+
+| Layer | Pick | Why |
+|-------|------|-----|
+| Language | Python 3.12+ | One language for data, maths, jobs, API and MCP server (D-017) |
+| Env and packages | uv | Fast, lockfile, `uv run` |
+| API | FastAPI | Typed, generates an OpenAPI schema for the frontend client |
+| Database | SQLite in WAL mode | UI can read while jobs write (D-013) |
+| DB layer | SQLAlchemy 2.0 + Alembic | Typed models plus migrations as the schema evolves |
+| Data checking | Pydantic v2 | One definition of each object, shared by API, MCP tools and jobs |
+| Data handling | pandas, yfinance, httpx | Free sources (D-012), with timeouts and retries |
+| Returns | pyxirr | Fast, tested XIRR |
+| Market calendars | pandas_market_calendars or exchange_calendars | NSE and US trading days |
+| MCP server (Phase 2) | Official MCP Python SDK (FastMCP), stdio | Thin wrapper over `core/` |
+| Config | `.env` + pydantic-settings | FRED key, SEC EDGAR contact header |
+| Quality | pytest, ruff | Tests for the maths, lint and format |
+
+#### Frontend (React)
+
+| Layer | Pick | Why |
+|-------|------|-----|
+| Build | Vite + React + TypeScript | Plain single-page app. No Next.js: FastAPI is already the server, so a second server layer adds nothing |
+| Packages | pnpm | Fast, strict |
+| API client | Generated from FastAPI's OpenAPI schema (e.g. openapi-typescript or Orval) | Backend and frontend types never drift apart |
+| Server data | TanStack Query | Caching, refetch, loading and error states |
+| Tables | TanStack Table | Holdings, lots, watchlist, suggestions |
+| Forms | React Hook Form + Zod | Lots of manual data entry (D-003) |
+| UI components | shadcn/ui + Tailwind CSS | Good-looking defaults, components owned in the repo |
+| Charts | ECharts (allocation, performance) + TradingView Lightweight Charts (price charts) | Free, handle financial data well |
+| Routing | React Router (or TanStack Router) | Few pages, simple |
+
+#### Rules
+
+- **All logic lives in `backend/friday/core/`.** API, jobs and MCP server are thin layers. The UI, the CIO and Risk Guard always get the same number for the same question.
+- **The React app talks only to the API.** It never reads SQLite or computes portfolio figures itself.
+- **Money is `Decimal`** in Python and SQL, and is **sent as a string in JSON**, because JavaScript numbers lose precision. The frontend formats it but doesn't do arithmetic on it.
+- **Times stored in UTC**, shown in IST. A market date belongs to its exchange.
+- **One process for daily use:** the built React app (`frontend/dist`) is served by FastAPI at `http://localhost:8000`. During development: Vite dev server with `/api` proxied to FastAPI.
 
 ---
 
@@ -410,7 +465,7 @@ friday/
 
 1. **Claude billing:** run the scheduled jobs on my Claude subscription login (shares usage limits with my interactive use) or on an API key (pay per use, separate budget)?2. **IPS values:** goals, horizon, max drawdown, target allocation India vs US vs debt vs gold (section 3.10)
 3. **Tax rules config:** capital-gains rates, holding periods and LRS/TCS thresholds change with budgets. Who updates the `tax_rules` table, and how?
-4. **Tech stack:** backend language, scheduler, agent framework, frontend. Not decided.
+4. ~~**Tech stack**~~ → decided: D-023 (React + FastAPI). Sub-picks D-024 and D-025 still Proposed
 5. **Notification channel** for urgent items: in-app only for v1, or also desktop notifications?
 6. **Where the screener/tips come from** when we build them: own screens, a newsletter, another agent?
 7. **Existing US holdings:** which broker and platform? Affects how I enter lots and FX rates historically.
@@ -430,6 +485,7 @@ friday/
 | v1.2 | 2026-10-24 | Decisions D-016 to D-020: Friday as a Claude Code project (subagents, skills, local MCP server), Python for non-LLM work, `friday tick` + `claude -p` scheduling, hard rules in code, locked-down unattended permissions. Added section 3.13 |
 | v1.2 (docs) | 2026-10-24 | Added `docs/architecture.md`: plain-language overview of the v1.2 architecture and user journeys J1–J10. No design change |
 | v1.2 (phases) | 2026-10-24 | Decisions D-021 (build phases 1, 2, 3, 4a, 4b, 5) and D-022 (cron + backfill in Phase 1). Added `docs/phases.md` |
+| v1.2 (stack) | 2026-10-24 | Decisions D-023 (React + FastAPI), D-024 (frontend picks), D-025 (backend picks). Added section 3.14. Project layout split into `backend/` and `frontend/` |
 
 ---
 
