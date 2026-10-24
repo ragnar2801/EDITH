@@ -3,6 +3,7 @@
 > Living design doc for **Friday**, a personal stock analyst / portfolio manager.
 > This file is the memory for brainstorming sessions: decisions, the current plan, open questions and ideas for later.
 > Update it every session. Never delete history. Supersede it (see [How to use this file](#how-to-use-this-file)).
+> Plain-language overview and user journeys: [`docs/architecture.md`](docs/architecture.md).
 
 **Current plan:** v1.2 · **Last updated:** 2026-10-24
 
@@ -424,6 +425,7 @@ friday/
 | v1 | 2026-10-24 | Initial architecture from first brainstorm. Decisions D-001 to D-009. v1 agent roster, schedules, data model, suggestion format |
 | v1.1 | 2026-10-24 | Decisions D-010 to D-015 (LRS resident, return target, free data, laptop-local, urgency policy, index baseline). Full system design: runtime components, 22-component roster by layer, IST timeline, event table, laptop resilience, LLM load estimate. Added LRS & Tax Ledger (P4), Data Health (W5), Orchestrator and Housekeeper. Data sources decided |
 | v1.2 | 2026-10-24 | Decisions D-016 to D-020: Friday as a Claude Code project (subagents, skills, local MCP server), Python for non-LLM work, `friday tick` + `claude -p` scheduling, hard rules in code, locked-down unattended permissions. Added section 3.13 |
+| v1.2 (docs) | 2026-10-24 | Added `docs/architecture.md`: plain-language overview of the v1.2 architecture and user journeys J1–J10. No design change |
 
 ---
 
