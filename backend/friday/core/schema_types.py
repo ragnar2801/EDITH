@@ -55,6 +55,9 @@ Units = _decimal_string(8)
 FxRate = _decimal_string(6)
 """Exchange rate: 6 decimal places."""
 
+Percent = _decimal_string(2)
+"""Percentage, e.g. an allocation share: 2 decimal places."""
+
 
 def _to_utc(value: datetime) -> datetime:
     return value.astimezone(UTC)

@@ -1,0 +1,38 @@
+Scheme Code;ISIN Div Payout/ ISIN Growth;ISIN Div Reinvestment;Scheme Name;Plan;Option;Net Asset Value;Date
+ 
+Open Ended Schemes(Debt Scheme - Liquid Fund)
+ 
+HDFC Mutual Fund
+ 
+119091;INF179KB1HP9;-;HDFC Liquid Fund;Direct Plan;Growth Option;5612.8067;25-Oct-2026
+100868;INF179KB1HK0;-;HDFC Liquid Fund;Regular Plan;Growth Option;5545.9887;25-Oct-2026
+Open Ended Schemes(Equity Scheme - Flexi Cap Fund)
+ 
+PPFAS Mutual Fund
+ 
+122639;INF879O01027;-;Parag Parikh Flexi Cap Fund;Direct Plan;Growth;88.9695;23-Oct-2026
+153964;-;INF879O01308;Parag Parikh Flexi Cap Fund;Direct Plan;Monthly IDCW Payout;88.9699;23-Oct-2026
+122640;INF879O01019;-;Parag Parikh Flexi Cap Fund;Regular Plan;Growth;80.9965;23-Oct-2026
+153965;-;INF879O01324;Parag Parikh Flexi Cap Fund;Regular Plan;Monthly IDCW Payout;80.9966;23-Oct-2026
+Open Ended Schemes(Other Scheme - FoF Domestic)
+ 
+Motilal Oswal Mutual Fund
+ 
+145552;INF247L01718;-;Motilal Oswal Nasdaq 100 Fund of Fund;;;60.7950;23-Oct-2026
+145551;INF247L01700;-;Motilal Oswal Nasdaq 100 Fund of Fund;;;58.9868;23-Oct-2026
+Open Ended Schemes(Other Scheme - Other  ETFs)
+ 
+Nippon India Mutual Fund
+ 
+140084;INF204KB14I2;-;Nippon India ETF Nifty 50 BeES;Direct Plan;;257.8497;23-Oct-2026
+Open Ended Schemes(Solution Oriented Schemes ** - Retirement Fund)
+ 
+Axis Mutual Fund
+ 
+147825;INF846K01S86;-;Axis Retirement Fund - Aggressive Plan;Direct Plan;Growth Option;19.20;23-Oct-2026
+Close Ended Schemes(Income)
+ 
+Nippon India Mutual Fund
+ 
+142916;INF204KB1XN0;-;Nippon India Fixed Horizon Fund XXXVI- Series 9;;;10.0000;10-May-2021
+142915;INF204KB1VU9;-;Nippon India Fixed Horizon Fund XXXVI- Series 9;;;12.5597;10-May-2021

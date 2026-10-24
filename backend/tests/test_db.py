@@ -84,4 +84,4 @@ def test_migrations_run_and_are_repeatable(settings: Settings) -> None:
     with engine.connect() as connection:
         version = connection.execute(text("SELECT version_num FROM alembic_version")).scalar()
     engine.dispose()
-    assert version == "0001"
+    assert version == "0002"

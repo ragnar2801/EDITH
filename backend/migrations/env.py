@@ -5,8 +5,11 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+import friday.core.models  # noqa: F401 (registers every table on Base.metadata)
 from friday.config import Settings
 from friday.core.db import Base
+from friday.core.instruments.search import FTS_TABLE
+from friday.core.types import DecimalText, UtcDateTime
 
 config = context.config
 
@@ -20,12 +23,28 @@ if not config.get_main_option("sqlalchemy.url"):
 target_metadata = Base.metadata
 
 
+def include_name(name: str | None, type_: str, _parent_names: object) -> bool:
+    """Leave the FTS5 search table and its shadow tables alone: they are created in a
+    migration by hand and aren't part of the ORM metadata."""
+    return not (type_ == "table" and name is not None and name.startswith(FTS_TABLE))
+
+
+def render_item(type_: str, obj: object, _autogen_context: object) -> str | bool:
+    """Write Friday's exact-value column types as the plain text columns they are in SQLite,
+    so generated migrations don't import application code."""
+    if type_ == "type" and isinstance(obj, DecimalText | UtcDateTime):
+        return "sa.String()"
+    return False
+
+
 def run_migrations_offline() -> None:
     context.configure(
         url=config.get_main_option("sqlalchemy.url"),
         target_metadata=target_metadata,
         literal_binds=True,
         render_as_batch=True,
+        include_name=include_name,
+        render_item=render_item,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -43,6 +62,8 @@ def run_migrations_online() -> None:
             connection=connection,
             target_metadata=target_metadata,
             render_as_batch=True,
+            include_name=include_name,
+            render_item=render_item,
         )
         with context.begin_transaction():
             context.run_migrations()

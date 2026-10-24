@@ -24,6 +24,14 @@ class Settings(BaseSettings):
     log_dir: Path = REPO_ROOT / "logs"
     frontend_dist: Path = REPO_ROOT / "frontend" / "dist"
 
+    # SEC asks for a name and contact email in the User-Agent. Without it, CIKs are skipped.
+    sec_user_agent: str | None = None
+
+    @cached_property
+    def sources_dir(self) -> Path:
+        """Raw copies of the downloaded instrument lists (D-039)."""
+        return self.data_dir / "sources"
+
     @cached_property
     def db_path(self) -> Path:
         return self.data_dir / "friday.db"
