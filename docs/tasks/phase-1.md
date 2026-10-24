@@ -5,7 +5,7 @@
 > **Already fixed:** React frontend + Python backend (D-023) · SQLite on the laptop (D-013) · free data only (D-012) · scheduled fetch + backfill (D-022) · Windows + Task Scheduler (D-027).
 > Everything else is decided **inside the task that needs it** (see each task's *Decisions* list). How this board works: [`README.md`](README.md)
 
-**Board version:** 2 (regenerated 2026-10-24 as feature-sized tasks; the first draft's IDs are void) · **Done:** 1 / 10
+**Board version:** 2 (regenerated 2026-10-24 as feature-sized tasks; the first draft's IDs are void) · **Done:** 1 / 11
 
 ---
 
@@ -23,6 +23,7 @@
 | T1-08 | Portfolio view: value, P&L, allocation, XIRR | Feature | Claude | todo | T1-03, T1-04, T1-05, T1-06 |
 | T1-09 | Daily automation on Windows | Infra | both | todo | T1-05, T1-06 |
 | T1-10 | Phase 1 acceptance: my real data, reconciled | Verify | both | todo | T1-01 to T1-09 |
+| T1-11 | REITs, InvITs and BSE-only listings | Feature | Claude | todo | T1-02 |
 
 ```
 T1-01 ─┬─► T1-02 ─┬─► T1-03 ───────────────┐
@@ -32,7 +33,7 @@ T1-01 ─┬─► T1-02 ─┬─► T1-03 ────────────
        └─► T1-04 ──────────────────────────► (T1-08) ──┘
 ```
 
-T1-04 can be built in parallel with T1-02 / T1-03. T1-07 and T1-09 can run in parallel with T1-08.
+T1-04 can be built in parallel with T1-02 / T1-03. T1-07 and T1-09 can run in parallel with T1-08. T1-11 (added during T1-02) can be done any time after T1-02.
 
 ---
 
@@ -92,6 +93,14 @@ T1-04 can be built in parallel with T1-02 / T1-03. T1-07 and T1-09 can run in pa
 - Decided: allocation split over equity / debt / gold / silver / other plus exposure IN / US / GLOBAL; rules from NSE's ETF column, AMFI categories and name keywords; hybrid defaults; manual override that survives refresh (D-040)
 - Decided: never delete; match by ISIN → symbol → NSE symbol-change chain; old values become aliases; missing or stale → inactive; reject a list under half its usual size (D-041)
 - Decided: local SQLite FTS5 search with prefix matching, exact-symbol first, fund variants grouped with Direct + Growth first (D-042)
+
+**Progress (2026-10-24)**
+- Checked every source from the build environment first: NSE archives need browser-like headers, Nasdaq Trader rejects them (bot-check page), AMFI moved to `portal.amfiindia.com` and its file now has Plan and Option columns, AMFI uses two category naming schemes side by side, and about 5,600 AMFI schemes have no NAV since 2014–2025 (closed). REITs and InvITs are not in NSE's equity list → new task T1-11
+- Built: tables `instruments`, `instrument_aliases`, `instrument_overrides`, `instrument_imports` and the FTS5 index (migration 0002); parsers for every file; refresh that matches, never deletes and changes only what differs; classification rules; search API (`/api/v1/instruments/search`, detail, override, sources); `friday instruments refresh|search` and `just instruments`; UI: reusable `InstrumentSearch` box, Instruments page with list status, instrument page with identifiers, plans, old names and a classification override form
+- Live run (2026-10-24, all four sources downloaded): 2,968 NSE stocks and ETFs, 14,412 AMFI schemes (8,471 active), 11,755 US stocks and ETFs, 6,158 CIKs, 1,277 aliases from NSE's rename files; 12 s. Second live run: 0 added, 0 updated, 0 deactivated
+- Done-when searches on the live data: "infos" → NSE INFY (stock, NSE, INR, equity; the NYSE ADR in USD also listed); "parag parikh flexi" → AMFI 122639 Direct Growth (mutual fund, INR, equity) with its 3 other plans; "QQQ" → NASDAQ QQQ (ETF, USD, equity). Also "zomato" → ETERNAL, NIFTYBEES carries its AMFI scheme
+- Tests: 138 backend (parsers on byte-for-byte slices of the real files, classification table, refresh scenarios: renames, splits, reused symbols, delistings, bad downloads, overrides) and 17 frontend. `just lint`, `just test`, `just api-check`, `just smoke` pass on Linux; screenshots checked at desktop and phone width, light and dark
+- Known limits: US ETFs are classified by name only (e.g. a US "multi-asset" ETF shows as equity; fix with an override). US ticker changes are matched only when `FRIDAY_SEC_USER_AGENT` is set (CIK). BSE-only stocks aren't listed (T1-11)
 
 **Done when**
 - Searching "infos", "parag parikh flexi" and "QQQ" finds the right instruments with correct type, exchange, currency and asset class
@@ -281,3 +290,26 @@ T1-04 can be built in parallel with T1-02 / T1-03. T1-07 and T1-09 can run in pa
 - No open bugs from this check, or they're logged as tasks
 
 **Evidence:** —
+
+---
+
+## T1-11 · REITs, InvITs and BSE-only listings
+`Feature` · Owner: Claude · Status: todo · Depends on: T1-02
+
+**Goal:** I can find and hold REITs, InvITs and stocks listed only on BSE, like any other instrument.
+
+**Scope**
+- Found in T1-02: NSE's `EQUITY_L.csv` has no REITs or InvITs, and BSE isn't imported
+- Import the REIT and InvIT lists (NSE publishes them separately) as their own kind, classified as `other` (real estate / infrastructure) unless decided otherwise
+- Import BSE's scrip list for stocks not on NSE, matched to NSE instruments by ISIN so dual-listed stocks stay one instrument
+
+**Decisions**
+- Source files for REITs, InvITs and BSE scrips (check what downloads without a browser session)
+- Bucket for REITs and InvITs (`other`, or a new `real_estate` bucket)
+- Whether BSE codes are stored for every NSE stock too (useful for BSE price fallback in T1-05)
+
+**Done when**
+- Searching "embassy" finds Embassy Office Parks REIT; a BSE-only stock is found by name
+- A stock listed on both exchanges is still one instrument
+- Refresh twice changes nothing; tests cover the new parsers
+

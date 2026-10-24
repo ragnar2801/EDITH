@@ -30,6 +30,14 @@ just run
 
 Open <http://localhost:8000>. Friday only listens on this laptop, not on your network.
 
+Load the instrument lists once, and again whenever you want new listings and funds (takes under a minute):
+
+```powershell
+just instruments
+```
+
+This downloads the NSE, AMFI and Nasdaq Trader lists into `data/sources/` and updates Friday's instruments. If a site blocks the download, save the files from a browser into a folder and run `just instruments --from-dir C:\path\to\folder` (file names: `EQUITY_L.csv`, `eq_etfseclist.csv`, `symbolchange.csv`, `namechange.csv`, `NAVAll.txt`, `nasdaqlisted.txt`, `otherlisted.txt`).
+
 ## Commands
 
 | Command | What it does |
@@ -43,6 +51,7 @@ Open <http://localhost:8000>. Friday only listens on this laptop, not on your ne
 | `just api` | Regenerate the frontend's API types after changing an endpoint |
 | `just migrate` | Upgrade the database (`just run` also does this on start) |
 | `just revision "msg"` | Create a database migration from model changes |
+| `just instruments` | Download the stock, ETF and fund lists and update instruments (`--source nse amfi us`, `--from-dir DIR`) |
 | `just smoke` | Start a real server with a throwaway database and check it answers |
 
 Settings can be overridden in a `.env` file (see `.env.example`). Data lives in `data/`, logs in `logs/`; neither is committed.

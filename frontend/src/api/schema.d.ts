@@ -41,10 +41,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/instruments/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search
+         * @description Find instruments by part of a name, a symbol, an AMFI scheme code or an ISIN.
+         */
+        get: operations["searchInstruments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/instruments/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Sources
+         * @description When each instrument list was last refreshed.
+         */
+        get: operations["getInstrumentSources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/instruments/{instrument_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Instrument */
+        get: operations["getInstrument"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/instruments/{instrument_id}/classification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Put Classification
+         * @description Set my own allocation split and exposure. It wins over the rules and survives refresh.
+         */
+        put: operations["setClassification"];
+        post?: never;
+        /**
+         * Delete Classification
+         * @description Go back to the rule-based classification.
+         */
+        delete: operations["clearClassification"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Alias */
+        Alias: {
+            /** Changed On */
+            changed_on: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "symbol" | "name";
+            /** Value */
+            value: string;
+        };
+        /** ClassificationOut */
+        ClassificationOut: {
+            /** Allocation */
+            allocation: components["schemas"]["Share"][];
+            /**
+             * Asset Class
+             * @enum {string}
+             */
+            asset_class: "equity" | "debt" | "gold" | "silver" | "other" | "hybrid" | "unclassified";
+            /**
+             * Exposure
+             * @enum {string}
+             */
+            exposure: "IN" | "US" | "GLOBAL";
+        };
         /** Echo */
         Echo: {
             /**
@@ -83,6 +191,159 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** ImportRun */
+        ImportRun: {
+            /** Added */
+            added: number;
+            /** Deactivated */
+            deactivated: number;
+            /**
+             * Finished At
+             * Format: date-time
+             */
+            finished_at: string;
+            /** Message */
+            message: string | null;
+            /** Rows */
+            rows: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "failed";
+            /** Updated */
+            updated: number;
+        };
+        /** InstrumentDetail */
+        InstrumentDetail: {
+            /** Aliases */
+            aliases: components["schemas"]["Alias"][];
+            /** Amfi Code */
+            amfi_code: string | null;
+            /**
+             * Asset Class
+             * @enum {string}
+             */
+            asset_class: "equity" | "debt" | "gold" | "silver" | "other" | "hybrid" | "unclassified";
+            /** Cik */
+            cik: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD";
+            /** Exchange */
+            exchange: string | null;
+            /**
+             * Exposure
+             * @enum {string}
+             */
+            exposure: "IN" | "US" | "GLOBAL";
+            /** Fund Category */
+            fund_category: string | null;
+            /** Fund House */
+            fund_house: string | null;
+            /** Id */
+            id: number;
+            /** Is Active */
+            is_active: boolean;
+            /** Isin */
+            isin: string | null;
+            /** Isin Reinvestment */
+            isin_reinvestment: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "stock" | "etf" | "mutual_fund";
+            /** Listed On */
+            listed_on: string | null;
+            /**
+             * Market
+             * @enum {string}
+             */
+            market: "IN" | "US";
+            /** Name */
+            name: string;
+            /** Option */
+            option: string | null;
+            override: components["schemas"]["Override"] | null;
+            /** Plan */
+            plan: string | null;
+            rule: components["schemas"]["ClassificationOut"];
+            /** Scheme Type */
+            scheme_type: string | null;
+            /** Series */
+            series: string | null;
+            /** Source */
+            source: string;
+            /** Symbol */
+            symbol: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Variants */
+            variants?: components["schemas"]["Variant"][];
+        };
+        /** InstrumentSummary */
+        InstrumentSummary: {
+            /** Amfi Code */
+            amfi_code: string | null;
+            /**
+             * Asset Class
+             * @enum {string}
+             */
+            asset_class: "equity" | "debt" | "gold" | "silver" | "other" | "hybrid" | "unclassified";
+            /**
+             * Currency
+             * @enum {string}
+             */
+            currency: "INR" | "USD";
+            /** Exchange */
+            exchange: string | null;
+            /**
+             * Exposure
+             * @enum {string}
+             */
+            exposure: "IN" | "US" | "GLOBAL";
+            /** Fund Category */
+            fund_category: string | null;
+            /** Fund House */
+            fund_house: string | null;
+            /** Id */
+            id: number;
+            /** Is Active */
+            is_active: boolean;
+            /** Isin */
+            isin: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "stock" | "etf" | "mutual_fund";
+            /**
+             * Market
+             * @enum {string}
+             */
+            market: "IN" | "US";
+            /** Name */
+            name: string;
+            /** Option */
+            option: string | null;
+            /** Plan */
+            plan: string | null;
+            /** Symbol */
+            symbol: string | null;
+            /** Variants */
+            variants?: components["schemas"]["Variant"][];
+        };
         /** Money */
         Money: {
             /** Amount */
@@ -92,6 +353,40 @@ export interface components {
              * @enum {string}
              */
             currency: "INR" | "USD";
+        };
+        /** Override */
+        Override: {
+            /** Allocation */
+            allocation: components["schemas"]["Share"][];
+            /**
+             * Asset Class
+             * @enum {string}
+             */
+            asset_class: "equity" | "debt" | "gold" | "silver" | "other" | "hybrid" | "unclassified";
+            /**
+             * Exposure
+             * @enum {string}
+             */
+            exposure: "IN" | "US" | "GLOBAL";
+            /** Note */
+            note: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** OverrideIn */
+        OverrideIn: {
+            /** Allocation */
+            allocation: components["schemas"]["Share"][];
+            /**
+             * Exposure
+             * @enum {string}
+             */
+            exposure: "IN" | "US" | "GLOBAL";
+            /** Note */
+            note?: string | null;
         };
         /**
          * ProblemDetails
@@ -108,6 +403,44 @@ export interface components {
             title: string;
             /** Type */
             type: string;
+        };
+        /** Share */
+        Share: {
+            /**
+             * Bucket
+             * @enum {string}
+             */
+            bucket: "equity" | "debt" | "gold" | "silver" | "other";
+            /** Percent */
+            percent: string;
+        };
+        /** SourceOut */
+        SourceOut: {
+            /** Active Instruments */
+            active_instruments: number;
+            last_run: components["schemas"]["ImportRun"] | null;
+            last_success: components["schemas"]["ImportRun"] | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "nse" | "amfi" | "us";
+        };
+        /**
+         * Variant
+         * @description Another plan or option of the same mutual fund scheme.
+         */
+        Variant: {
+            /** Amfi Code */
+            amfi_code: string | null;
+            /** Id */
+            id: number;
+            /** Is Active */
+            is_active: boolean;
+            /** Option */
+            option: string | null;
+            /** Plan */
+            plan: string | null;
         };
     };
     responses: never;
@@ -167,6 +500,168 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    searchInstruments: {
+        parameters: {
+            query: {
+                /** @description Name, symbol or code */
+                q: string;
+                limit?: number;
+                market?: ("IN" | "US") | null;
+                kind?: ("stock" | "etf" | "mutual_fund") | null;
+                include_inactive?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstrumentSummary"][];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getInstrumentSources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceOut"][];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getInstrument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                instrument_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstrumentDetail"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    setClassification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                instrument_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OverrideIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstrumentDetail"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    clearClassification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                instrument_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstrumentDetail"];
                 };
             };
             /** @description Problem details (RFC 9457) */

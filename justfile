@@ -37,6 +37,10 @@ migrate:
 revision message:
     uv run --directory backend alembic revision --autogenerate -m "{{ message }}"
 
+# Download the NSE, AMFI and US lists and update instruments, e.g. `just instruments --source amfi`
+instruments *args:
+    uv run --project backend friday instruments refresh {{ args }}
+
 # Regenerate the TypeScript API types from the backend schema
 api:
     uv run --project backend friday openapi --out frontend/src/api/openapi.json

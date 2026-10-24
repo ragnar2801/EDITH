@@ -26,6 +26,7 @@ Conventions (decisions D-029 to D-037):
 - **Frontend never does arithmetic on amounts.** Format with `formatMoney`; the backend computes every figure.
 - **After changing an endpoint, run `just api`** and commit the regenerated `frontend/src/api/` files (CI fails if they're stale).
 - **Schema changes go through Alembic:** change models, then `just revision "what changed"`, review the file, commit it.
+- **Instruments (D-038):** everything points at `instruments.id`, never at a symbol or ISIN. Pick instruments in the UI with `InstrumentSearch`. Instruments are never deleted; a list refresh marks them inactive.
 - Errors are RFC 9457 problem details. The server binds to `127.0.0.1` only.
 - Windows is the target OS: keep commands Windows-safe (no `&&` chains in PowerShell 5, `npm.cmd` not `npm.ps1`, LF line endings via `.gitattributes`).
 

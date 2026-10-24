@@ -239,7 +239,7 @@ Assuming ~20 watchlist/held stocks and ~10 funds/ETFs: roughly **10–20 large-m
 
 ### 3.9 Data model (minimal)
 
-- `instruments`: symbol, exchange (NSE/BSE/NASDAQ/NYSE Arca…), type (stock/MF/ETF), currency, ISIN / AMFI scheme code, sector, domicile
+- `instruments` (built in T1-02, D-038 to D-041): internal id; kind (stock / etf / mutual_fund); exchange + symbol, ISIN, AMFI scheme code, SEC CIK; currency, market; fund house, category, plan, option; allocation split (equity / debt / gold / silver / other) and exposure (IN / US / GLOBAL); active flag. Plus `instrument_aliases` (old symbols and names), `instrument_overrides` (my classification) and `instrument_imports` (refresh log). Sector comes later
 - `holdings_lots`: instrument, buy date, qty/units, price, fees, currency (lots are needed for XIRR and tax)
 - `cash_accounts`: name, currency, balance, **earmark** (emergency / deployable / reserved)
 - `remittances`: date, INR amount, USD received, FX rate, TCS paid, financial year (for LRS)
@@ -411,9 +411,11 @@ friday/                       # repo root
 │   ├── pyproject.toml  uv.lock  alembic.ini
 │   ├── friday/
 │   │   ├── config.py         # settings (FRIDAY_* env vars / .env)
-│   │   ├── cli.py            # `friday serve | migrate | openapi`
-│   │   ├── core/             # ALL logic: db, exact money/time types (D-032); later models,
-│   │   │                     #   calc (xirr, drift, lrs, tax), fetchers, watchers, risk_rules
+│   │   ├── cli.py            # `friday serve | migrate | openapi | instruments refresh|search`
+│   │   ├── core/             # ALL logic: db, exact money/time types (D-032), models.py;
+│   │   │   ├── instruments/  #   T1-02: models, sources/ (NSE, AMFI, Nasdaq, SEC parsers),
+│   │   │   │                 #   download, refresh, classify, search (FTS5), service
+│   │   │                     #   later: calc (xirr, drift, lrs, tax), fetchers, watchers, risk_rules
 │   │   ├── api/              # FastAPI app, routes (thin), problem-details errors, UI serving
 │   │   ├── jobs/             # later: scheduled entry points, then `friday tick`
 │   │   └── mcp_server.py     # Phase 2: core functions as tools for Claude (thin)
@@ -523,6 +525,7 @@ React app (Vite + TypeScript) ──HTTP/JSON──► FastAPI (api/) ──► 
 | v1.2 (T1-01 decisions) | 2026-10-24 | D-029 to D-037: Python 3.14 + uv + ruff, FastAPI, SQLAlchemy 2 + Alembic on SQLite, money/time conventions, Vite + React + TS + npm, shadcn/ui + Tailwind + TanStack Query + React Router, OpenAPI-generated client, `just` + localhost-only server, pytest + Vitest + Windows CI |
 | v1.2 (T1-01 done) | 2026-10-24 | T1-01 built: app skeleton (backend, frontend, `just` commands, Windows CI green). Project layout in 3.13 updated to match |
 | v1.2 (T1-02 decisions) | 2026-10-24 | D-038 to D-042: instrument identity (internal id, natural keys as lookups, aliases), list sources (NSE archives, AMFI, Nasdaq Trader, SEC) via httpx2, classification (allocation split + exposure, hybrid defaults, manual override), renames and closures (never delete, inactive), local FTS5 search |
+| v1.2 (T1-02 built) | 2026-10-24 | T1-02 built: instrument tables and FTS5 search, importers for NSE, AMFI, Nasdaq Trader and SEC lists, classification rules with overrides, Instruments page and reusable search box. Data model 3.9 and layout 3.13 updated. New task T1-11 (REITs, InvITs, BSE-only) |
 
 ---
 

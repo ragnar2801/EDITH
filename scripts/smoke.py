@@ -61,7 +61,11 @@ def main() -> None:
             assert health["status"] == "ok" and health["database"] == "ok", health
             print(f"ok  /api/v1/health  {health}")
 
-            for path in ["/", "/holdings"]:
+            status, body = _get(f"{base}/api/v1/instruments/search?q=infosys")
+            assert status == 200 and body.startswith("["), (status, body)
+            print("ok  /api/v1/instruments/search  answers (empty until `just instruments`)")
+
+            for path in ["/", "/holdings", "/instruments"]:
                 status, body = _get(f"{base}{path}")
                 if status == 503:
                     raise SystemExit("UI is not built. Run `just build` first.")

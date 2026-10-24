@@ -28,6 +28,11 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-bucket-equity: var(--bucket-equity);
+  --color-bucket-debt: var(--bucket-debt);
+  --color-bucket-gold: var(--bucket-gold);
+  --color-bucket-silver: var(--bucket-silver);
+  --color-bucket-other: var(--bucket-other);
 }
 
 :root {
@@ -51,6 +56,12 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
+  /* Allocation buckets (D-040): one colour each, the same everywhere they appear. */
+  --bucket-equity: oklch(0.55 0.15 255);
+  --bucket-debt: oklch(0.6 0.11 180);
+  --bucket-gold: oklch(0.75 0.15 80);
+  --bucket-silver: oklch(0.7 0.01 260);
+  --bucket-other: oklch(0.55 0.15 320);
 }
 
 .dark {
@@ -73,6 +84,11 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
+  --bucket-equity: oklch(0.68 0.14 255);
+  --bucket-debt: oklch(0.72 0.11 180);
+  --bucket-gold: oklch(0.8 0.14 80);
+  --bucket-silver: oklch(0.78 0.01 260);
+  --bucket-other: oklch(0.7 0.14 320);
 }
 
 @layer base {

@@ -1,6 +1,81 @@
 {
   "components": {
     "schemas": {
+      "Alias": {
+        "properties": {
+          "changed_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changed On"
+          },
+          "kind": {
+            "enum": [
+              "symbol",
+              "name"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "value",
+          "changed_on"
+        ],
+        "title": "Alias",
+        "type": "object"
+      },
+      "ClassificationOut": {
+        "properties": {
+          "allocation": {
+            "items": {
+              "$ref": "#/components/schemas/Share"
+            },
+            "title": "Allocation",
+            "type": "array"
+          },
+          "asset_class": {
+            "enum": [
+              "equity",
+              "debt",
+              "gold",
+              "silver",
+              "other",
+              "hybrid",
+              "unclassified"
+            ],
+            "title": "Asset Class",
+            "type": "string"
+          },
+          "exposure": {
+            "enum": [
+              "IN",
+              "US",
+              "GLOBAL"
+            ],
+            "title": "Exposure",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset_class",
+          "allocation",
+          "exposure"
+        ],
+        "title": "ClassificationOut",
+        "type": "object"
+      },
       "Echo": {
         "properties": {
           "at": {
@@ -86,6 +161,518 @@
         "title": "Health",
         "type": "object"
       },
+      "ImportRun": {
+        "properties": {
+          "added": {
+            "title": "Added",
+            "type": "integer"
+          },
+          "deactivated": {
+            "title": "Deactivated",
+            "type": "integer"
+          },
+          "finished_at": {
+            "format": "date-time",
+            "title": "Finished At",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "rows": {
+            "title": "Rows",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated": {
+            "title": "Updated",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "status",
+          "finished_at",
+          "rows",
+          "added",
+          "updated",
+          "deactivated",
+          "message"
+        ],
+        "title": "ImportRun",
+        "type": "object"
+      },
+      "InstrumentDetail": {
+        "properties": {
+          "aliases": {
+            "items": {
+              "$ref": "#/components/schemas/Alias"
+            },
+            "title": "Aliases",
+            "type": "array"
+          },
+          "amfi_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amfi Code"
+          },
+          "asset_class": {
+            "enum": [
+              "equity",
+              "debt",
+              "gold",
+              "silver",
+              "other",
+              "hybrid",
+              "unclassified"
+            ],
+            "title": "Asset Class",
+            "type": "string"
+          },
+          "cik": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cik"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency": {
+            "enum": [
+              "INR",
+              "USD"
+            ],
+            "title": "Currency",
+            "type": "string"
+          },
+          "exchange": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exchange"
+          },
+          "exposure": {
+            "enum": [
+              "IN",
+              "US",
+              "GLOBAL"
+            ],
+            "title": "Exposure",
+            "type": "string"
+          },
+          "fund_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fund Category"
+          },
+          "fund_house": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fund House"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "isin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isin"
+          },
+          "isin_reinvestment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isin Reinvestment"
+          },
+          "kind": {
+            "enum": [
+              "stock",
+              "etf",
+              "mutual_fund"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "listed_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Listed On"
+          },
+          "market": {
+            "enum": [
+              "IN",
+              "US"
+            ],
+            "title": "Market",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "option": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option"
+          },
+          "override": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Override"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan"
+          },
+          "rule": {
+            "$ref": "#/components/schemas/ClassificationOut"
+          },
+          "scheme_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheme Type"
+          },
+          "series": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Series"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "variants": {
+            "items": {
+              "$ref": "#/components/schemas/Variant"
+            },
+            "title": "Variants",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "market",
+          "currency",
+          "exchange",
+          "symbol",
+          "amfi_code",
+          "isin",
+          "fund_house",
+          "fund_category",
+          "plan",
+          "option",
+          "asset_class",
+          "exposure",
+          "is_active",
+          "source",
+          "series",
+          "listed_on",
+          "cik",
+          "isin_reinvestment",
+          "scheme_type",
+          "aliases",
+          "rule",
+          "override",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "InstrumentDetail",
+        "type": "object"
+      },
+      "InstrumentSummary": {
+        "properties": {
+          "amfi_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amfi Code"
+          },
+          "asset_class": {
+            "enum": [
+              "equity",
+              "debt",
+              "gold",
+              "silver",
+              "other",
+              "hybrid",
+              "unclassified"
+            ],
+            "title": "Asset Class",
+            "type": "string"
+          },
+          "currency": {
+            "enum": [
+              "INR",
+              "USD"
+            ],
+            "title": "Currency",
+            "type": "string"
+          },
+          "exchange": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exchange"
+          },
+          "exposure": {
+            "enum": [
+              "IN",
+              "US",
+              "GLOBAL"
+            ],
+            "title": "Exposure",
+            "type": "string"
+          },
+          "fund_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fund Category"
+          },
+          "fund_house": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fund House"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "isin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isin"
+          },
+          "kind": {
+            "enum": [
+              "stock",
+              "etf",
+              "mutual_fund"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "market": {
+            "enum": [
+              "IN",
+              "US"
+            ],
+            "title": "Market",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "option": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          },
+          "variants": {
+            "items": {
+              "$ref": "#/components/schemas/Variant"
+            },
+            "title": "Variants",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "market",
+          "currency",
+          "exchange",
+          "symbol",
+          "amfi_code",
+          "isin",
+          "fund_house",
+          "fund_category",
+          "plan",
+          "option",
+          "asset_class",
+          "exposure",
+          "is_active"
+        ],
+        "title": "InstrumentSummary",
+        "type": "object"
+      },
       "Money": {
         "properties": {
           "amount": {
@@ -107,6 +694,103 @@
           "currency"
         ],
         "title": "Money",
+        "type": "object"
+      },
+      "Override": {
+        "properties": {
+          "allocation": {
+            "items": {
+              "$ref": "#/components/schemas/Share"
+            },
+            "title": "Allocation",
+            "type": "array"
+          },
+          "asset_class": {
+            "enum": [
+              "equity",
+              "debt",
+              "gold",
+              "silver",
+              "other",
+              "hybrid",
+              "unclassified"
+            ],
+            "title": "Asset Class",
+            "type": "string"
+          },
+          "exposure": {
+            "enum": [
+              "IN",
+              "US",
+              "GLOBAL"
+            ],
+            "title": "Exposure",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset_class",
+          "allocation",
+          "exposure",
+          "note",
+          "updated_at"
+        ],
+        "title": "Override",
+        "type": "object"
+      },
+      "OverrideIn": {
+        "properties": {
+          "allocation": {
+            "items": {
+              "$ref": "#/components/schemas/Share"
+            },
+            "minItems": 1,
+            "title": "Allocation",
+            "type": "array"
+          },
+          "exposure": {
+            "enum": [
+              "IN",
+              "US",
+              "GLOBAL"
+            ],
+            "title": "Exposure",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "allocation",
+          "exposure"
+        ],
+        "title": "OverrideIn",
         "type": "object"
       },
       "ProblemDetails": {
@@ -156,6 +840,132 @@
           "status"
         ],
         "title": "ProblemDetails",
+        "type": "object"
+      },
+      "Share": {
+        "properties": {
+          "bucket": {
+            "enum": [
+              "equity",
+              "debt",
+              "gold",
+              "silver",
+              "other"
+            ],
+            "title": "Bucket",
+            "type": "string"
+          },
+          "percent": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Percent",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bucket",
+          "percent"
+        ],
+        "title": "Share",
+        "type": "object"
+      },
+      "SourceOut": {
+        "properties": {
+          "active_instruments": {
+            "title": "Active Instruments",
+            "type": "integer"
+          },
+          "last_run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImportRun"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "last_success": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImportRun"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "enum": [
+              "nse",
+              "amfi",
+              "us"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "active_instruments",
+          "last_run",
+          "last_success"
+        ],
+        "title": "SourceOut",
+        "type": "object"
+      },
+      "Variant": {
+        "description": "Another plan or option of the same mutual fund scheme.",
+        "properties": {
+          "amfi_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amfi Code"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "option": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan"
+          }
+        },
+        "required": [
+          "id",
+          "amfi_code",
+          "plan",
+          "option",
+          "is_active"
+        ],
+        "title": "Variant",
         "type": "object"
       }
     }
@@ -236,6 +1046,292 @@
         "summary": "Get Health",
         "tags": [
           "system"
+        ]
+      }
+    },
+    "/api/v1/instruments/search": {
+      "get": {
+        "description": "Find instruments by part of a name, a symbol, an AMFI scheme code or an ISIN.",
+        "operationId": "searchInstruments",
+        "parameters": [
+          {
+            "description": "Name, symbol or code",
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "description": "Name, symbol or code",
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "market",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "IN",
+                    "US"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Market"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "stock",
+                    "etf",
+                    "mutual_fund"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_inactive",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Inactive",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InstrumentSummary"
+                  },
+                  "title": "Response Searchinstruments",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Search",
+        "tags": [
+          "instruments"
+        ]
+      }
+    },
+    "/api/v1/instruments/sources": {
+      "get": {
+        "description": "When each instrument list was last refreshed.",
+        "operationId": "getInstrumentSources",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SourceOut"
+                  },
+                  "title": "Response Getinstrumentsources",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Sources",
+        "tags": [
+          "instruments"
+        ]
+      }
+    },
+    "/api/v1/instruments/{instrument_id}": {
+      "get": {
+        "operationId": "getInstrument",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instrument_id",
+            "required": true,
+            "schema": {
+              "title": "Instrument Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstrumentDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Get Instrument",
+        "tags": [
+          "instruments"
+        ]
+      }
+    },
+    "/api/v1/instruments/{instrument_id}/classification": {
+      "delete": {
+        "description": "Go back to the rule-based classification.",
+        "operationId": "clearClassification",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instrument_id",
+            "required": true,
+            "schema": {
+              "title": "Instrument Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstrumentDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Delete Classification",
+        "tags": [
+          "instruments"
+        ]
+      },
+      "put": {
+        "description": "Set my own allocation split and exposure. It wins over the rules and survives refresh.",
+        "operationId": "setClassification",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instrument_id",
+            "required": true,
+            "schema": {
+              "title": "Instrument Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OverrideIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstrumentDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Put Classification",
+        "tags": [
+          "instruments"
         ]
       }
     }

@@ -4,6 +4,7 @@ import {
   BriefcaseBusiness,
   Eye,
   LayoutDashboard,
+  Search,
   Send,
   Activity,
   type LucideIcon,
@@ -60,6 +61,13 @@ export const SECTIONS: Section[] = [
     icon: Eye,
     task: 'T1-07',
     description: 'Stocks and funds you are watching, with your reasons and buy zones.',
+  },
+  {
+    path: '/instruments',
+    label: 'Instruments',
+    icon: Search,
+    task: 'T1-02',
+    description: 'Find any NSE stock or ETF, Indian mutual fund, or US stock or ETF.',
   },
   {
     path: '/status',
