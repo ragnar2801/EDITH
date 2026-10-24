@@ -4,7 +4,7 @@
 > This file is the memory for brainstorming sessions: decisions, the current plan, open questions and ideas for later.
 > Update it every session. Never delete history. Supersede it (see [How to use this file](#how-to-use-this-file)).
 
-**Current plan:** v1.1 · **Last updated:** 2026-10-24
+**Current plan:** v1.2 · **Last updated:** 2026-10-24
 
 ---
 
@@ -50,10 +50,15 @@ Friday **advises**. I **execute** trades myself at my broker.
 | D-013 | 2026-10-24 | **Runs locally on my laptop, 24/7.** One process plus SQLite. Must tolerate sleep, reboot and offline | Simple, private, free hosting | Active |
 | D-014 | 2026-10-24 | Most events wait for the **weekly CIO run**. Only *urgent* events trigger a mid-week CIO run, at most once a day | Long-term style. Avoids noise and LLM cost | Proposed |
 | D-015 | 2026-10-24 | Every BUY/ADD must justify itself against the **index-fund alternative** | Keeps the alpha target honest | Proposed |
+| D-016 | 2026-10-24 | **LLM = Claude, run through Claude Code.** Friday is a Claude Code project: agents are subagents, workflows are skills, tools come from a local MCP server | No custom agent framework to build. Same setup works interactively and unattended | Active |
+| D-017 | 2026-10-24 | **Plain Python for everything that doesn't need judgment** (fetchers, watchers, LRS ledger, Scorekeeper, Housekeeper). Claude Code is only invoked for LLM agents | Doesn't spend Claude usage on downloads and arithmetic | Active |
+| D-018 | 2026-10-24 | **Scheduling:** one OS scheduler entry runs `friday tick` every 15 min. The tick decides what's due, runs Python jobs, and starts `claude -p "/<skill>"` for LLM jobs. Manual runs: `claude` in the project, then `/<skill>` | OS-agnostic, handles catch-up and dedupe itself, no app needs to stay open | Proposed |
+| D-019 | 2026-10-24 | **Hard rules are enforced in code** inside the MCP server (`create_suggestion` runs Risk Guard checks before saving). Only the CIO subagent is allowed the `create_suggestion` tool | An LLM can't talk its way past a rule. Web content can't inject a suggestion | Proposed |
+| D-020 | 2026-10-24 | Unattended runs use `--permission-mode dontAsk` with an allowlist (Friday MCP tools, web search/fetch, read). Anything else is denied, never prompted | Nobody is there to answer prompts at 3 a.m. | Proposed |
 
 ---
 
-## 3. Current plan — v1.1
+## 3. Current plan — v1.2
 
 ### 3.1 Scope
 
@@ -73,10 +78,11 @@ Friday **advises**. I **execute** trades myself at my broker.
 | **Web UI** | Portfolio, cash, watchlist, suggestions, weekly letter, ask-Friday chat | Served on `localhost` |
 | **API / backend** | CRUD for my data. Serves the UI. Exposes tools to agents | Same process as the scheduler |
 | **SQLite DB** | All state: holdings, prices, notes, events, suggestions | One file, backed up daily |
-| **Orchestrator** | Scheduler, event dispatch, catch-up after sleep, retries, LLM budget cap | Not an LLM. The "24/7" part |
+| **Orchestrator** (`friday tick`) | Decides what's due, event dispatch, catch-up after sleep, retries, one Claude job at a time, usage cap | Python, not an LLM. The "24/7" part |
 | **Data adapters** | One adapter per free source, with fallback and caching | NSE → Yahoo fallback for India |
-| **Agent runner** | Runs LLM agents with their tools and writes outputs to the DB | Only part that costs money (LLM API) |
-| **OS service** | Auto-start on boot (launchd / systemd / Task Scheduler) | Keeps it "always on" |
+| **Friday MCP server** | Exposes DB reads, calculations and writes as typed tools to Claude. Enforces hard rules | Local stdio server registered in `.mcp.json` |
+| **Agent runner** | Claude Code: `claude -p "/<skill>"` for scheduled runs, interactive `claude` for manual ones | Only part that uses Claude usage (D-016) |
+| **OS scheduler** | Runs `friday tick` every 15 min (launchd / cron / systemd timer / Task Scheduler) | Keeps it "always on" |
 
 ### 3.3 Agent roster
 
@@ -128,7 +134,7 @@ LLM column: **—** = none, **S** = small/fast model, **L** = large model.
 | ID | Agent | Work | Trigger / frequency | LLM | v1 |
 |----|-------|------|---------------------|-----|----|
 | C1 | CIO | Reads notes, plans, IPS and portfolio. Writes the bear case for each idea, then publishes ranked suggestions (including NO_ACTION) | Sun weekly pipeline · urgent events (max once a day) | L | ✅ |
-| C2 | Risk Guard | Checks every draft against hard rules. Approves, downgrades or vetoes | Right after every C1 run | — + S | ✅ |
+| C2 | Risk Guard | Checks every draft against hard rules. Approves, downgrades or vetoes. Rules run as code inside `create_suggestion` (D-019). A small model only writes the explanation | On every `create_suggestion` call | — + S | ✅ |
 
 #### Layer 5 — Feedback, communication and system
 
@@ -273,6 +279,118 @@ outcome:      return vs benchmark at 1/3/6/12 months (Scorekeeper)
 
 Caveat: these are unofficial or scraped endpoints. Fine for low-volume personal use, but expect breakage. The adapter and fallback design (3.6) exists for this reason.
 
+### 3.13 Implementation on Claude Code (D-016 to D-020)
+
+#### Friday concepts → Claude Code features
+
+| Friday concept | Claude Code feature | Where |
+|----------------|---------------------|-------|
+| Rules every agent follows (principles, no math in prompts, advisory only) | `CLAUDE.md` (short; this design doc stays separate) | `/CLAUDE.md` |
+| LLM agents (R1–R3, P1–P3, C1, C2 explainer, W4, F2) | Subagents, with model, tool allowlist and memory per agent | `.claude/agents/*.md` |
+| Workflows you can trigger (weekly review, research a ticker…) | Skills invoked as slash commands | `.claude/skills/<name>/SKILL.md` |
+| Know-how agents need (valuation framework, fund checklist, tax/LRS rules, note and suggestion formats) | Background skills (`user-invocable: false`), preloaded into the subagents that need them via `skills:` | `.claude/skills/<name>/` |
+| Tools (`get_holdings`, `xirr`, `allocation_drift`, `create_suggestion`…) | Local MCP server wrapping SQLite and the calculation code | `.mcp.json` → `friday/mcp_server.py` |
+| Agent learnings ("last time I over-weighted X") | Subagent `memory: project` | `.claude/agent-memory/<agent>/` |
+| Fetchers, watchers, LRS ledger, Scorekeeper, Housekeeper, Orchestrator | **Not Claude.** Plain Python (D-017) | `friday/` package |
+| Unattended runs | `claude -p` (headless) started by the Orchestrator | — |
+| Manual runs and "ask Friday" | Interactive `claude` in the project folder | — |
+
+#### Subagents
+
+| File (`.claude/agents/`) | Agent | Model | Key tools | Preloaded skills |
+|--------------------------|-------|-------|-----------|------------------|
+| `fundamental-analyst.md` | R1 | sonnet (opus for first deep dive) | Friday read tools, `write_research_note`, WebSearch, WebFetch | valuation-framework, note-format |
+| `fund-analyst.md` | R2 | sonnet | Friday read tools, `write_research_note`, WebFetch | fund-checklist, note-format |
+| `macro-strategist.md` | R3 | sonnet | Friday macro tools, `write_research_note`, WebSearch | note-format |
+| `portfolio-doctor.md` | P1 | sonnet | Friday read and calc tools | policy |
+| `rebalancer.md` | P2 | sonnet | Friday calc tools, `tax_lot_impact`, `simulate_trades` | policy, tax-india-lrs |
+| `cash-deployer.md` | P3 | sonnet | Friday calc tools, `lrs_position`, `simulate_trades` | policy, tax-india-lrs |
+| `cio.md` | C1 | opus | All Friday read tools, **`create_suggestion` (only this agent)** | policy, suggestion-format |
+| `risk-explainer.md` | C2 (explanation only) | haiku | `get_policy`, read suggestion | policy |
+| `filing-triage.md` | W4 | haiku | `get_filings`, `raise_event` | — |
+| `briefing.md` | F2 | sonnet | Friday read tools | — |
+
+Research agents get web access but no tool that creates suggestions. The CIO creates suggestions but reads only Friday's own data.
+
+#### Workflow skills (slash commands)
+
+| Skill | What it does | Subagents it runs (in order) | Triggered by |
+|-------|--------------|------------------------------|--------------|
+| `/weekly-review` | The Sunday pipeline | portfolio-doctor → rebalancer (if drift) and cash-deployer (if cash) → cio → briefing | Tick, Sun 09:00 · manual |
+| `/research <symbol>` | Create or refresh the research note for one instrument | fundamental-analyst or fund-analyst | Watchlist add · results event · note expiry · manual |
+| `/deploy-cash [amount]` | Where should this cash go? | cash-deployer → cio | Cash event · manual |
+| `/rebalance-check` | Is a rebalance needed, and how? | portfolio-doctor → rebalancer → cio | Drift event · quarterly · manual |
+| `/macro-update` | Refresh India and US macro views | macro-strategist | Tick, Sat 10:00 · after RBI/FOMC · manual |
+| `/fund-review` | Monthly review of all held and watched funds/ETFs | fund-analyst (per fund) | Tick, ~12th monthly · manual |
+| `/triage-filings` | Tag today's filings, escalate material ones | filing-triage | Tick, daily 20:00 |
+| `/urgent-review` | Mid-week CIO run for urgent events only | fundamental-analyst (thesis check) → cio | Urgent event, max once a day (D-014) |
+
+#### Scheduling options considered
+
+| Option | Verdict | Why |
+|--------|---------|-----|
+| **OS scheduler → `friday tick` → `claude -p`** | ✅ Chosen (D-018) | No app needs to stay open. Survives reboot. The tick does its own catch-up via `job_runs`, so missed runs are handled the same on any OS. Also runs the non-Claude Python jobs |
+| Claude Desktop local scheduled tasks | Good fallback for the LLM jobs | Local files, per-task permissions, one catch-up run on wake. But the Desktop app must be open, it can't run the Python jobs, and the schedule lives outside the repo |
+| `/loop` or in-session cron | ❌ | Only fires while a session is open. Recurring tasks expire after 7 days. No catch-up |
+| Cloud scheduled tasks | ❌ for now | Runs on a fresh cloud clone, so it can't see the local SQLite database |
+
+#### What the tick runs
+
+| Job | Command | Claude? |
+|-----|---------|---------|
+| Price, NAV, FX, fundamentals, events, macro, fund data | `python -m friday.fetch <source>` | No |
+| Watchers W1–W3, W5 | `python -m friday.watch` (after each fetch) | No |
+| Filing triage | `claude -p "/triage-filings"` | Yes (haiku) |
+| Research on events | `claude -p "/research <symbol>"` | Yes |
+| Macro, weekly, monthly, urgent | `claude -p "/macro-update"` etc. | Yes |
+| Scorekeeper, LRS ledger, Housekeeper | `python -m friday.score` etc. | No |
+
+Example unattended call:
+
+```bash
+claude -p "/weekly-review" \
+  --permission-mode dontAsk \
+  --allowedTools "mcp__friday__*,WebSearch,WebFetch,Read" \
+  --output-format json \
+  --max-budget-usd 3 \
+  > logs/weekly-review-$(date +%F).json
+```
+
+Notes:
+- Don't use `--bare` for these runs. Bare mode skips the project's `CLAUDE.md`, subagents, skills and `.mcp.json`, and requires an API key.
+- The tick runs one Claude job at a time (a lock), so jobs never overlap and SQLite has a single writer.
+- The exit code and JSON output are logged to `job_runs`. A failed job is retried on the next tick, with backoff.
+
+#### Project layout (target)
+
+```
+friday/
+├── agents.md                 # this design doc (memory for brainstorming)
+├── CLAUDE.md                 # short rules loaded in every Claude session
+├── .mcp.json                 # registers the local "friday" MCP server
+├── .claude/
+│   ├── settings.json         # permission allowlist, hooks
+│   ├── agents/               # subagents (table above)
+│   ├── skills/
+│   │   ├── weekly-review/  research/  deploy-cash/  rebalance-check/
+│   │   ├── macro-update/  fund-review/  triage-filings/  urgent-review/
+│   │   └── policy/  valuation-framework/  fund-checklist/
+│   │       tax-india-lrs/  note-format/  suggestion-format/   # background know-how
+│   └── agent-memory/         # per-agent learnings
+├── friday/                   # Python package
+│   ├── mcp_server.py         # tools for Claude, enforces hard rules
+│   ├── db.py                 # SQLite schema and access
+│   ├── fetchers/             # nse, amfi, yahoo, edgar, fred, fx
+│   ├── calc/                 # xirr, drift, valuation, overlap, tax, lrs
+│   ├── watchers/             # W1–W3, W5
+│   ├── risk_rules.py         # hard rules (D-019)
+│   ├── scorekeeper.py
+│   └── orchestrator.py       # `friday tick`
+├── web/                      # UI (reads and writes SQLite through the backend)
+├── data/friday.db            # git-ignored
+└── logs/                     # git-ignored
+```
+
 ---
 
 ## 4. Roadmap / parking lot
@@ -286,16 +404,16 @@ Caveat: these are unofficial or scraped endpoints. Fine for low-volume personal 
 
 ## 5. Open questions
 
-1. **LLM cost:** data is free but the LLM is not. Use a paid LLM API (expected load in 3.7 is small) or a local model (free, but weaker reasoning for CIO-level work)? Or a hybrid: local for S tasks, API for L tasks?
-2. **IPS values:** goals, horizon, max drawdown, target allocation India vs US vs debt vs gold (section 3.10)
+1. **Claude billing:** run the scheduled jobs on my Claude subscription login (shares usage limits with my interactive use) or on an API key (pay per use, separate budget)?2. **IPS values:** goals, horizon, max drawdown, target allocation India vs US vs debt vs gold (section 3.10)
 3. **Tax rules config:** capital-gains rates, holding periods and LRS/TCS thresholds change with budgets. Who updates the `tax_rules` table, and how?
 4. **Tech stack:** backend language, scheduler, agent framework, frontend. Not decided.
 5. **Notification channel** for urgent items: in-app only for v1, or also desktop notifications?
 6. **Where the screener/tips come from** when we build them: own screens, a newsletter, another agent?
 7. **Existing US holdings:** which broker and platform? Affects how I enter lots and FX rates historically.
+8. **Laptop OS:** macOS, Windows or Linux? Decides which OS scheduler runs `friday tick`.
 
 ### Resolved
-- ~~Tax residency~~ → D-010 · ~~Data budget~~ → D-012 · ~~Hosting~~ → D-013 · ~~Benchmarks / target~~ → D-011 (IPS details still open)
+- ~~Tax residency~~ → D-010 · ~~Data budget~~ → D-012 · ~~Hosting~~ → D-013 · ~~Benchmarks / target~~ → D-011 (IPS details still open) · ~~Which LLM~~ → D-016 · ~~Agent framework~~ → D-016 (Claude Code)
 
 ---
 
@@ -305,6 +423,7 @@ Caveat: these are unofficial or scraped endpoints. Fine for low-volume personal 
 |---------|------|--------|
 | v1 | 2026-10-24 | Initial architecture from first brainstorm. Decisions D-001 to D-009. v1 agent roster, schedules, data model, suggestion format |
 | v1.1 | 2026-10-24 | Decisions D-010 to D-015 (LRS resident, return target, free data, laptop-local, urgency policy, index baseline). Full system design: runtime components, 22-component roster by layer, IST timeline, event table, laptop resilience, LLM load estimate. Added LRS & Tax Ledger (P4), Data Health (W5), Orchestrator and Housekeeper. Data sources decided |
+| v1.2 | 2026-10-24 | Decisions D-016 to D-020: Friday as a Claude Code project (subagents, skills, local MCP server), Python for non-LLM work, `friday tick` + `claude -p` scheduling, hard rules in code, locked-down unattended permissions. Added section 3.13 |
 
 ---
 
