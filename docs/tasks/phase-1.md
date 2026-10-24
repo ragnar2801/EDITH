@@ -14,7 +14,7 @@
 | ID | Task | Kind | Owner | Status | Depends on |
 |----|------|------|-------|--------|------------|
 | T1-01 | Foundation: app skeleton running on Windows | Infra | Claude | done | — |
-| T1-02 | Instruments: find any stock, fund or ETF | Feature | Claude | todo | T1-01 |
+| T1-02 | Instruments: find any stock, fund or ETF | Feature | Claude | doing | T1-01 |
 | T1-03 | Holdings: record what I own | Feature | Claude | todo | T1-02 |
 | T1-04 | Cash and remittances, with LRS totals | Feature | Claude | todo | T1-01 |
 | T1-05 | India market data: stock prices and fund NAVs, with backfill | Feature | Claude | todo | T1-02 |
@@ -76,7 +76,7 @@ T1-04 can be built in parallel with T1-02 / T1-03. T1-07 and T1-09 can run in pa
 ---
 
 ## T1-02 · Instruments: find any stock, fund or ETF
-`Feature` · Owner: Claude · Status: todo · Depends on: T1-01
+`Feature` · Owner: Claude · Status: doing · Depends on: T1-01
 
 **Goal:** every instrument I could hold or watch is known to Friday, with the right type, exchange, currency and asset class, and I can find it by typing part of its name.
 
@@ -86,11 +86,12 @@ T1-04 can be built in parallel with T1-02 / T1-03. T1-07 and T1-09 can run in pa
 - Asset classification per instrument (asset class, country, currency, fund category), with a manual override
 - Search API and a reusable search box in the UI; a simple instrument page
 
-**Decisions**
-- Identifiers (ISIN, NSE symbol, BSE code, AMFI scheme code, US ticker / SEC CIK) and internal ID scheme
-- Sources for the lists (candidates: NSE equity list file, AMFI scheme list from the NAV file, SEC `company_tickers.json`, Nasdaq Trader symbol files)
-- Allocation buckets and how each instrument is assigned (e.g. how mutual funds map from their AMFI category; hybrid funds)
-- How renames and mergers are handled
+**Decisions** (approved 2026-10-24)
+- Decided: internal integer `id` as the key; (exchange, symbol), AMFI scheme code, ISIN and CIK stored as lookups; an alias table for old symbols and names; an ETF on NSE and in AMFI is one instrument, matched on ISIN (D-038)
+- Decided: NSE archive files (equity list, ETF list, symbol and name changes), AMFI `NAVAll.txt`, Nasdaq Trader symbol files, SEC tickers for CIKs (optional); downloaded with httpx2 using per-source headers; raw copies kept in `data/sources/`; import from a folder as a fallback (D-039)
+- Decided: allocation split over equity / debt / gold / silver / other plus exposure IN / US / GLOBAL; rules from NSE's ETF column, AMFI categories and name keywords; hybrid defaults; manual override that survives refresh (D-040)
+- Decided: never delete; match by ISIN → symbol → NSE symbol-change chain; old values become aliases; missing or stale → inactive; reject a list under half its usual size (D-041)
+- Decided: local SQLite FTS5 search with prefix matching, exact-symbol first, fund variants grouped with Direct + Growth first (D-042)
 
 **Done when**
 - Searching "infos", "parag parikh flexi" and "QQQ" finds the right instruments with correct type, exchange, currency and asset class
