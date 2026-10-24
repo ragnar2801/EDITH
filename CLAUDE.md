@@ -10,8 +10,8 @@ Personal stock analyst / portfolio manager for Indian and US markets. Design-sta
 
 ## Rules
 
-- Only what's in the `agents.md` decision log as **Active** is decided. Library names and data sources elsewhere are proposals until their DECIDE task is done.
-- A DECIDE task closes by writing its outcome in the board and adding a `D-###` row to `agents.md`.
+- Only what's in the `agents.md` decision log as **Active** is decided. Library names and data sources elsewhere are proposals until the task that needs them decides.
+- Each task starts with its *Decisions* list. Every decision is written under the task and logged as a `D-###` row in `agents.md`.
 - Update the board table and the task's detail section together. Commit messages start with the task ID.
 - New work found mid-task becomes a new task at the end of the board.
 

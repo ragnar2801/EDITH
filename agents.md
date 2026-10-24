@@ -47,7 +47,7 @@ Friday **advises**. I **execute** trades myself at my broker.
 | D-009 | 2026-10-24 | Base reporting currency **INR**. USD positions are shown in both currencies | I think in INR | Proposed (confirm) |
 | D-010 | 2026-10-24 | **Indian tax resident.** US investing via **LRS**. Existing US holdings and USD cash may already be there | Drives tax, TCS, remittance limits and estate-tax checks | Active |
 | D-011 | 2026-10-24 | Return target: **beat Nifty 50 and S&P 500 by 5–10% a year**. Recorded as a *stretch* goal. The working target is to beat a blended benchmark after costs and taxes, measured by the Scorekeeper | 5–10% sustained outperformance is rare even for professionals. A measurable target keeps Friday honest | Active (stretch) |
-| D-012 | 2026-10-24 | **Free data only:** NSE (bhavcopy, announcements), AMFI, Yahoo Finance, SEC EDGAR, FRED | No paid subscriptions | Active (free-only). The sources named are candidates: picks are made in tasks T1-12 to T1-16 |
+| D-012 | 2026-10-24 | **Free data only:** NSE (bhavcopy, announcements), AMFI, Yahoo Finance, SEC EDGAR, FRED | No paid subscriptions | Active (free-only). The sources named are candidates: picks are made in tasks T1-02, T1-05 and T1-06 |
 | D-013 | 2026-10-24 | **Runs locally on my laptop, 24/7.** One process plus SQLite. Must tolerate sleep, reboot and offline | Simple, private, free hosting | Active |
 | D-014 | 2026-10-24 | Most events wait for the **weekly CIO run**. Only *urgent* events trigger a mid-week CIO run, at most once a day | Long-term style. Avoids noise and LLM cost | Proposed |
 | D-015 | 2026-10-24 | Every BUY/ADD must justify itself against the **index-fund alternative** | Keeps the alpha target honest | Proposed |
@@ -58,11 +58,12 @@ Friday **advises**. I **execute** trades myself at my broker.
 | D-020 | 2026-10-24 | Unattended runs use `--permission-mode dontAsk` with an allowlist (Friday MCP tools, web search/fetch, read). Anything else is denied, never prompted | Nobody is there to answer prompts at 3 a.m. | Proposed |
 | D-021 | 2026-10-24 | **Build in phases:** 1 Tracker → 2 Research on demand → 3 Suggestions on demand → 4a Watchers & alerts → 4b Automatic AI runs → 5 Wider view & feedback. Details in `docs/phases.md` | Data before AI. AI run by hand before it runs unattended. Every phase is usable on its own | Active |
 | D-022 | 2026-10-24 | **Phase 1 schedules fetchers with plain cron** (or the OS equivalent). Each fetcher backfills every date missed since its last success. `friday tick` (D-018) takes over in Phase 4a | Simplest thing that works. Backfill covers runs skipped while the laptop sleeps | Active |
-| D-023 | 2026-10-24 | **React frontend + Python backend** (the 100-foot view). No Django. Framework and libraries are decided in Phase 1 tasks (FastAPI moved to T1-03) | Clean split between UI and logic. API-first, so a phone app, other clients or integrations can reuse the same API later | Active |
-| D-024 | 2026-10-24 | Frontend: Vite + React + TypeScript (no Next.js), pnpm, API client generated from OpenAPI, TanStack Query/Table, React Hook Form + Zod, shadcn/ui + Tailwind, ECharts + Lightweight Charts. Details in 3.14 | Standard, well-supported choices. Generated client keeps types in sync | Withdrawn → decided in tasks T1-06 to T1-09 |
-| D-025 | 2026-10-24 | Backend: Python 3.12+, uv, FastAPI, SQLAlchemy 2 + Alembic, Pydantic v2, SQLite (WAL), pandas, yfinance, httpx, pyxirr, pytest, ruff. Shared `core/` package. Money as `Decimal`, sent as strings in JSON. Details in 3.14 | One logic layer for UI, jobs and Claude. No floating-point money errors | Withdrawn → decided in tasks T1-02 to T1-05 and T1-11 |
-| D-026 | 2026-10-24 | **Work is tracked in `docs/tasks/`**: a markdown tracker in the repo, one board per phase. Every open choice below the 100-foot view (libraries, data sources, data model, rule values) is a DECIDE task. Its outcome is logged here as a `D-###` | Works across sessions. Versioned with the code. Decisions made with evidence, one at a time | Active |
-| D-027 | 2026-10-24 | **Laptop OS: Windows, native** (not WSL2). Scheduler: **Windows Task Scheduler** with *run as soon as possible after a missed start* on and *only on AC power* off (T1-01) | My laptop. WSL2 stops when idle, so jobs inside it are unreliable. Task Scheduler catches up after sleep, like the backfill in D-022 | Active |
+| D-023 | 2026-10-24 | **React frontend + Python backend** (the 100-foot view). No Django. Framework and libraries are decided in Phase 1 tasks (FastAPI is a candidate in T1-01) | Clean split between UI and logic. API-first, so a phone app, other clients or integrations can reuse the same API later | Active |
+| D-024 | 2026-10-24 | Frontend: Vite + React + TypeScript (no Next.js), pnpm, API client generated from OpenAPI, TanStack Query/Table, React Hook Form + Zod, shadcn/ui + Tailwind, ECharts + Lightweight Charts. Details in 3.14 | Standard, well-supported choices. Generated client keeps types in sync | Withdrawn → decided in the Phase 1 tasks that need each piece (mostly T1-01) |
+| D-025 | 2026-10-24 | Backend: Python 3.12+, uv, FastAPI, SQLAlchemy 2 + Alembic, Pydantic v2, SQLite (WAL), pandas, yfinance, httpx, pyxirr, pytest, ruff. Shared `core/` package. Money as `Decimal`, sent as strings in JSON. Details in 3.14 | One logic layer for UI, jobs and Claude. No floating-point money errors | Withdrawn → decided in the Phase 1 tasks that need each piece (mostly T1-01) |
+| D-026 | 2026-10-24 | **Work is tracked in `docs/tasks/`**: a markdown tracker in the repo, one board per phase. Every open choice below the 100-foot view (libraries, data sources, data model, rule values) is a DECIDE task. Its outcome is logged here as a `D-###` | Works across sessions. Versioned with the code. Decisions made with evidence, one at a time | Active (tracker). Task shape revised by D-028 |
+| D-027 | 2026-10-24 | **Laptop OS: Windows, native** (not WSL2). Scheduler: **Windows Task Scheduler** with *run as soon as possible after a missed start* on and *only on AC power* off. Applied in T1-09 | My laptop. WSL2 stops when idle, so jobs inside it are unreliable. Task Scheduler catches up after sleep, like the backfill in D-022 | Active |
+| D-028 | 2026-10-24 | **Tasks are engineering tasks sized as features or infra slices** (about 10 per phase), each testable end to end. Decisions are made inside the task that needs them, not as separate tasks. Phase 1 board regenerated (version 2, 10 tasks) | Small decision-only tasks were overhead. Feature tasks are easier to test and show progress | Active |
 
 ---
 
@@ -274,7 +275,7 @@ status:       proposed → accepted | rejected | snoozed | expired
 outcome:      return vs benchmark at 1/3/6/12 months (Scorekeeper)
 ```
 
-### 3.12 Data sources (candidates; picks decided in tasks T1-12 to T1-16)
+### 3.12 Data sources (candidates; picks decided in tasks T1-02, T1-05 and T1-06)
 
 | Need | India | US |
 |------|-------|----|
@@ -370,7 +371,7 @@ Notes:
 - The tick runs one Claude job at a time (a lock), so jobs never overlap and SQLite has a single writer.
 - The exit code and JSON output are logged to `job_runs`. A failed job is retried on the next tick, with backoff.
 
-#### Project layout (tentative; final shape decided in T1-10)
+#### Project layout (tentative; final shape decided in T1-01)
 
 ```
 friday/                       # repo root
@@ -387,18 +388,18 @@ friday/                       # repo root
 │   │   └── policy/  valuation-framework/  fund-checklist/
 │   │       tax-india-lrs/  note-format/  suggestion-format/   # background know-how
 │   └── agent-memory/         # per-agent learnings
-├── backend/                  # Python (tools: T1-02 to T1-05)
-│   ├── pyproject.toml        # tooling: T1-02
+├── backend/                  # Python (tools: T1-01)
+│   ├── pyproject.toml        # tooling: T1-01
 │   ├── friday/
 │   │   ├── core/             # ALL logic: models, db, calc (xirr, drift, lrs, tax),
 │   │   │                     #   fetchers, watchers, risk_rules (D-019), scorekeeper
-│   │   ├── api/              # API routes (thin; the UI's only way in; framework: T1-03)
+│   │   ├── api/              # API routes (thin; the UI's only way in; framework: T1-01)
 │   │   ├── jobs/             # cron entry points; later orchestrator (`friday tick`)
 │   │   └── mcp_server.py     # Phase 2: core functions as tools for Claude (thin)
-│   ├── migrations/           # DB migrations (tool: T1-04)
+│   ├── migrations/           # DB migrations (tool: T1-01)
 │   └── tests/
-├── frontend/                 # React (tools: T1-06 to T1-08)
-│   ├── package.json          # tooling: T1-06
+├── frontend/                 # React (tools: T1-01, charts: T1-08)
+│   ├── package.json          # tooling: T1-01
 │   └── src/                  # pages/, components/, api/ (generated client)
 ├── data/friday.db            # git-ignored
 └── logs/                     # git-ignored
@@ -406,7 +407,7 @@ friday/                       # repo root
 
 ### 3.14 Tech stack (proposals)
 
-> Only D-023 (React + Python backend) is decided. Everything in this section is a **proposal** and an input to the Phase 1 DECIDE tasks (T1-02 to T1-11). Final picks are logged in section 2 as they're made.
+> Only D-023 (React + Python backend) is decided. Everything in this section is a **proposal** and an input to the Phase 1 tasks (mostly T1-01). Final picks are logged in section 2 as they're made.
 
 ```
 React app (Vite + TypeScript) ──HTTP/JSON──► FastAPI (api/) ──► core/ ──► SQLite
@@ -469,7 +470,7 @@ React app (Vite + TypeScript) ──HTTP/JSON──► FastAPI (api/) ──► 
 
 1. **Claude billing:** run the scheduled jobs on my Claude subscription login (shares usage limits with my interactive use) or on an API key (pay per use, separate budget)?2. **IPS values:** goals, horizon, max drawdown, target allocation India vs US vs debt vs gold (section 3.10)
 3. **Tax rules config:** capital-gains rates, holding periods and LRS/TCS thresholds change with budgets. Who updates the `tax_rules` table, and how?
-4. **Tech stack details:** D-023 fixes React + Python backend. Everything else → Phase 1 tasks T1-02 to T1-11
+4. **Tech stack details:** D-023 fixes React + Python backend. Everything else → decided inside the Phase 1 tasks (mostly T1-01)
 5. **Notification channel** for urgent items: in-app only for v1, or also desktop notifications?
 6. **Where the screener/tips come from** when we build them: own screens, a newsletter, another agent?
 7. **Existing US holdings:** which broker and platform? Affects how I enter lots and FX rates historically.
@@ -491,7 +492,8 @@ React app (Vite + TypeScript) ──HTTP/JSON──► FastAPI (api/) ──► 
 | v1.2 (phases) | 2026-10-24 | Decisions D-021 (build phases 1, 2, 3, 4a, 4b, 5) and D-022 (cron + backfill in Phase 1). Added `docs/phases.md` |
 | v1.2 (stack) | 2026-10-24 | Decisions D-023 (React + FastAPI), D-024 (frontend picks), D-025 (backend picks). Added section 3.14. Project layout split into `backend/` and `frontend/` |
 | v1.2 (tasks) | 2026-10-24 | D-026: task tracker in `docs/tasks/` with the Phase 1 board (44 tasks: 23 DECIDE, 18 BUILD, 3 VERIFY). D-023 narrowed to React + Python backend. D-024 and D-025 withdrawn into tasks. Data sources in D-012 and 3.12 are now candidates. Added root `CLAUDE.md` with the session routine |
-| v1.2 (T1-01) | 2026-10-24 | D-027: Windows (native) + Task Scheduler |
+| v1.2 (OS) | 2026-10-24 | D-027: Windows (native) + Task Scheduler |
+| v1.2 (board v2) | 2026-10-24 | D-028: Phase 1 board regenerated as 10 feature/infra tasks with decisions inside each task. References to the first draft's task IDs updated |
 
 ---
 
