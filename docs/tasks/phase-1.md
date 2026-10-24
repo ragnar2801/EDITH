@@ -15,7 +15,7 @@
 
 | ID | Task | Type | Owner | Status | Depends on |
 |----|------|------|-------|--------|------------|
-| T1-01 | Laptop OS and scheduler | DECIDE | me | todo | — |
+| T1-01 | Laptop OS and scheduler | DECIDE | me | doing | — |
 | T1-02 | Backend tooling (Python version, packages, lint, types) | DECIDE | both | todo | — |
 | T1-03 | Backend web framework | DECIDE | both | todo | — |
 | T1-04 | Database access and migrations | DECIDE | both | todo | T1-03 |
@@ -92,7 +92,7 @@
 ## M1 — Foundations
 
 ### T1-01 · Laptop OS and scheduler
-`DECIDE` · Owner: me · Status: todo · Depends on: —
+`DECIDE` · Owner: me · Status: doing · Depends on: —
 
 - **Question:** which OS does Friday run on, and which scheduler runs the daily jobs?
 - **Options:** macOS (cron, or launchd, which runs a missed job once after wake) · Windows (Task Scheduler with "run as soon as possible after a missed start") · Linux (cron, or systemd timers with `Persistent=true`)
