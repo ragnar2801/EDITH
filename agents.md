@@ -4,7 +4,7 @@
 > This file is the memory for brainstorming sessions: decisions, the current plan, open questions and ideas for later.
 > Update it every session. Never delete history. Supersede it (see [How to use this file](#how-to-use-this-file)).
 
-**Current plan:** v1 · **Last updated:** 2026-10-24
+**Current plan:** v1.1 · **Last updated:** 2026-10-24
 
 ---
 
@@ -21,11 +21,13 @@ Friday **advises**. I **execute** trades myself at my broker.
 ### Principles
 
 - **Code computes, LLMs judge.** Prices, returns, XIRR, drift, ratios, indicators and tax impact are deterministic code exposed as tools. LLMs interpret, weigh evidence and explain. No arithmetic inside prompts.
-- **Watch cheaply, think expensively only when needed.** "24/7 agents" are schedulers and code-based watchers. An LLM only wakes up on a meaningful trigger.
+- **Watch cheaply, think expensively only when needed.** Most of the "agents" are plain code. An LLM only wakes up on a meaningful trigger.
 - **One voice to the user.** Only the CIO agent creates suggestions. Every other agent writes research notes.
 - **Every suggestion is falsifiable.** Each one states what to do, how much, why, how confident it is, and what would prove it wrong. Then it gets scored.
-- **Policy over prediction.** Every suggestion is judged against my written Investment Policy Statement (IPS), not against "maximum returns".
+- **Beat the index or buy the index.** Every stock or active-fund idea must argue why it beats simply buying the index fund. If it can't, the suggestion is the index fund.
+- **Policy over prediction.** Every suggestion is judged against my written Investment Policy Statement (IPS).
 - **Low noise.** Long-term investing means few, high-quality suggestions. Silence is a valid output.
+- **Laptop-first.** The system must survive sleep, reboot and going offline without losing or duplicating work.
 
 ---
 
@@ -37,140 +39,218 @@ Friday **advises**. I **execute** trades myself at my broker.
 | D-002 | 2026-10-24 | **Watchlist is curated manually** by me | I want control over the universe | Active |
 | D-003 | 2026-10-24 | Holdings and cash are entered **manually** (no broker sync in v1) | Simplest. Broker/CAS import comes later | Active |
 | D-004 | 2026-10-24 | Investment style: **long-term** (buy, hold, rebalance). No intraday or swing trading | Matches my goals. Lets agents run on low cadence | Active |
-| D-005 | 2026-10-24 | **Single user** (me). No multi-tenancy | Keeps auth and data model simple. Personal use avoids the advisory-registration question | Active |
+| D-005 | 2026-10-24 | **Single user** (me). No multi-tenancy | Keeps auth and data model simple | Active |
 | D-006 | 2026-10-24 | **Advisory only.** Friday never places orders | Safety. I stay in the loop | Active |
 | D-007 | 2026-10-24 | Screener agent and external tip sources are **future**, not v1. When added, they feed the *same* pipeline (they propose ideas and never create suggestions directly) | Keeps one research path and one quality bar | Planned |
 | D-008 | 2026-10-24 | Deterministic tools for all numbers. LLMs for judgment and narrative | Reproducibility, cost, correctness | Active |
-| D-009 | 2026-10-24 | Base reporting currency **INR**. USD positions are shown in both currencies | I think in INR. USD exposure is a currency bet in its own right | Proposed (confirm) |
+| D-009 | 2026-10-24 | Base reporting currency **INR**. USD positions are shown in both currencies | I think in INR | Proposed (confirm) |
+| D-010 | 2026-10-24 | **Indian tax resident.** US investing via **LRS**. Existing US holdings and USD cash may already be there | Drives tax, TCS, remittance limits and estate-tax checks | Active |
+| D-011 | 2026-10-24 | Return target: **beat Nifty 50 and S&P 500 by 5–10% a year**. Recorded as a *stretch* goal. The working target is to beat a blended benchmark after costs and taxes, measured by the Scorekeeper | 5–10% sustained outperformance is rare even for professionals. A measurable target keeps Friday honest | Active (stretch) |
+| D-012 | 2026-10-24 | **Free data only:** NSE (bhavcopy, announcements), AMFI, Yahoo Finance, SEC EDGAR, FRED | No paid subscriptions | Active |
+| D-013 | 2026-10-24 | **Runs locally on my laptop, 24/7.** One process plus SQLite. Must tolerate sleep, reboot and offline | Simple, private, free hosting | Active |
+| D-014 | 2026-10-24 | Most events wait for the **weekly CIO run**. Only *urgent* events trigger a mid-week CIO run, at most once a day | Long-term style. Avoids noise and LLM cost | Proposed |
+| D-015 | 2026-10-24 | Every BUY/ADD must justify itself against the **index-fund alternative** | Keeps the alpha target honest | Proposed |
 
 ---
 
-## 3. Current plan — v1
+## 3. Current plan — v1.1
 
 ### 3.1 Scope
 
 **In v1**
-- Manual entry of holdings (as tax lots), cash accounts and the watchlist
-- Portfolio view: allocation, P&L, XIRR, drift vs target (INR and USD)
-- Suggestions tab: ranked suggestions with accept, reject and snooze, plus history
-- Background agents (see roster): portfolio health, rebalancing, cash deployment, fund analysis, fundamental research on watchlist stocks, light macro view, CIO, Risk Guard, Scorekeeper, weekly brief
+- Manual entry of holdings (as tax lots), cash accounts, LRS remittances and the watchlist
+- Portfolio view: allocation, P&L, XIRR, drift vs target, benchmark comparison (INR and USD)
+- Suggestions tab: ranked suggestions with accept, reject and snooze, plus history and scoring
+- The v1 agents in 3.3
 
 **Not in v1** (see [Roadmap](#4-roadmap--parking-lot))
-- Broker or CAS sync, auto-trading, screener or idea discovery, external tips, technical and sentiment agents, intraday alerts, multi-user
+- Broker or CAS sync, auto-trading, screener or idea discovery, external tips, technical and sentiment agents, intraday alerts, full tax agent, multi-user
 
-### 3.2 Architecture
+### 3.2 Runtime components (one laptop)
 
-```
- Triggers: schedules (per market) · events (cash added, holding edited,
-           watchlist add, drift breach, earnings/filing) · on-demand ask
-        │
-  ┌─────▼────────────┐  code only, cheap, frequent
-  │ Data & Watchers  │─► prices, NAVs, FX, fundamentals, filings, macro
-  └─────┬────────────┘   raise an EVENT only when something is material
-        │
-  ┌─────▼────────────┐  LLM, on trigger
-  │ Research agents  │─► write RESEARCH NOTES (thesis, evidence, confidence, expiry)
-  └─────┬────────────┘
-  ┌─────▼────────────┐
-  │ Portfolio agents │─► drift, rebalance plans, cash deployment plans
-  └─────┬────────────┘
-  ┌─────▼────────────┐
-  │      CIO         │─► reads notes + portfolio + IPS → draft SUGGESTIONS
-  └─────┬────────────┘
-  ┌─────▼────────────┐
-  │   Risk Guard     │─► hard-rule check: approve / downgrade / veto
-  └─────┬────────────┘
-        ▼
-  Suggestions tab ──► my decision ──► Scorekeeper (tracks outcome vs benchmark)
-```
-
-Shared state lives in one database. Agents talk *through the store* (notes, events, suggestions), not to each other directly.
+| Component | Role | Notes |
+|-----------|------|-------|
+| **Web UI** | Portfolio, cash, watchlist, suggestions, weekly letter, ask-Friday chat | Served on `localhost` |
+| **API / backend** | CRUD for my data. Serves the UI. Exposes tools to agents | Same process as the scheduler |
+| **SQLite DB** | All state: holdings, prices, notes, events, suggestions | One file, backed up daily |
+| **Orchestrator** | Scheduler, event dispatch, catch-up after sleep, retries, LLM budget cap | Not an LLM. The "24/7" part |
+| **Data adapters** | One adapter per free source, with fallback and caching | NSE → Yahoo fallback for India |
+| **Agent runner** | Runs LLM agents with their tools and writes outputs to the DB | Only part that costs money (LLM API) |
+| **OS service** | Auto-start on boot (launchd / systemd / Task Scheduler) | Keeps it "always on" |
 
 ### 3.3 Agent roster
 
-Model tier: **S** = small/fast model (triage, tagging), **L** = large model (deep reasoning), **—** = no LLM.
+There are 22 components, but only about **9 use an LLM**. The rest are deterministic code.
+LLM column: **—** = none, **S** = small/fast model, **L** = large model.
 
-| # | Agent | Job | Trigger | Tier | v1? |
-|---|-------|-----|---------|------|-----|
-| 1 | **Data Refresher** | Pull EOD prices, NAVs, FX, and fundamentals for holdings and watchlist | Schedules (see 3.4) | — | ✅ |
-| 2 | **Watchlist Sentinel** | Flag big moves, 52-week lows/highs, or prices entering my buy zone | After each data refresh | — | ✅ |
-| 3 | **Filings & Earnings Scout** | Detect results, corporate actions and material filings for holdings and watchlist. Tag materiality | Daily | S | ✅ |
-| 4 | **Fundamental Analyst** | Business quality, valuation vs own history and peers, balance-sheet red flags. Writes and refreshes the thesis note per stock | On watchlist add, after results, when a note expires | L | ✅ |
-| 5 | **Fund Analyst** | MFs and ETFs: rolling returns vs benchmark, expense ratio, tracking difference, manager change, style drift, AUM, overlap with my other holdings. Flags regular plans (prefer direct) | Monthly (after factsheets), on add | L | ✅ |
-| 6 | **Macro Strategist** | Light regime view per market (rates cycle, valuation of the market as a whole, INR/USD trend). Outputs asset-class tilts, not stock picks | Weekly, and after major macro events | L | ✅ |
-| 7 | **Portfolio Doctor** | Allocation vs target, concentration, sector/country/currency exposure, MF look-through overlap (e.g. Indian funds holding US stocks) | Weekly, and on holding change | — + S | ✅ |
-| 8 | **Rebalancer** | When drift breaches its band, propose trades. Use new cash first, then tax-aware sells (holding period, exit load, harvesting losses) | Drift breach, quarterly | — + L | ✅ |
-| 9 | **Cash Deployer** | Deployable cash over threshold → where it should go and how: lump sum vs staggered, parking vehicle meanwhile (liquid fund / T-bill ETF) | Cash added, weekly | L | ✅ |
-| 10 | **CIO** | Combine notes, plans, IPS and portfolio into ranked suggestions. Writes its own bear case before finalising (the "devil's advocate" step, built in) | Weekly, plus urgent events | L | ✅ |
-| 11 | **Risk Guard** | Enforce hard rules (3.7). Can veto or downgrade | Every draft suggestion | — + S | ✅ |
-| 12 | **Scorekeeper** | Mark each suggestion at 1, 3, 6 and 12 months vs benchmark. Hit rate per agent and per suggestion type | Monthly | — | ✅ |
-| 13 | **Briefing Agent** | Weekly letter: portfolio status, what changed, open suggestions. Answers on-demand questions from the store | Weekly, on demand | S/L | ✅ |
-| 14 | Tax Agent | Full tax view: realised/unrealised gains by bucket, year-end harvesting. (v1 has only the tax-aware tool used by the Rebalancer) | Event, year-end | L | later |
-| 15 | Technical Analyst | Entry timing, trend context | Daily | S | later |
-| 16 | Sentiment Analyst | Analyst ratings, promoter/insider activity, bulk deals | Daily | S | later |
-| 17 | Screener / Idea Scout | Propose *new* watchlist candidates from screens | Weekly | — + L | later |
-| 18 | External Tips Intake | Ingest tips from external sources/agents → normalise → send to research like any other idea | On arrival | S | later |
+#### Layer 0 — Data fetchers (code)
 
-### 3.4 Schedules (all times IST)
+| ID | Agent | Work | Source (free) | Frequency (IST) | LLM | v1 |
+|----|-------|------|---------------|-----------------|-----|----|
+| D1 | India EOD Fetcher | EOD prices for all NSE stocks | NSE bhavcopy. Yahoo `.NS` fallback | Mon–Fri 16:30 (NSE trading days) | — | ✅ |
+| D2 | MF NAV Fetcher | Daily NAV for all Indian MF schemes | AMFI `NAVAll.txt` | Daily 23:30 | — | ✅ |
+| D3 | US EOD Fetcher | EOD prices for US stocks and ETFs | Yahoo Finance | Tue–Sat 07:00 (after NASDAQ close) | — | ✅ |
+| D4 | FX Fetcher | USD/INR rate | Yahoo `INR=X`. RBI reference rate | Runs with D1 and D3 | — | ✅ |
+| D5 | Fundamentals Fetcher | Financials and ratios for holdings and watchlist | Yahoo. NSE results. SEC EDGAR | Sat 08:00, and on results event | — | ✅ |
+| D6 | Corporate Events Fetcher | Results dates, filings, dividends, splits | NSE announcements. SEC EDGAR | Daily 20:00 | — | ✅ |
+| D7 | Macro Fetcher | Rates, inflation, Nifty P/E, US yields | RBI, NSE, FRED | Sat 08:00 | — | ✅ |
+| D8 | Fund Data Fetcher | Expense ratio, category, AUM, holdings for look-through | AMC factsheets/disclosures. ETF issuer files | Monthly ~12th | — | ⚠️ partial |
 
-| When | What |
-|------|------|
-| ~16:30 Mon–Fri | India EOD prices → Sentinel |
-| ~23:30 Mon–Fri | Indian MF NAVs (AMFI publishes in the evening) → Sentinel |
-| ~07:00 Tue–Sat | US EOD prices (after NASDAQ close) + FX → Sentinel |
-| Daily | Filings & Earnings Scout |
-| Sunday | Portfolio Doctor → Rebalancer/Cash Deployer → Macro → CIO → Risk Guard → Weekly brief |
-| ~10th of month | Fund Analyst (factsheets out) · Scorekeeper |
-| Quarterly | Forced rebalance review |
+#### Layer 1 — Watchers (code rules that raise events)
 
-Both exchange holiday calendars (NSE and US) must be respected. US close shifts by an hour with US daylight saving.
+| ID | Agent | Work | Frequency | LLM | v1 |
+|----|-------|------|-----------|-----|----|
+| W1 | Watchlist Sentinel | Price in my buy zone, X% below 52-week high, unusual move on a holding | After D1/D2/D3 | — | ✅ |
+| W2 | Drift Monitor | Asset-class / country / single-stock weight outside its band | After every price update, and on holding edit | — | ✅ |
+| W3 | Cash Monitor | Deployable cash above threshold (INR or USD) | On cash edit, and daily | — | ✅ |
+| W4 | Filing Triage | Tag new filings by materiality (ignore noise, escalate results, management change, pledging, etc.) | After D6 | S | ✅ |
+| W5 | Data Health | Stale, missing or outlier prices. Blocks downstream agents if data is bad | After every fetch | — | ✅ |
 
-### 3.5 Skills / tools
+#### Layer 2 — Research agents (write research notes)
+
+| ID | Agent | Work | Trigger / frequency | LLM | v1 |
+|----|-------|------|---------------------|-----|----|
+| R1 | Fundamental Analyst | Per stock: business quality, valuation vs own history and peers, red flags, thesis, and why this beats the index | On watchlist add · after results · note older than 90 days · W1 price alert (thesis re-check) | L | ✅ |
+| R2 | Fund Analyst | Per MF/ETF: rolling returns vs benchmark, expense ratio, tracking difference, manager change, style drift, overlap. Flags regular plans | Monthly after D8 · on add | L | ✅ |
+| R3 | Macro Strategist | Per market (IN, US): rate cycle, market valuation, INR/USD trend. Outputs asset-class tilts only | Sat 10:00 · after RBI MPC / FOMC decisions | L | ✅ |
+
+#### Layer 3 — Portfolio agents
+
+| ID | Agent | Work | Trigger / frequency | LLM | v1 |
+|----|-------|------|---------------------|-----|----|
+| P1 | Portfolio Doctor | Health report: allocation, concentration, sector/country/currency exposure, overlap, performance vs benchmarks | Sun weekly pipeline · on holding edit | — + S | ✅ |
+| P2 | Rebalancer | Trade plan when drift breaches its band. New cash first, then tax-aware sells (holding period, exit load) | W2 drift event · quarterly review | — + L | ✅ |
+| P3 | Cash Deployer | Where idle cash should go: India vs US, lump sum vs staggered, where to park it meanwhile. Accounts for LRS friction (TCS, FX spread) when moving INR to the US | W3 cash event · Sun weekly | L | ✅ |
+| P4 | LRS & Tax Ledger | Tracks remittances against the LRS limit and TCS threshold per financial year. Tracks holding periods, US-situs value (estate-tax exposure), and dividends with withholding. Sends year-end reminders (e.g. foreign-asset reporting) | On remittance or trade entry · monthly · financial-year end | — | ✅ light |
+
+#### Layer 4 — Decision
+
+| ID | Agent | Work | Trigger / frequency | LLM | v1 |
+|----|-------|------|---------------------|-----|----|
+| C1 | CIO | Reads notes, plans, IPS and portfolio. Writes the bear case for each idea, then publishes ranked suggestions (including NO_ACTION) | Sun weekly pipeline · urgent events (max once a day) | L | ✅ |
+| C2 | Risk Guard | Checks every draft against hard rules. Approves, downgrades or vetoes | Right after every C1 run | — + S | ✅ |
+
+#### Layer 5 — Feedback, communication and system
+
+| ID | Agent | Work | Trigger / frequency | LLM | v1 |
+|----|-------|------|---------------------|-----|----|
+| F1 | Scorekeeper | Marks every suggestion vs its benchmark at 1/3/6/12 months. Tracks hit rate per agent and alpha vs target (D-011) | Daily mark (code) · monthly report | — | ✅ |
+| F2 | Briefing Agent | Weekly letter. Urgent alerts. Answers my questions from the DB | Sun after C2 · on demand | S/L | ✅ |
+| S1 | Orchestrator | Schedules, event routing, catch-up after sleep, retries, dedupe, debounce, LLM budget cap | Always on | — | ✅ |
+| S2 | Housekeeper | Expire old notes and suggestions. DB backup. Log rotation | Daily 03:00 (or on wake) | — | ✅ |
+
+#### Later (not v1)
+
+| Agent | Work | Frequency |
+|-------|------|-----------|
+| Tax Agent (full) | Realised/unrealised gains by bucket, harvesting plan, advance-tax estimate | Event · financial-year end |
+| Technical Analyst | Entry timing and trend context for buys | Daily |
+| Sentiment Analyst | Analyst ratings, promoter/insider activity, bulk/block deals | Daily |
+| Screener / Idea Scout | Propose new watchlist candidates from screens | Weekly |
+| External Tips Intake | Normalise outside tips into watchlist candidates (D-007) | On arrival |
+
+### 3.4 Timeline (IST)
+
+| When | What runs |
+|------|-----------|
+| Mon–Fri 16:30 | D1 India EOD + D4 FX → W5 → W1, W2 |
+| Daily 20:00 | D6 corporate events → W4 triage → R1 if a holding or watchlist stock reported results |
+| Daily 23:30 | D2 MF NAVs → W5 → W1, W2 |
+| Tue–Sat 07:00 | D3 US EOD + D4 FX → W5 → W1, W2 |
+| Daily 03:00 | S2 Housekeeper. F1 daily mark |
+| Sat 08:00 | D5 fundamentals refresh. D7 macro |
+| Sat 10:00 | R3 Macro Strategist (India and US) |
+| **Sun 09:00 — weekly pipeline** (chained, each step starts when the previous one finishes) | P1 → P2 (if drift) and P3 (if cash) → C1 CIO → C2 Risk Guard → F2 weekly letter |
+| ~12th monthly | D8 fund data → R2 Fund Analyst. F1 monthly report |
+| Quarterly | Forced P2 rebalance review. Results season means more R1 runs |
+| FY end (Feb–Mar) | P4 reminders: LRS/TCS totals, holding periods, harvesting window |
+
+### 3.5 Events → who reacts
+
+| Event | Raised by | Reaction | Urgency |
+|-------|-----------|----------|---------|
+| Watchlist item added | UI | D5 → R1 or R2 initial research | Normal |
+| Holding / cash / remittance edited | UI | W2, W3, P4 → P1 | Normal |
+| Price in buy zone | W1 | R1 thesis check → C1 | **Urgent** |
+| Holding down ≥ 15% from cost or high | W1 | R1 thesis check → C1 | **Urgent** |
+| Results or material filing | W4 | D5 → R1 updates note | Normal (urgent if thesis broken) |
+| Drift outside band | W2 | P2 → C1 (weekly) | Normal |
+| Deployable cash above threshold | W3 | P3 → C1 (weekly) | Normal |
+| RBI MPC / FOMC decision | Calendar | R3 refresh | Normal |
+| Stale or bad data | W5 | Pause C1. Show alert in UI | Blocking |
+
+"Normal" waits for the Sunday pipeline. "Urgent" can trigger a mid-week C1 run, at most once a day (D-014).
+
+### 3.6 Laptop reality (D-013)
+
+| Concern | Design answer |
+|---------|---------------|
+| Lid closed / sleep | On wake, the Orchestrator compares last-success times with the schedule and runs missed jobs once (catch-up). EOD data a few hours late is harmless |
+| Duplicate runs | Every job is idempotent, keyed by `(job, market_date)` |
+| Reboot | Runs as an OS service with auto-start |
+| Offline | Retry with backoff. W5 marks data stale. Nothing downstream runs on stale data |
+| Free sources break or rate-limit | One adapter per source, fallback chain, caching, polite request rate. NSE needs browser-like headers. Bhavcopy files are more stable than NSE's JSON endpoints |
+| Data loss | Daily SQLite backup (optionally to a cloud-synced folder) |
+| LLM cost runaway | Weekly token budget in the Orchestrator. Research notes cached and reused until they expire |
+
+### 3.7 Expected LLM load (rough)
+
+Assuming ~20 watchlist/held stocks and ~10 funds/ETFs: roughly **10–20 large-model runs a week** (CIO, Macro ×2, Cash Deployer, Rebalancer, a few Fundamental re-checks), plus ~10 Fund Analyst runs a month and some small-model triage calls each day. Results season causes spikes.
+
+### 3.8 Skills / tools
 
 **Data:** `get_quote` · `get_ohlcv` · `get_fundamentals` · `get_fund_nav` · `get_fund_holdings` · `get_fx_rate` · `get_filings` · `get_news` · `get_macro_series`
 
-**Calculations (pure code):** `valuation_vs_history` · `peer_compare` · `rolling_returns` · `xirr` · `allocation_drift` · `exposure_breakdown` (sector/country/currency, with MF look-through) · `overlap_matrix` · `tax_lot_impact` · `simulate_trades`
+**Calculations (pure code):** `valuation_vs_history` · `peer_compare` · `rolling_returns` · `xirr` · `allocation_drift` · `exposure_breakdown` (sector/country/currency, with MF look-through) · `overlap_matrix` · `tax_lot_impact` · `lrs_position` · `benchmark_compare` · `simulate_trades`
 
 **Portfolio and state:** `get_holdings` · `get_cash` · `get_watchlist` · `get_policy` · `get_research_notes` · `write_research_note` · `raise_event`
 
 **Output:** `create_suggestion` (CIO only) · `risk_check` · `notify_user`
 
-### 3.6 Data model (minimal)
+### 3.9 Data model (minimal)
 
-- `instruments`: symbol, exchange (NSE/BSE/NASDAQ/NYSE Arca…), type (stock/MF/ETF), currency, ISIN / AMFI scheme code, sector
+- `instruments`: symbol, exchange (NSE/BSE/NASDAQ/NYSE Arca…), type (stock/MF/ETF), currency, ISIN / AMFI scheme code, sector, domicile
 - `holdings_lots`: instrument, buy date, qty/units, price, fees, currency (lots are needed for XIRR and tax)
 - `cash_accounts`: name, currency, balance, **earmark** (emergency / deployable / reserved)
-- `watchlist`: instrument, *my reason for watching*, buy zone (optional), max allocation, added date
+- `remittances`: date, INR amount, USD received, FX rate, TCS paid, financial year (for LRS)
+- `watchlist`: instrument, *my reason for watching*, buy zone (optional), max allocation, status (`active` / `candidate`), added date
 - `policy` (IPS): goals, horizon, risk tolerance, target allocation and drift bands, hard rules, benchmarks
+- `tax_rules`: config table (rates, holding periods, thresholds), updated after each Budget, never hard-coded
 - `market_data`: prices, NAVs, FX, fundamentals snapshots
-- `events`: type, instrument, payload, materiality, processed flag
+- `events`: type, instrument, payload, urgency, processed flag
+- `job_runs`: job, market_date, status, started/finished (for catch-up and idempotency)
 - `research_notes`: agent, instrument/scope, thesis, evidence links, confidence, **expires_at**
-- `suggestions`: see 3.8, with status and outcome tracking
+- `suggestions`: see 3.11, with status and outcome tracking
 
-### 3.7 Policy (IPS) & Risk Guard rules
+### 3.10 Policy (IPS), benchmarks & Risk Guard rules
 
-> To be filled in by me. The values below are **proposed defaults** for discussion.
+> No IPS yet. Values below are **proposed defaults** to fill in or change.
 
+- **Return target:** stretch goal, beat Nifty 50 and S&P 500 by 5–10% a year (D-011). Working goal: beat the blended benchmark after costs and taxes over rolling 3 years.
+- **Benchmarks (proposed):** India sleeve vs Nifty 50 TRI. US sleeve vs S&P 500 TR in USD (measures picking skill). Whole portfolio in INR vs a blend weighted by target allocation (measures what I actually get).
 - Goals & horizon: _TBD_
-- Target allocation: _TBD_ (e.g. India equity / US equity / debt / cash / gold)
+- Max drawdown I can tolerate: _TBD_
+- Target allocation: _TBD_ (India equity / US equity / debt / cash / gold)
 - Drift band: ±5% absolute per asset class (proposed)
-- Benchmarks: Nifty 50 (or Nifty 500) for India equity, NASDAQ-100 / S&P 500 for US, a blended benchmark for the whole portfolio (proposed)
 
 **Hard rules (Risk Guard), proposed:**
 - Emergency-fund cash is never deployable
-- Max single stock: 10% of portfolio. Max single sector: 30%. Max single fund house: _TBD_
+- Max single stock: 10% of portfolio. Max single sector: 30%
 - No leverage, derivatives, shorting or margin
 - Deployments above a threshold are staggered over several weeks unless I override
 - No new buy in a stock within a few days before its results
 - MF suggestions use direct plans only
-- Every suggestion must cite at least one unexpired research note
+- Every suggestion cites at least one unexpired research note, and every BUY/ADD states why it beats the index (D-015)
+- Warn when US-situs holdings approach the US estate-tax exemption for non-US persons
+- Warn before a remittance would cross the LRS limit or TCS threshold for the year
 
-### 3.8 Suggestion format
+### 3.11 Suggestion format
 
 ```
-type:         DEPLOY_CASH | BUY | ADD | TRIM | EXIT | SWITCH_FUND | REBALANCE | NO_ACTION
+type:         DEPLOY_CASH | BUY | ADD | TRIM | EXIT | SWITCH_FUND | REBALANCE | REMIT_USD | NO_ACTION
 instrument(s), market, amount (INR/USD), staggering plan
 why:          short rationale + links to research notes
+vs_index:     why this beats the index-fund alternative
 confidence:   low | medium | high
 invalidation: what would make this wrong
 horizon:      expected holding period
@@ -179,38 +259,43 @@ status:       proposed → accepted | rejected | snoozed | expired
 outcome:      return vs benchmark at 1/3/6/12 months (Scorekeeper)
 ```
 
-### 3.9 Data source candidates (not decided)
+### 3.12 Data sources (decided: free only, D-012)
 
 | Need | India | US |
 |------|-------|----|
-| EOD prices | Broker API (e.g. Kite Connect), Yahoo-style `.NS`/`.BO` feeds | Polygon, Finnhub, FMP, Alpha Vantage |
-| MF NAV | AMFI daily NAV file, mfapi.in | n/a |
-| Fundamentals | _TBD_ (no great free API; may need a paid source) | FMP, Finnhub, SEC EDGAR |
-| Filings / results | NSE/BSE corporate announcements | SEC EDGAR |
-| Fund holdings / factsheets | AMC monthly portfolio disclosures | ETF issuer holdings files |
-| FX (INR/USD) | RBI reference rate | Any FX API |
-| Macro | RBI, MOSPI | FRED |
+| EOD prices | NSE bhavcopy (primary), Yahoo `.NS` / `.BO` (fallback) | Yahoo Finance |
+| MF NAV | AMFI `NAVAll.txt` (history via mfapi.in) | n/a |
+| Fundamentals | Yahoo, NSE results filings | Yahoo, SEC EDGAR (XBRL) |
+| Filings / results | NSE corporate announcements | SEC EDGAR |
+| Fund holdings / factsheets | AMC monthly portfolio disclosures (formats vary by AMC) | ETF issuer holdings files |
+| FX (INR/USD) | RBI reference rate, Yahoo `INR=X` | — |
+| Macro | RBI, NSE (index P/E) | FRED |
+
+Caveat: these are unofficial or scraped endpoints. Fine for low-volume personal use, but expect breakage. The adapter and fallback design (3.6) exists for this reason.
 
 ---
 
 ## 4. Roadmap / parking lot
 
-- **v2 candidates:** Tax Agent · Screener/Idea Scout · External Tips Intake (D-007) · CAS / broker CSV import · Technical & Sentiment agents · notifications (email/Telegram)
+- **v2 candidates:** Tax Agent (full) · Screener/Idea Scout · External Tips Intake (D-007) · CAS / broker CSV import · Technical & Sentiment agents · notifications (email/Telegram)
 - **Later:** broker read-only sync · backtesting the CIO on historical data · "what-if" simulator in the UI · goal-based planning (retirement, house, etc.)
-- **Ideas inbox rule (for screener/tips):** an idea goes to the watchlist as `candidate` → Fundamental/Fund Analyst research → only then is it eligible for the CIO. No shortcuts.
+- **Idea to evaluate:** Ireland-domiciled (UCITS) ETFs as an alternative to US-domiciled ETFs. They reduce US estate-tax exposure and dividend withholding for Indian residents, but they trade on LSE, not NASDAQ.
+- **Ideas inbox rule (for screener/tips):** an idea goes to the watchlist as `candidate` → R1/R2 research → only then is it eligible for the CIO. No shortcuts.
 
 ---
 
 ## 5. Open questions
 
-1. **Tax residency:** am I an Indian resident investing in the US via LRS? That affects tax treatment of US holdings, dividend withholding, foreign-asset reporting, and US estate-tax exposure for non-US persons. These would become Risk Guard and Briefing items.
-2. **Tax rules as config:** capital-gains rates and holding periods change with budgets. Keep them in a config table, not in code or prompts. Who updates them, and how?
-3. **Target allocation and IPS values** (section 3.7)
-4. **Tech stack:** backend, database, scheduler, agent framework, frontend. Not decided.
-5. **Hosting:** where do the schedulers run (always-on VPS vs serverless cron)?
-6. **Data budget:** free sources only, or willing to pay for fundamentals?
-7. **Notification channel** for urgent items (in-app only for v1?)
-8. **Where the screener/tips come from** when we build them: own screens, a newsletter, another agent?
+1. **LLM cost:** data is free but the LLM is not. Use a paid LLM API (expected load in 3.7 is small) or a local model (free, but weaker reasoning for CIO-level work)? Or a hybrid: local for S tasks, API for L tasks?
+2. **IPS values:** goals, horizon, max drawdown, target allocation India vs US vs debt vs gold (section 3.10)
+3. **Tax rules config:** capital-gains rates, holding periods and LRS/TCS thresholds change with budgets. Who updates the `tax_rules` table, and how?
+4. **Tech stack:** backend language, scheduler, agent framework, frontend. Not decided.
+5. **Notification channel** for urgent items: in-app only for v1, or also desktop notifications?
+6. **Where the screener/tips come from** when we build them: own screens, a newsletter, another agent?
+7. **Existing US holdings:** which broker and platform? Affects how I enter lots and FX rates historically.
+
+### Resolved
+- ~~Tax residency~~ → D-010 · ~~Data budget~~ → D-012 · ~~Hosting~~ → D-013 · ~~Benchmarks / target~~ → D-011 (IPS details still open)
 
 ---
 
@@ -219,6 +304,7 @@ outcome:      return vs benchmark at 1/3/6/12 months (Scorekeeper)
 | Version | Date | Change |
 |---------|------|--------|
 | v1 | 2026-10-24 | Initial architecture from first brainstorm. Decisions D-001 to D-009. v1 agent roster, schedules, data model, suggestion format |
+| v1.1 | 2026-10-24 | Decisions D-010 to D-015 (LRS resident, return target, free data, laptop-local, urgency policy, index baseline). Full system design: runtime components, 22-component roster by layer, IST timeline, event table, laptop resilience, LLM load estimate. Added LRS & Tax Ledger (P4), Data Health (W5), Orchestrator and Housekeeper. Data sources decided |
 
 ---
 
