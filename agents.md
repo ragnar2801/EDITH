@@ -380,7 +380,7 @@ Notes:
 - The tick runs one Claude job at a time (a lock), so jobs never overlap and SQLite has a single writer.
 - The exit code and JSON output are logged to `job_runs`. A failed job is retried on the next tick, with backoff.
 
-#### Project layout (tentative; final shape decided in T1-01)
+#### Project layout (set up in T1-01; `.claude/` and `.mcp.json` arrive in Phase 2)
 
 ```
 friday/                       # repo root
@@ -397,19 +397,29 @@ friday/                       # repo root
 │   │   └── policy/  valuation-framework/  fund-checklist/
 │   │       tax-india-lrs/  note-format/  suggestion-format/   # background know-how
 │   └── agent-memory/         # per-agent learnings
-├── backend/                  # Python (tools: T1-01)
-│   ├── pyproject.toml        # tooling: T1-01
+├── justfile                  # every command: setup, run, dev, test, lint, api, smoke (D-036)
+├── scripts/                  # dev.py (both dev servers), smoke.py (real-server check)
+├── .github/workflows/ci.yml  # lint + tests + smoke on a Windows runner (D-037)
+├── backend/                  # Python 3.14, uv, FastAPI, SQLAlchemy + Alembic (D-029 to D-031)
+│   ├── pyproject.toml  uv.lock  alembic.ini
 │   ├── friday/
-│   │   ├── core/             # ALL logic: models, db, calc (xirr, drift, lrs, tax),
-│   │   │                     #   fetchers, watchers, risk_rules (D-019), scorekeeper
-│   │   ├── api/              # API routes (thin; the UI's only way in; framework: T1-01)
-│   │   ├── jobs/             # cron entry points; later orchestrator (`friday tick`)
+│   │   ├── config.py         # settings (FRIDAY_* env vars / .env)
+│   │   ├── cli.py            # `friday serve | migrate | openapi`
+│   │   ├── core/             # ALL logic: db, exact money/time types (D-032); later models,
+│   │   │                     #   calc (xirr, drift, lrs, tax), fetchers, watchers, risk_rules
+│   │   ├── api/              # FastAPI app, routes (thin), problem-details errors, UI serving
+│   │   ├── jobs/             # later: scheduled entry points, then `friday tick`
 │   │   └── mcp_server.py     # Phase 2: core functions as tools for Claude (thin)
-│   ├── migrations/           # DB migrations (tool: T1-01)
+│   ├── migrations/           # Alembic (SQLite batch mode)
 │   └── tests/
-├── frontend/                 # React (tools: T1-01, charts: T1-08)
-│   ├── package.json          # tooling: T1-01
-│   └── src/                  # pages/, components/, api/ (generated client)
+├── frontend/                 # Vite + React + TS, shadcn/ui, TanStack Query, React Router (D-033, D-034)
+│   ├── package.json  components.json
+│   └── src/
+│       ├── api/              # openapi.json + schema.d.ts (generated, `just api`), client.ts, queries.ts
+│       ├── app/              # navigation, routes
+│       ├── components/       # layout/, ui/ (shadcn), shared components
+│       ├── lib/              # utils, money formatting
+│       └── pages/
 ├── data/friday.db            # git-ignored
 └── logs/                     # git-ignored
 ```

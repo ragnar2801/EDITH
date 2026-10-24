@@ -1,0 +1,25 @@
+# Local data and logs (D-013): never committed
+data/
+logs/
+*.db
+*.db-wal
+*.db-shm
+
+# Secrets
+.env
+
+# Python
+backend/.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
+# Frontend (also see frontend/.gitignore)
+frontend/node_modules/
+frontend/dist/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -61,6 +61,12 @@ T1-04 can be built in parallel with T1-02 / T1-03. T1-07 and T1-09 can run in pa
 - Decided: `backend/` + `frontend/`, **`just`** (PowerShell on Windows), server on `127.0.0.1:8000`, Vite dev server on `:5173` (D-036)
 - Decided: **pytest**, **Vitest**, **GitHub Actions on a Windows runner** (D-037)
 
+**Progress (2026-10-24)**
+- Built: backend (FastAPI, SQLite + Alembic baseline, exact money/time types, problem-details errors, UI serving, `friday` CLI), frontend (Vite + React + TS, shadcn/ui, TanStack Query, React Router, app shell with Phase 1 pages, backend status badge, generated API client, `formatMoney`), `justfile`, `scripts/dev.py`, `scripts/smoke.py`, Windows CI, README, `CLAUDE.md` conventions
+- Verified on Linux: `just setup`, `just lint`, `just test` (backend 20 tests, frontend 7 tests), `just smoke`, and screenshots of the running app (desktop and phone width)
+- Notes: Vite's template now ships oxlint; replaced with ESLint as decided (D-033). TypeScript pinned to 5.9 because openapi-typescript doesn't support TypeScript 6 yet. shadcn's registry is blocked from the build environment, so the shadcn setup and components (button, card, badge) were added by hand from shadcn's source; `npx shadcn add` works normally on the laptop
+- Waiting on: Windows CI run
+
 **Done when**
 - On a fresh clone on Windows, the documented setup + run commands open Friday at `localhost` showing the app shell and "backend: ok"
 - `test` and `lint` pass on both sides

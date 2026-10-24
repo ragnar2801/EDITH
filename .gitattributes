@@ -1,0 +1,6 @@
+# Keep LF line endings on every OS (Windows checkouts included), so formatters and
+# generated-file checks behave the same everywhere.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
