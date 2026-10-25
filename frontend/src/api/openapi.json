@@ -1116,6 +1116,97 @@
         "title": "Health",
         "type": "object"
       },
+      "HoldingOut": {
+        "properties": {
+          "cost": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Cost",
+            "type": "string"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/CoverageOut"
+          },
+          "fund": {
+            "$ref": "#/components/schemas/FundRef"
+          },
+          "lots": {
+            "items": {
+              "$ref": "#/components/schemas/LotOut"
+            },
+            "title": "Lots",
+            "type": "array"
+          },
+          "sips": {
+            "items": {
+              "$ref": "#/components/schemas/SipOut"
+            },
+            "title": "Sips",
+            "type": "array"
+          },
+          "units": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Units",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fund",
+          "units",
+          "cost",
+          "lots",
+          "sips",
+          "coverage"
+        ],
+        "title": "HoldingOut",
+        "type": "object"
+      },
+      "HoldingSummaryOut": {
+        "properties": {
+          "active_sips": {
+            "title": "Active Sips",
+            "type": "integer"
+          },
+          "cost": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Cost",
+            "type": "string"
+          },
+          "fund": {
+            "$ref": "#/components/schemas/FundRef"
+          },
+          "lots": {
+            "title": "Lots",
+            "type": "integer"
+          },
+          "nav_last": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nav Last"
+          },
+          "units": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Units",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fund",
+          "units",
+          "cost",
+          "lots",
+          "active_sips",
+          "nav_last"
+        ],
+        "title": "HoldingSummaryOut",
+        "type": "object"
+      },
       "ImportRun": {
         "properties": {
           "added": {
@@ -1702,6 +1793,228 @@
           "benchmark_return_pct"
         ],
         "title": "IntervalOut",
+        "type": "object"
+      },
+      "LotEditIn": {
+        "properties": {
+          "amount": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "buy_date": {
+            "format": "date",
+            "title": "Buy Date",
+            "type": "string"
+          },
+          "nav": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nav"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "skipped": {
+            "default": false,
+            "title": "Skipped",
+            "type": "boolean"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
+          }
+        },
+        "required": [
+          "buy_date",
+          "amount"
+        ],
+        "title": "LotEditIn",
+        "type": "object"
+      },
+      "LotOut": {
+        "properties": {
+          "amount": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "buy_date": {
+            "format": "date",
+            "title": "Buy Date",
+            "type": "string"
+          },
+          "cost_remaining": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Cost Remaining",
+            "type": "string"
+          },
+          "edited": {
+            "title": "Edited",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "lump_sum",
+              "sip"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "nav": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Nav",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "sales": {
+            "items": {
+              "$ref": "#/components/schemas/SaleOut"
+            },
+            "title": "Sales",
+            "type": "array"
+          },
+          "sip_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sip Id"
+          },
+          "skipped": {
+            "title": "Skipped",
+            "type": "boolean"
+          },
+          "units": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Units",
+            "type": "string"
+          },
+          "units_remaining": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Units Remaining",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "sip_id",
+          "buy_date",
+          "amount",
+          "nav",
+          "units",
+          "units_remaining",
+          "cost_remaining",
+          "edited",
+          "skipped",
+          "note",
+          "sales"
+        ],
+        "title": "LotOut",
+        "type": "object"
+      },
+      "LumpSumIn": {
+        "properties": {
+          "amount": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "buy_date": {
+            "format": "date",
+            "title": "Buy Date",
+            "type": "string"
+          },
+          "instrument_id": {
+            "title": "Instrument Id",
+            "type": "integer"
+          },
+          "nav": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nav"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
+          }
+        },
+        "required": [
+          "buy_date",
+          "amount",
+          "instrument_id"
+        ],
+        "title": "LumpSumIn",
         "type": "object"
       },
       "MetricsOut": {
@@ -2311,6 +2624,97 @@
         "title": "RunUpdate",
         "type": "object"
       },
+      "SaleIn": {
+        "properties": {
+          "lots": {
+            "items": {
+              "$ref": "#/components/schemas/SaleLotIn"
+            },
+            "minItems": 1,
+            "title": "Lots",
+            "type": "array"
+          },
+          "nav": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nav"
+          },
+          "sale_date": {
+            "format": "date",
+            "title": "Sale Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sale_date",
+          "lots"
+        ],
+        "title": "SaleIn",
+        "type": "object"
+      },
+      "SaleLotIn": {
+        "properties": {
+          "lot_id": {
+            "title": "Lot Id",
+            "type": "integer"
+          },
+          "units": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Units",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lot_id",
+          "units"
+        ],
+        "title": "SaleLotIn",
+        "type": "object"
+      },
+      "SaleOut": {
+        "properties": {
+          "amount": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "nav": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Nav",
+            "type": "string"
+          },
+          "sale_date": {
+            "format": "date",
+            "title": "Sale Date",
+            "type": "string"
+          },
+          "units": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Units",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sale_date",
+          "units",
+          "nav",
+          "amount"
+        ],
+        "title": "SaleOut",
+        "type": "object"
+      },
       "Share": {
         "properties": {
           "bucket": {
@@ -2335,6 +2739,178 @@
           "percent"
         ],
         "title": "Share",
+        "type": "object"
+      },
+      "SipEditIn": {
+        "properties": {
+          "amount": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "day": {
+            "maximum": 28.0,
+            "minimum": 1.0,
+            "title": "Day",
+            "type": "integer"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "day",
+          "start_date"
+        ],
+        "title": "SipEditIn",
+        "type": "object"
+      },
+      "SipIn": {
+        "properties": {
+          "amount": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "day": {
+            "maximum": 28.0,
+            "minimum": 1.0,
+            "title": "Day",
+            "type": "integer"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "instrument_id": {
+            "title": "Instrument Id",
+            "type": "integer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "day",
+          "start_date",
+          "instrument_id"
+        ],
+        "title": "SipIn",
+        "type": "object"
+      },
+      "SipOut": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "amount": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "day": {
+            "title": "Day",
+            "type": "integer"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "instalments": {
+            "title": "Instalments",
+            "type": "integer"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "amount",
+          "day",
+          "start_date",
+          "end_date",
+          "note",
+          "active",
+          "instalments"
+        ],
+        "title": "SipOut",
         "type": "object"
       },
       "SipParams": {
@@ -3351,6 +3927,85 @@
         ]
       }
     },
+    "/api/v1/holdings": {
+      "get": {
+        "description": "Every fund I have a lot or a SIP in, with units and cost of what I still hold.",
+        "operationId": "listHoldings",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/HoldingSummaryOut"
+                  },
+                  "title": "Response Listholdings",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "List All",
+        "tags": [
+          "holdings"
+        ]
+      }
+    },
+    "/api/v1/holdings/{instrument_id}": {
+      "get": {
+        "description": "One fund's lots (oldest first), with what was sold from each, and its SIPs.",
+        "operationId": "getHolding",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instrument_id",
+            "required": true,
+            "schema": {
+              "title": "Instrument Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Get",
+        "tags": [
+          "holdings"
+        ]
+      }
+    },
     "/api/v1/instruments/search": {
       "get": {
         "description": "Find instruments by part of a name, a symbol, an AMFI scheme code or an ISIN.",
@@ -3845,6 +4500,135 @@
         ]
       }
     },
+    "/api/v1/lots": {
+      "post": {
+        "description": "Record a lump sum. The fund becomes tracked for NAVs.",
+        "operationId": "addLumpSum",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LumpSumIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Add Lump Sum",
+        "tags": [
+          "holdings"
+        ]
+      }
+    },
+    "/api/v1/lots/{lot_id}": {
+      "delete": {
+        "description": "Delete a lump sum that nothing was sold from.",
+        "operationId": "deleteLot",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lot_id",
+            "required": true,
+            "schema": {
+              "title": "Lot Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Delete",
+        "tags": [
+          "holdings"
+        ]
+      },
+      "put": {
+        "description": "Change a lot's figures, or skip a SIP instalment. Edited and skipped instalments are\nkept when the SIP is rebuilt.",
+        "operationId": "updateLot",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "lot_id",
+            "required": true,
+            "schema": {
+              "title": "Lot Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LotEditIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Update",
+        "tags": [
+          "holdings"
+        ]
+      }
+    },
     "/api/v1/navs/status": {
       "get": {
         "description": "Every tracked fund with the NAV dates Friday has, and the last sync.",
@@ -3923,6 +4707,213 @@
         "summary": "Sync",
         "tags": [
           "navs"
+        ]
+      }
+    },
+    "/api/v1/sales": {
+      "post": {
+        "description": "Take units out of the lots picked, all of one fund, on one date (D-054).",
+        "operationId": "sellUnits",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Add Sale",
+        "tags": [
+          "holdings"
+        ]
+      }
+    },
+    "/api/v1/sales/{sale_id}": {
+      "delete": {
+        "description": "Undo a sale from one lot: its units go back into the lot.",
+        "operationId": "deleteSale",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sale_id",
+            "required": true,
+            "schema": {
+              "title": "Sale Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Remove Sale",
+        "tags": [
+          "holdings"
+        ]
+      }
+    },
+    "/api/v1/sips": {
+      "post": {
+        "description": "Start a SIP. Instalments are added for every month the stored NAVs cover, and after\neach NAV sync (D-053).",
+        "operationId": "addSip",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SipIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Add Sip",
+        "tags": [
+          "holdings"
+        ]
+      }
+    },
+    "/api/v1/sips/{sip_id}": {
+      "delete": {
+        "description": "Delete a SIP and its instalments, if nothing was sold from them.",
+        "operationId": "deleteSip",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sip_id",
+            "required": true,
+            "schema": {
+              "title": "Sip Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Remove Sip",
+        "tags": [
+          "holdings"
+        ]
+      },
+      "put": {
+        "description": "Change a SIP and rebuild its instalments, keeping edited, skipped and sold ones.",
+        "operationId": "updateSip",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sip_id",
+            "required": true,
+            "schema": {
+              "title": "Sip Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SipEditIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoldingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Change Sip",
+        "tags": [
+          "holdings"
         ]
       }
     }

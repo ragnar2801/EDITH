@@ -7,6 +7,8 @@ import { BacktestPage } from '@/pages/BacktestPage'
 import { BucketsPage } from '@/pages/BucketsPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { DataStatusPage } from '@/pages/DataStatusPage'
+import { HoldingPage } from '@/pages/HoldingPage'
+import { HoldingsPage } from '@/pages/HoldingsPage'
 import { InstrumentPage } from '@/pages/InstrumentPage'
 import { InstrumentsPage } from '@/pages/InstrumentsPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
@@ -17,6 +19,7 @@ const BUILT: Record<string, ReactElement> = {
   '/': <DashboardPage />,
   '/buckets': <BucketsPage />,
   '/backtest': <BacktestPage />,
+  '/holdings': <HoldingsPage />,
   '/instruments': <InstrumentsPage />,
   '/status': <DataStatusPage />,
 }
@@ -31,6 +34,7 @@ export const routes: RouteObject[] = [
       })),
       { path: '/instruments/:id', element: <InstrumentPage /> },
       { path: '/backtest/:bucketId', element: <BacktestPage /> },
+      { path: '/holdings/:id', element: <HoldingPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

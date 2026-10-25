@@ -26,3 +26,8 @@ export function formatMonthYear(date: string): string {
     timeZone: 'UTC',
   }).format(new Date(Date.UTC(year, month - 1, 1)))
 }
+
+/** Today's date in India, where NAV dates live, as "2026-10-25". */
+export function todayIst(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date())
+}

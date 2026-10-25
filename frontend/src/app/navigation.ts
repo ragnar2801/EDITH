@@ -1,6 +1,5 @@
 import {
   Activity,
-  ArrowLeftRight,
   Banknote,
   BriefcaseBusiness,
   FlaskConical,
@@ -47,14 +46,7 @@ export const SECTIONS: Section[] = [
     label: 'Holdings',
     icon: BriefcaseBusiness,
     task: 'T1-15',
-    description: 'The funds you own: units and cost per fund and folio.',
-  },
-  {
-    path: '/transactions',
-    label: 'Transactions',
-    icon: ArrowLeftRight,
-    task: 'T1-15',
-    description: 'Purchases, SIP instalments, redemptions, switches and IDCW.',
+    description: 'The funds you own: lump sums, SIPs and sells, with units and cost per fund.',
   },
   {
     path: '/cash',

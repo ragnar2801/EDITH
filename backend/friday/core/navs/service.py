@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from friday.core.buckets.service import bucket_reasons
 from friday.core.db import session_scope
+from friday.core.holdings.service import add_due_instalments, holding_reasons
 from friday.core.instruments.download import FetchError
 from friday.core.instruments.models import Instrument
 from friday.core.instruments.sources.common import SourceFormatError
@@ -47,16 +48,21 @@ def require_fund(instrument: Instrument) -> None:
         raise NotAFund(f"{instrument.name} is not a mutual fund scheme, so it has no NAVs.")
 
 
-def _bucket_reasons(session: Session) -> dict[int, list[str]]:
-    return bucket_reasons(session)
+def _used_by(session: Session) -> dict[int, list[str]]:
+    """Why a fund is tracked other than my marking it: buckets and holdings."""
+    reasons = bucket_reasons(session)
+    for instrument_id, why in holding_reasons(session).items():
+        reasons.setdefault(instrument_id, []).extend(why)
+    return reasons
 
 
 def tracking_reasons(session: Session) -> dict[int, list[str]]:
-    """Every tracked fund and why: ``"me"``, or the buckets that use it (D-046)."""
+    """Every tracked fund and why: ``"me"``, the buckets that use it, or ``"holding"``
+    (D-046)."""
     reasons: dict[int, list[str]] = {
         instrument_id: [ME] for instrument_id in session.scalars(select(TrackedFund.instrument_id))
     }
-    for instrument_id, why in _bucket_reasons(session).items():
+    for instrument_id, why in _used_by(session).items():
         reasons.setdefault(instrument_id, []).extend(why)
     return reasons
 
@@ -69,7 +75,7 @@ def track(session: Session, instrument: Instrument) -> None:
 
 
 def untrack(session: Session, instrument: Instrument) -> None:
-    others = [why for why in _bucket_reasons(session).get(instrument.id, []) if why != ME]
+    others = [why for why in _used_by(session).get(instrument.id, []) if why != ME]
     if others:
         raise StillUsed(f"{instrument.name} is used by {', '.join(others)}; remove it there first.")
     tracked = session.get(TrackedFund, instrument.id)
@@ -212,6 +218,7 @@ def sync_navs(
         session.add(run)
         session.flush()
         run_id = run.id
+        add_due_instalments(session)  # new NAVs may cover new SIP instalments (D-053)
     return SyncResult(run_id, status, started, finished, results)
 
 

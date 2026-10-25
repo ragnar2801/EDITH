@@ -6,7 +6,7 @@
 > **Already fixed:** React frontend + Python backend (D-023) · SQLite on the laptop (D-013) · free data only (D-012) · scheduled fetch + catch-up (D-022) · Windows + Task Scheduler (D-027) · Nifty 50 benchmark (D-043).
 > Everything else is decided **inside the task that needs it** (see each task's *Decisions* list). How this board works: [`README.md`](README.md)
 
-**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7) · **Done:** 5 / 11
+**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7) · **Done:** 6 / 11
 
 ---
 
@@ -19,7 +19,7 @@
 | T1-12 | Fund NAVs: full history, daily catch-up, refresh | Feature | Claude | done | T1-02 |
 | T1-13 | Buckets: my target split | Feature | Claude | done | T1-12 |
 | T1-14 | Backtests: lump sum, SIP, SWP and custom, vs Nifty 50 | Feature | Claude | done | T1-12, T1-13 |
-| T1-15 | Fund holdings: folios, transactions, FIFO lots | Feature | Claude | todo | T1-12 |
+| T1-15 | Fund holdings: lump sums, SIPs and sells | Feature | Claude | done | T1-12 |
 | T1-16 | Cash, and "I have ₹X, where does it go?" | Feature | Claude | todo | T1-13, T1-15 |
 | T1-17 | Portfolio view vs target: value, P&L, XIRR, drift | Feature | Claude | todo | T1-13, T1-15, T1-16 |
 | T1-18 | Daily NAV update on Windows | Infra | both | todo | T1-12 |
@@ -207,28 +207,34 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12.
 
 ---
 
-## T1-15 · Fund holdings: folios, transactions, FIFO lots
-`Feature` · Owner: Claude · Status: todo · Depends on: T1-12
+## T1-15 · Fund holdings: lump sums, SIPs and sells
+`Feature` · Owner: Claude · Status: done · Depends on: T1-12
 
-**Goal:** I type in every fund purchase, SIP instalment and redemption, and Friday shows the correct units and cost per fund and per folio.
+**Goal:** I enter my lump sums and SIPs, sell units from the lots I choose, and Friday shows the units and cost I hold in each fund.
 
-**Scope**
-- Folios (AMC + folio number) and transactions: purchase (SIP instalments are purchases), redemption, switch in / out, IDCW paid out or reinvested, stamp duty
-- Lots built from transactions; redemptions matched to lots
-- API for create / edit / delete / list; transactions list, add/edit form with the instrument search, holdings list with units and cost (value comes in T1-17)
-- Optional: CSV import in Friday's own template, with a preview before saving
+**Scope** (simplified 2026-10-25: no tax, folios, switches, mergers, IDCW or stamp duty)
+- A holding is keyed by **fund** only (`instruments.id`, one per AMFI scheme code, D-038). No folios
+- Two ways money goes in: **lump sum** (one buy) and **SIP** (amount, day of month, start date, optional end date)
+- **Each buy is a lot** with its units, NAV, amount and a **units remaining** balance. Selling is not a transaction type: I pick lots and how many units to take from each
+- API for create / edit / delete / list; holdings page, fund holding page with lots and SIPs, forms with `InstrumentSearch kind="mutual_fund"`; units and cost per fund (value comes in T1-17)
+- Holding a fund tracks it for NAVs (D-046)
 
-**Decisions** (proposals from the board v2 T1-03 discussion, to confirm)
-- Transaction types and fields; how a scheme merger or a plan switch (regular → direct) is recorded
-- Lot matching: FIFO per folio and fund (the usual rule for fund units; confirm)
-- Stamp duty in cost: yes (proposed)
-- Units: up to 8 decimal places stored; AMCs allot 3 (confirm display)
-- Forms and tables libraries (candidates: React Hook Form + Zod · TanStack Table · plain components)
-- CSV template import: yes or no in Phase 1
+**Decisions** (approved 2026-10-25)
+- Decided: a holding is keyed by fund only (`instruments.id`). Each buy, a lump sum or a SIP instalment, is one **lot**: date, amount (2 places), NAV, units (8 places stored, 3 shown) and a stored **units remaining**. Tax, folios, switches, scheme mergers, plan switches, IDCW, stamp duty and exit loads are out of Phase 1 (D-051)
+- Decided: when I leave the NAV blank, it is the fund's NAV for that date from the stored history (refused if Friday has none: type it). When I leave units blank, they are amount ÷ NAV rounded to 3 places, as AMCs allot; I can type my statement's units instead (D-052)
+- Decided: a **SIP** is amount, day of month (1–28), start date and optional end date. Friday adds one instalment per month on the first NAV date on or after the SIP day (within 10 days; a month without one, such as a data gap or before the fund's first NAV, has no instalment), up to the latest stored NAV, when the SIP is saved and after every NAV sync. An instalment can be edited (my statement's figures) or skipped (a missed month); editing the SIP rebuilds the other instalments and keeps those. A SIP with sold instalments can't be deleted (D-053)
+- Decided: **selling is taking units from lots I pick**, not a transaction type. A sale has a date and, per lot, the units taken; the NAV is that date's NAV from history (or typed). Each take is kept (lot, date, units, NAV) so T1-17 can work out realised P&L and XIRR, and deleting it puts the units back. A lot can't go below zero, be edited below the units already sold, or be deleted while it has sales (D-054)
+- Decided: forms and tables are plain components, as in `BucketsPage`. No CSV import in Phase 1: SIP schedules cover most of the typing (D-055)
+
+**Progress (2026-10-25)**
+- Built: tables `sips`, `lots`, `lot_sales` (migration 0006); `friday.core.holdings.service` (lump sums, lot edits, SIP instalments, selling from picked lots, undoing a sale, units and cost per fund); endpoints `GET /holdings`, `GET /holdings/{instrument_id}`, `POST`/`PUT`/`DELETE /lots`, `POST`/`PUT`/`DELETE /sips`, `POST /sales`, `DELETE /sales/{id}`; held funds count as tracked (`used_by: holding`) and every NAV sync adds the SIP instalments its new NAVs cover
+- UI: Holdings page (fund search, units, cost, lots, active SIPs) and a page per fund with lump sum, SIP, edit / skip and sell forms; lots show what was sold from them, with an undo. A fund with no NAVs is tracked and downloaded before the first lump sum or SIP is saved. The *Transactions* placeholder is gone: lots live on the fund's page
+- Checked on a copy of the live database: a ₹5,000 SIP on the 5th of Parag Parikh Flexi Cap from 1 Jan 2025 gave 22 instalments (weekend dates moved to the next NAV date); selling all of the Jan 2025 lot and 20 units of Feb 2025 left 1,140.793 units at a cost of ₹1,03,245.71, matching a hand calculation
+- Tests: 8 on SIP dates (holidays, end date, year rollover, a data gap, before the first NAV, waiting for NAVs, 3-place units) and 14 API tests (SIP plus lump sum, selling from picked lots, skip, step-up rebuild, undo, typed statement figures, edited instalments kept, oversell, missing NAVs, one fund per sale, protected lots, bad input, funds only, tracking and sync); frontend: holdings list, lump sum with NAV download, sell, refused sale, SIP and undo
 
 **Done when**
-- A test portfolio with a SIP fund partly redeemed, a lump sum, a switch and an IDCW reinvestment shows correct units and cost
-- Lot matching has unit tests with hand-worked values
+- A test portfolio with a lump sum and a SIP fund that was partly sold shows correct units, cost and units remaining per lot
+- SIP instalment dates (holidays, a skipped month, an end date) and lot balances have unit tests with hand-worked values
 
 ---
 
@@ -265,12 +271,12 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12.
 - Dashboard: totals, allocation, drift, holdings table, NAVs last updated; fund detail page: lots, transactions, NAV chart, P&L and XIRR
 
 **Decisions**
-- Returns definitions (what counts in P&L and XIRR, IDCW handling)
+- Returns definitions (what counts in P&L and XIRR)
 - Charts library for allocation (candidates: keep the SVG chart from D-050 and add a bar · ECharts · Recharts)
 - Drift bands shown now, or only in Phase 3
 
 **Done when**
-- Hand-worked examples (one lump sum, SIPs with a partial redemption) pass as unit tests
+- Hand-worked examples (one lump sum, SIPs with a partial sell) pass as unit tests
 - Dashboard numbers match the API exactly
 
 ---

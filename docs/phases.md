@@ -41,7 +41,7 @@ I keep a **target split** across a few funds (large cap, mid cap, small cap, fle
 | | |
 |---|---|
 | **Goal** | See all my funds with correct numbers, test target splits on history, and know exactly where new cash should go |
-| **Builds** | Instruments *(done: T1-02)* · daily and historical fund NAVs (D2) with catch-up · **buckets**: my target split with weights, rebalance policy and benchmark · **backtests** of a bucket: lump sum, SIP, SWP and a custom timeline, against the Nifty 50 (these three come from the earlier `ragnar2801/Friday` app, D-043) · fund holdings I type in (folios, transactions, FIFO lots) · cash accounts with an emergency earmark · "I have ₹X, where does it go?" plan towards the target split · portfolio view vs target: value, P&L, XIRR, drift · daily NAV update on Windows |
+| **Builds** | Instruments *(done: T1-02)* · daily and historical fund NAVs (D2) with catch-up · **buckets**: my target split with weights, rebalance policy and benchmark · **backtests** of a bucket: lump sum, SIP, SWP and a custom timeline, against the Nifty 50 (these three come from the earlier `ragnar2801/Friday` app, D-043) · fund holdings I type in (lump sums, SIPs, sells; one lot per buy) · cash accounts with an emergency earmark · "I have ₹X, where does it go?" plan towards the target split · portfolio view vs target: value, P&L, XIRR, drift · daily NAV update on Windows |
 | **Not yet** | Any AI, watchers, alerts |
 | **Journeys** | J1 (without research), J4 (the plan is arithmetic, no AI yet) |
 | **Done when** | All my real funds are in, NAVs update daily by themselves, the numbers match my statements, and the cash plan matches a hand calculation |

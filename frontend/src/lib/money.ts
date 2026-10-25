@@ -49,3 +49,10 @@ export function inr(amount: string): string {
 export function inrShort(amount: string): string {
   return formatMoneyShort({ amount, currency: 'INR' })
 }
+
+const UNITS = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+
+/** Fund units as AMCs allot them, to 3 places (D-051): 1,234.568. */
+export function formatUnits(units: string): string {
+  return UNITS.format(units as Intl.StringNumericLiteral)
+}

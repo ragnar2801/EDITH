@@ -368,3 +368,119 @@ export function useBacktestInterval(
     placeholderData: keepPreviousData,
   })
 }
+
+export type Holding = Schemas['HoldingOut']
+export type Lot = Schemas['LotOut']
+
+export function useHoldings() {
+  return useQuery({
+    queryKey: ['holdings'],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/api/v1/holdings')
+      if (error) throw failure(error)
+      return data
+    },
+  })
+}
+
+export function useHolding(id: number) {
+  return useQuery({
+    queryKey: ['holding', id],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/api/v1/holdings/{instrument_id}', {
+        params: { path: { instrument_id: id } },
+      })
+      if (error) throw failure(error)
+      return data
+    },
+    retry: false,
+  })
+}
+
+/** A fund with no NAVs yet: track it and download its history, so a blank NAV can be looked
+ * up and SIP instalments can be added. */
+async function ensureNavs(holding: Holding) {
+  if (holding.coverage.count > 0) return
+  const id = holding.fund.id
+  const tracked = await api.PUT('/api/v1/instruments/{instrument_id}/tracking', {
+    params: { path: { instrument_id: id } },
+  })
+  if (tracked.error) throw failure(tracked.error)
+  const sync = await api.POST('/api/v1/navs/sync', { body: { instrument_ids: [id] } })
+  if (sync.error) throw failure(sync.error)
+}
+
+/** Every change to a holding answers with the fund's new holding (or nothing, for deletes). */
+function useHoldingChange<T>(
+  instrumentId: number,
+  change: (body: T) => Promise<{ data?: Holding; error?: ProblemDetails }>,
+) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (body: T) => {
+      const { data, error } = await change(body)
+      if (error) throw failure(error)
+      return data
+    },
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['holding', instrumentId] }),
+        queryClient.invalidateQueries({ queryKey: ['holdings'] }),
+        invalidateNavs(queryClient),
+      ]),
+  })
+}
+
+export function useAddLumpSum(holding: Holding) {
+  return useHoldingChange(
+    holding.fund.id,
+    async (body: Omit<Schemas['LumpSumIn'], 'instrument_id'>) => {
+      await ensureNavs(holding)
+      return api.POST('/api/v1/lots', { body: { ...body, instrument_id: holding.fund.id } })
+    },
+  )
+}
+
+export function useUpdateLot(instrumentId: number) {
+  return useHoldingChange(
+    instrumentId,
+    ({ id, body }: { id: number; body: Schemas['LotEditIn'] }) =>
+      api.PUT('/api/v1/lots/{lot_id}', { params: { path: { lot_id: id } }, body }),
+  )
+}
+
+export function useDeleteLot(instrumentId: number) {
+  return useHoldingChange(instrumentId, (id: number) =>
+    api.DELETE('/api/v1/lots/{lot_id}', { params: { path: { lot_id: id } } }),
+  )
+}
+
+/** Start a SIP (no `id`) or change one. */
+export function useSaveSip(holding: Holding) {
+  return useHoldingChange(
+    holding.fund.id,
+    async ({ id, body }: { id?: number; body: Schemas['SipEditIn'] }) => {
+      if (id) return api.PUT('/api/v1/sips/{sip_id}', { params: { path: { sip_id: id } }, body })
+      await ensureNavs(holding)
+      return api.POST('/api/v1/sips', { body: { ...body, instrument_id: holding.fund.id } })
+    },
+  )
+}
+
+export function useDeleteSip(instrumentId: number) {
+  return useHoldingChange(instrumentId, (id: number) =>
+    api.DELETE('/api/v1/sips/{sip_id}', { params: { path: { sip_id: id } } }),
+  )
+}
+
+export function useSell(instrumentId: number) {
+  return useHoldingChange(instrumentId, (body: Schemas['SaleIn']) =>
+    api.POST('/api/v1/sales', { body }),
+  )
+}
+
+export function useDeleteSale(instrumentId: number) {
+  return useHoldingChange(instrumentId, (id: number) =>
+    api.DELETE('/api/v1/sales/{sale_id}', { params: { path: { sale_id: id } } }),
+  )
+}

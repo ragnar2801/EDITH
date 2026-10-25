@@ -29,6 +29,7 @@ Conventions (decisions D-029 to D-037):
 - **Instruments (D-038):** everything points at `instruments.id`, never at a symbol or ISIN. Pick instruments in the UI with `InstrumentSearch` (pass `kind="mutual_fund"` for fund-only pickers). Instruments are never deleted; a list refresh marks them inactive.
 - **NAVs (D-044 to D-046):** stored exactly as published, up to 8 places (`Nav` type); read them with `friday.core.navs.service.nav_series`. Funds in a bucket are tracked automatically.
 - **Backtests (D-048 to D-050):** amounts and units are `Decimal`, ratios are floats rounded to 2 places with `engine.figure`. Charts use `components/charts/LineChart` (SVG); numbers there are for drawing only, and every figure shown as text comes from the API.
+- **Holdings (D-051 to D-054):** keyed by fund; each buy (lump sum or SIP instalment) is a lot with a stored `units_remaining`. Selling takes units from lots I pick (`lot_sales`), not a transaction type. Logic in `friday.core.holdings.service`; NAV sync adds due SIP instalments.
 - Errors are RFC 9457 problem details. The server binds to `127.0.0.1` only.
 - Windows is the target OS: keep commands Windows-safe (no `&&` chains in PowerShell 5, `npm.cmd` not `npm.ps1`, LF line endings via `.gitattributes`).
 

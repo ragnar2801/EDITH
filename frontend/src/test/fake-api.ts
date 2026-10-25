@@ -161,6 +161,48 @@ export function fundRef(summary: Schemas['InstrumentSummary']): Schemas['FundRef
   return { id, name, amfi_code, fund_house, fund_category, plan, option, is_active }
 }
 
+export function lot(extra: Partial<Schemas['LotOut']> = {}): Schemas['LotOut'] {
+  return {
+    id: 11,
+    kind: 'sip',
+    sip_id: 3,
+    buy_date: '2026-01-05',
+    amount: '5000',
+    nav: '80',
+    units: '62.500',
+    units_remaining: '62.500',
+    cost_remaining: '5000.00',
+    edited: false,
+    skipped: false,
+    note: null,
+    sales: [],
+    ...extra,
+  }
+}
+
+export function holding(extra: Partial<Schemas['HoldingOut']> = {}): Schemas['HoldingOut'] {
+  return {
+    fund: fundRef(parag),
+    units: '62.500',
+    cost: '5000.00',
+    lots: [lot()],
+    sips: [
+      {
+        id: 3,
+        amount: '5000',
+        day: 5,
+        start_date: '2026-01-01',
+        end_date: null,
+        note: null,
+        active: true,
+        instalments: 1,
+      },
+    ],
+    coverage: { first: '2013-05-28', last: '2026-10-23', count: 3298 },
+    ...extra,
+  }
+}
+
 export function bucket(extra: Partial<Schemas['BucketOut']> = {}): Schemas['BucketOut'] {
   const coverage = { first: '2013-05-28', last: '2026-10-23', count: 3298 }
   return {

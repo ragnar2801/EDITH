@@ -186,6 +186,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/holdings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List All
+         * @description Every fund I have a lot or a SIP in, with units and cost of what I still hold.
+         */
+        get: operations["listHoldings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/holdings/{instrument_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get
+         * @description One fund's lots (oldest first), with what was sold from each, and its SIPs.
+         */
+        get: operations["getHolding"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/instruments/search": {
         parameters: {
             query?: never;
@@ -331,6 +371,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/lots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Lump Sum
+         * @description Record a lump sum. The fund becomes tracked for NAVs.
+         */
+        post: operations["addLumpSum"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/lots/{lot_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update
+         * @description Change a lot's figures, or skip a SIP instalment. Edited and skipped instalments are
+         *     kept when the SIP is rebuilt.
+         */
+        put: operations["updateLot"];
+        post?: never;
+        /**
+         * Delete
+         * @description Delete a lump sum that nothing was sold from.
+         */
+        delete: operations["deleteLot"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/navs/status": {
         parameters: {
             query?: never;
@@ -366,6 +451,91 @@ export interface paths {
          */
         post: operations["syncNavs"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Sale
+         * @description Take units out of the lots picked, all of one fund, on one date (D-054).
+         */
+        post: operations["sellUnits"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales/{sale_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Sale
+         * @description Undo a sale from one lot: its units go back into the lot.
+         */
+        delete: operations["deleteSale"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Sip
+         * @description Start a SIP. Instalments are added for every month the stored NAVs cover, and after
+         *     each NAV sync (D-053).
+         */
+        post: operations["addSip"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sips/{sip_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Sip
+         * @description Change a SIP and rebuild its instalments, keeping edited, skipped and sold ones.
+         */
+        put: operations["updateSip"];
+        post?: never;
+        /**
+         * Remove Sip
+         * @description Delete a SIP and its instalments, if nothing was sold from them.
+         */
+        delete: operations["deleteSip"];
         options?: never;
         head?: never;
         patch?: never;
@@ -732,6 +902,33 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** HoldingOut */
+        HoldingOut: {
+            /** Cost */
+            cost: string;
+            coverage: components["schemas"]["CoverageOut"];
+            fund: components["schemas"]["FundRef"];
+            /** Lots */
+            lots: components["schemas"]["LotOut"][];
+            /** Sips */
+            sips: components["schemas"]["SipOut"][];
+            /** Units */
+            units: string;
+        };
+        /** HoldingSummaryOut */
+        HoldingSummaryOut: {
+            /** Active Sips */
+            active_sips: number;
+            /** Cost */
+            cost: string;
+            fund: components["schemas"]["FundRef"];
+            /** Lots */
+            lots: number;
+            /** Nav Last */
+            nav_last: string | null;
+            /** Units */
+            units: string;
+        };
         /** ImportRun */
         ImportRun: {
             /** Added */
@@ -911,6 +1108,80 @@ export interface components {
             start_value: string;
             /** Withdrawn */
             withdrawn: string;
+        };
+        /** LotEditIn */
+        LotEditIn: {
+            /** Amount */
+            amount: string;
+            /**
+             * Buy Date
+             * Format: date
+             */
+            buy_date: string;
+            /** Nav */
+            nav?: string | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Skipped
+             * @default false
+             */
+            skipped: boolean;
+            /** Units */
+            units?: string | null;
+        };
+        /** LotOut */
+        LotOut: {
+            /** Amount */
+            amount: string;
+            /**
+             * Buy Date
+             * Format: date
+             */
+            buy_date: string;
+            /** Cost Remaining */
+            cost_remaining: string;
+            /** Edited */
+            edited: boolean;
+            /** Id */
+            id: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "lump_sum" | "sip";
+            /** Nav */
+            nav: string;
+            /** Note */
+            note: string | null;
+            /** Sales */
+            sales: components["schemas"]["SaleOut"][];
+            /** Sip Id */
+            sip_id: number | null;
+            /** Skipped */
+            skipped: boolean;
+            /** Units */
+            units: string;
+            /** Units Remaining */
+            units_remaining: string;
+        };
+        /** LumpSumIn */
+        LumpSumIn: {
+            /** Amount */
+            amount: string;
+            /**
+             * Buy Date
+             * Format: date
+             */
+            buy_date: string;
+            /** Instrument Id */
+            instrument_id: number;
+            /** Nav */
+            nav?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Units */
+            units?: string | null;
         };
         /** MetricsOut */
         MetricsOut: {
@@ -1105,6 +1376,41 @@ export interface components {
             /** Saved */
             saved: boolean;
         };
+        /** SaleIn */
+        SaleIn: {
+            /** Lots */
+            lots: components["schemas"]["SaleLotIn"][];
+            /** Nav */
+            nav?: string | null;
+            /**
+             * Sale Date
+             * Format: date
+             */
+            sale_date: string;
+        };
+        /** SaleLotIn */
+        SaleLotIn: {
+            /** Lot Id */
+            lot_id: number;
+            /** Units */
+            units: string;
+        };
+        /** SaleOut */
+        SaleOut: {
+            /** Amount */
+            amount: string;
+            /** Id */
+            id: number;
+            /** Nav */
+            nav: string;
+            /**
+             * Sale Date
+             * Format: date
+             */
+            sale_date: string;
+            /** Units */
+            units: string;
+        };
         /** Share */
         Share: {
             /**
@@ -1114,6 +1420,62 @@ export interface components {
             bucket: "equity" | "debt" | "gold" | "silver" | "other";
             /** Percent */
             percent: string;
+        };
+        /** SipEditIn */
+        SipEditIn: {
+            /** Amount */
+            amount: string;
+            /** Day */
+            day: number;
+            /** End Date */
+            end_date?: string | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+        };
+        /** SipIn */
+        SipIn: {
+            /** Amount */
+            amount: string;
+            /** Day */
+            day: number;
+            /** End Date */
+            end_date?: string | null;
+            /** Instrument Id */
+            instrument_id: number;
+            /** Note */
+            note?: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+        };
+        /** SipOut */
+        SipOut: {
+            /** Active */
+            active: boolean;
+            /** Amount */
+            amount: string;
+            /** Day */
+            day: number;
+            /** End Date */
+            end_date: string | null;
+            /** Id */
+            id: number;
+            /** Instalments */
+            instalments: number;
+            /** Note */
+            note: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
         };
         /** SipParams */
         SipParams: {
@@ -1713,6 +2075,66 @@ export interface operations {
             };
         };
     };
+    listHoldings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoldingSummaryOut"][];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getHolding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                instrument_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoldingOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     searchInstruments: {
         parameters: {
             query: {
@@ -2002,6 +2424,103 @@ export interface operations {
             };
         };
     };
+    addLumpSum: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LumpSumIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoldingOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    updateLot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lot_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LotEditIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoldingOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    deleteLot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                lot_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     getNavStatus: {
         parameters: {
             query?: never;
@@ -2052,6 +2571,165 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SyncRunOut"];
                 };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    sellUnits: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoldingOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    deleteSale: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sale_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    addSip: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SipIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoldingOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    updateSip: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sip_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SipEditIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoldingOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    deleteSip: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sip_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Problem details (RFC 9457) */
             "4XX": {
