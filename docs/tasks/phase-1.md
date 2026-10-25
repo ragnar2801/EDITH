@@ -6,7 +6,7 @@
 > **Already fixed:** React frontend + Python backend (D-023) · SQLite on the laptop (D-013) · free data only (D-012) · scheduled fetch + catch-up (D-022) · Windows + Task Scheduler (D-027) · Nifty 50 benchmark (D-043).
 > Everything else is decided **inside the task that needs it** (see each task's *Decisions* list). How this board works: [`README.md`](README.md)
 
-**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7) · **Done:** 7 / 11
+**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7) · **Done:** 7 / 13
 
 ---
 
@@ -21,10 +21,12 @@
 | T1-14 | Backtests: lump sum, SIP, SWP and custom, vs Nifty 50 | Feature | Claude | done | T1-12, T1-13 |
 | T1-15 | Fund holdings: lump sums, SIPs and sells | Feature | Claude | done | T1-12 |
 | T1-16 | Cash, and "I have ₹X, where does it go?" | Feature | Claude | done | T1-13, T1-15 |
-| T1-17 | Portfolio view vs target: value, P&L, XIRR, drift | Feature | Claude | todo | T1-13, T1-15, T1-16 |
+| T1-17 | Portfolio view vs target: value, P&L, XIRR, drift | Feature | Claude | todo | T1-13, T1-15, T1-16, T1-22 |
 | T1-18 | Daily NAV update on Windows | Infra | both | todo | T1-12 |
 | T1-19 | Phase 1 acceptance: my real funds, reconciled | Verify | both | todo | T1-12 to T1-18 |
 | T1-20 | Plan and option for every fund (AMFI leaves 5,623 blank) | Feature | Claude | todo | T1-02 |
+| T1-21 | UI kit and copy clean-up: no prose, info icons, no build talk | Feature | Claude | todo | T1-16 |
+| T1-22 | Journeys: new navigation, one fund page, Invest, Models, Settings | Feature | Claude | todo | T1-21 |
 | ~~T1-03 to T1-11~~ | Board v2 tasks for stocks, US, LRS and the watchlist | — | — | dropped | see [Dropped tasks](#dropped-tasks-board-v2) |
 
 ```
@@ -34,7 +36,7 @@ T1-01 ─► T1-02 ─► T1-12 ─┬─► T1-13 ─┬─► T1-14
                          └─► T1-18 ───────────────────┴─► T1-19
 ```
 
-T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12.
+T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12. T1-21 and T1-22 (UI rework, [`ui-redesign.md`](../ui-redesign.md)) come before T1-17, so the portfolio view is built once in its final place.
 
 ---
 
@@ -268,7 +270,7 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12.
 ---
 
 ## T1-17 · Portfolio view vs target: value, P&L, XIRR, drift
-`Feature` · Owner: Claude · Status: todo · Depends on: T1-13, T1-15, T1-16
+`Feature` · Owner: Claude · Status: todo · Depends on: T1-13, T1-15, T1-16, T1-22
 
 **Goal:** the dashboard shows what my funds are worth, how they've done against the Nifty 50 index fund, and how far each is from my target split.
 
@@ -341,6 +343,55 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12.
 - Searching "motilal oswal midcap" shows 127042 first, labelled Direct · Growth
 - No active scheme with a scheme-master entry is left without a plan and option
 - Refresh twice changes nothing; tests cover the parser on a slice of the real file
+
+---
+
+## T1-21 · UI kit and copy clean-up: no prose, info icons, no build talk
+`Feature` · Owner: Claude · Status: todo · Depends on: T1-16
+
+**Goal:** every screen looks and reads like a finished product: a title and its actions, figures and controls, and an info icon where a term needs defining. No paragraphs, task IDs, CLI commands or "coming soon".
+
+**Scope**
+- Found 2026-10-25 (UI review, [`ui-redesign.md`](../ui-redesign.md) sections 1, 2, 6 and 7): every page opens with an explanatory paragraph, card descriptions explain algorithms, task IDs and `just` commands appear in the UI, and each page hand-rolls headers, tables, fields and confirms
+- Components (shadcn by hand on the installed `radix-ui`): `PageHeader`, `InfoTip`, `Field`, `Dialog`, `AlertDialog`, `Tabs`, `DropdownMenu`, `DataTable`, `EmptyState`, `Toast`, `Skeleton`
+- Apply them to today's screens without moving anything: strip prose and build talk, hint lines → info tips or placeholders, `window.confirm` → confirm dialog, "Saved." → toast, row buttons → `⋯` menu, AMFI codes out of list rows, `SectionPage` deleted
+- Screen rules (`ui-redesign.md` section 2) added to `CLAUDE.md`
+
+**Decisions** (candidates in `ui-redesign.md` section 9)
+- Screen rules into `CLAUDE.md` (#1); toast component (#7); UI words: bucket, lot, earmark, deployable (#3 to #5)
+
+**Done when**
+- No page has a subtitle paragraph or an explanatory card description; no UI string contains a task ID, a `just` command or a data-source name
+- Every former hint is an info tip (keyboard-focusable, readable on tap) or gone
+- Deletes go through a confirm dialog; saves and deletes show a toast
+- `just lint`, `just test` pass; screenshots at desktop and phone width, light and dark
+
+---
+
+## T1-22 · Journeys: new navigation, one fund page, Invest, Models, Settings
+`Feature` · Owner: Claude · Status: todo · Depends on: T1-21
+
+**Goal:** the app is organised around what I come to do (see what I own, record a transaction, invest new cash, design and test a split, look up a fund), each on its own screen.
+
+**Scope** (`ui-redesign.md` sections 3 to 5)
+- Navigation: Portfolio · Invest · Models · Funds, plus a header with NAV freshness (sync on click), a global `+ Add` and Settings
+- Portfolio (`/`): funds tab (today's holdings list) and cash tab (accounts); setup checklist when empty
+- Add transaction dialog (lump sum, SIP, sell), global and pre-filled from a fund
+- Invest (`/invest`): the cash plan alone, amount pre-filled with investable cash
+- Models: list with a Target badge and "Set as target"; full-page editor; model page with Overview and Backtest tabs (no bucket picker)
+- One fund page (`/funds/:id`) with Overview, Transactions and Details tabs, replacing the instrument and holding pages
+- Settings: invest rules and data (sync log, tracked funds, list status)
+- Redirects from the old routes; fund search limited to mutual funds
+
+**Decisions** (candidates in `ui-redesign.md` section 9)
+- Top bar or sidebar (#2); where cash accounts live (#6); fund-list download from the UI (#8); hide stocks and US listings (#9)
+
+**Done when**
+- Journeys J1 to J8 in `ui-redesign.md` work as written, checked in the running app
+- Recording a lump sum takes 3 steps from any screen without leaving it
+- Clicking any fund name anywhere opens the same fund page
+- The target model is visible on Models, Invest and Settings, and set from Models
+- Old URLs redirect; `just lint`, `just test`, `just api-check` pass; screenshots at desktop and phone width, light and dark
 
 ---
 
