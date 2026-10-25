@@ -13,6 +13,7 @@ Personal stock analyst / portfolio manager for Indian and US markets, built **mu
 - Only what's in the `agents.md` decision log as **Active** is decided. Library names and data sources elsewhere are proposals until the task that needs them decides.
 - Each task starts with its *Decisions* list. Every decision is written under the task and logged as a `D-###` row in `agents.md`.
 - Update the board table and the task's detail section together. Commit messages start with the task ID.
+- **Work on `main` only.** Commit and push straight to `main`; no feature branches or pull requests.
 - New work found mid-task becomes a new task at the end of the board.
 
 ## Development
