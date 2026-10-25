@@ -1,6 +1,6 @@
 # Friday (EDITH repo)
 
-Personal stock analyst / portfolio manager for Indian and US markets. Design-stage project.
+Personal stock analyst / portfolio manager for Indian and US markets, built **mutual funds first** (D-043): Phase 1 is the fund tracker and planner.
 
 ## Start of every session
 
@@ -26,7 +26,9 @@ Conventions (decisions D-029 to D-037):
 - **Frontend never does arithmetic on amounts.** Format with `formatMoney`; the backend computes every figure.
 - **After changing an endpoint, run `just api`** and commit the regenerated `frontend/src/api/` files (CI fails if they're stale).
 - **Schema changes go through Alembic:** change models, then `just revision "what changed"`, review the file, commit it.
-- **Instruments (D-038):** everything points at `instruments.id`, never at a symbol or ISIN. Pick instruments in the UI with `InstrumentSearch`. Instruments are never deleted; a list refresh marks them inactive.
+- **Instruments (D-038):** everything points at `instruments.id`, never at a symbol or ISIN. Pick instruments in the UI with `InstrumentSearch` (pass `kind="mutual_fund"` for fund-only pickers). Instruments are never deleted; a list refresh marks them inactive.
+- **NAVs (D-044 to D-046):** stored exactly as published, up to 8 places (`Nav` type); read them with `friday.core.navs.service.nav_series`. Funds in a bucket are tracked automatically.
+- **Backtests (D-048 to D-050):** amounts and units are `Decimal`, ratios are floats rounded to 2 places with `engine.figure`. Charts use `components/charts/LineChart` (SVG); numbers there are for drawing only, and every figure shown as text comes from the API.
 - Errors are RFC 9457 problem details. The server binds to `127.0.0.1` only.
 - Windows is the target OS: keep commands Windows-safe (no `&&` chains in PowerShell 5, `npm.cmd` not `npm.ps1`, LF line endings via `.gitattributes`).
 

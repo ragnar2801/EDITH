@@ -6,7 +6,7 @@
 > **Already fixed:** React frontend + Python backend (D-023) · SQLite on the laptop (D-013) · free data only (D-012) · scheduled fetch + catch-up (D-022) · Windows + Task Scheduler (D-027) · Nifty 50 benchmark (D-043).
 > Everything else is decided **inside the task that needs it** (see each task's *Decisions* list). How this board works: [`README.md`](README.md)
 
-**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7) · **Done:** 2 / 10
+**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7) · **Done:** 5 / 11
 
 ---
 
@@ -16,14 +16,15 @@
 |----|------|------|-------|--------|------------|
 | T1-01 | Foundation: app skeleton running on Windows | Infra | Claude | done | — |
 | T1-02 | Instruments: find any stock, fund or ETF | Feature | Claude | done | T1-01 |
-| T1-12 | Fund NAVs: full history, daily catch-up, refresh | Feature | Claude | doing | T1-02 |
-| T1-13 | Buckets: my target split | Feature | Claude | todo | T1-12 |
-| T1-14 | Backtests: lump sum, SIP, SWP and custom, vs Nifty 50 | Feature | Claude | todo | T1-12, T1-13 |
+| T1-12 | Fund NAVs: full history, daily catch-up, refresh | Feature | Claude | done | T1-02 |
+| T1-13 | Buckets: my target split | Feature | Claude | done | T1-12 |
+| T1-14 | Backtests: lump sum, SIP, SWP and custom, vs Nifty 50 | Feature | Claude | done | T1-12, T1-13 |
 | T1-15 | Fund holdings: folios, transactions, FIFO lots | Feature | Claude | todo | T1-12 |
 | T1-16 | Cash, and "I have ₹X, where does it go?" | Feature | Claude | todo | T1-13, T1-15 |
 | T1-17 | Portfolio view vs target: value, P&L, XIRR, drift | Feature | Claude | todo | T1-13, T1-15, T1-16 |
 | T1-18 | Daily NAV update on Windows | Infra | both | todo | T1-12 |
 | T1-19 | Phase 1 acceptance: my real funds, reconciled | Verify | both | todo | T1-12 to T1-18 |
+| T1-20 | Plan and option for every fund (AMFI leaves 5,623 blank) | Feature | Claude | todo | T1-02 |
 | ~~T1-03 to T1-11~~ | Board v2 tasks for stocks, US, LRS and the watchlist | — | — | dropped | see [Dropped tasks](#dropped-tasks-board-v2) |
 
 ```
@@ -111,7 +112,7 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12.
 
 ---
 ## T1-12 · Fund NAVs: full history, daily catch-up, refresh
-`Feature` · Owner: Claude · Status: doing · Depends on: T1-02
+`Feature` · Owner: Claude · Status: done · Depends on: T1-02
 
 **Goal:** Friday has every NAV since launch for the funds I track, catches up on missed days by itself, and I can trigger a refresh from the UI or the command line.
 
@@ -128,6 +129,13 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12.
 - Decided: **one sync model, from Friday:** catch up to today for every tracked fund, upserting on (fund, date) so a re-run adds nothing. Tracked = marked by me, in a bucket, or a bucket's benchmark. Sync runs on demand in Phase 1 (button, CLI) and daily from T1-18. Each run is logged with per-fund results. Mutual funds and AMFI-listed schemes only (D-046)
 - Decided: NAV statistics (changes, CAGR, 52-week range) are computed in the backend, like every other figure (D-032, D-046)
 
+**Progress (2026-10-25)**
+- Built: tables `fund_navs`, `tracked_funds`, `nav_syncs` (migration 0003); mfapi.in and AMFI `NAVAll.txt` parsers; downloads with retries; sync that stores only missing or corrected NAVs and commits fund by fund; NAV statistics; endpoints `GET /navs/status`, `POST /navs/sync`, `GET /instruments/{id}/navs`, `GET /instruments/{id}/nav-summary`, `PUT`/`DELETE /instruments/{id}/tracking`; `friday navs track <AMFI code>` and `friday navs sync` / `just navs`; Data status page; NAV card on fund pages (figures, chart with 1M … Max, recent NAVs); Friday's SVG chart ported to React (D-050), drawn at the real width so it stays readable on a phone
+- Live run (2026-10-25): Parag Parikh Flexi Cap Direct Growth, 3,298 NAVs from 28 May 2013; UTI Nifty 50 Index Fund Direct Growth, 3,398 NAVs from 2 Jan 2013; both in 2.7 s, and a second run added nothing. Latest NAV ₹88.9695 on 23 Oct 2026, the same as AMFI's `NAVAll.txt`. With the five funds of the bucket below: 16,603 NAVs
+- Found: AMFI's file had 475 schemes with 5–8 decimal places (D-045). 5,623 of its 14,412 rows have blank Plan and Option columns (e.g. Motilal Oswal Midcap), so search can't tell Direct Growth from IDCW for them → new task T1-20
+- Tests: parsers on slices of the real responses (8-place NAVs, `0.0000` NAVs, wrong scheme, HTML instead of JSON), sync (first sync, repeat adds nothing, missed days filled exactly, corrections, AMFI fallback, one fund failing, all failing, untracked funds refused), statistics by hand, API; frontend: Data status page, NAV card, tracking
+- Windows CI green: run #7, https://github.com/ragnar2801/EDITH/actions/runs/40160211154
+
 **Done when**
 - Tracking a fund pulls its full history; a second sync adds nothing; skipping days and syncing fills exactly the missing NAVs
 - When mfapi is unreachable, the latest NAV still comes from AMFI's file
@@ -137,7 +145,7 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12.
 ---
 
 ## T1-13 · Buckets: my target split
-`Feature` · Owner: Claude · Status: todo · Depends on: T1-12
+`Feature` · Owner: Claude · Status: done · Depends on: T1-12
 
 **Goal:** I can write down my target split (e.g. 40% flexi cap, 25% large cap, 20% mid cap, 15% small cap) as a bucket, with a rebalance policy and a benchmark, and keep several to compare.
 
@@ -150,6 +158,13 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12.
 **Decisions** (2026-10-25, decided while bringing Friday's features in; review welcome)
 - Decided: weights are exact percentages (2 decimal places) that must **add up to exactly 100**; nothing is silently normalised (Friday normalised). Funds only: AMFI schemes. Rebalance policy none / monthly / quarterly / yearly. Benchmark: any fund, default **UTI Nifty 50 Index Fund – Direct Plan – Growth** (AMFI 120716, history from 2013) for the Nifty 50 (D-043). Deleting a bucket deletes its saved backtests (D-047)
 
+**Progress (2026-10-25)**
+- Built: tables `buckets`, `bucket_funds` (migration 0004); validation (exact total of 100, funds only, no duplicates, unique names); endpoints `GET`/`POST /buckets`, `GET`/`PUT`/`DELETE /buckets/{id}`, `GET /buckets/default-benchmark`; funds and benchmarks of buckets count as tracked; saving a bucket downloads NAVs for funds that have none; Buckets page with an editor (fund search limited to mutual funds, running total, equal weights) and a dashboard summary
+- The editor's running total and "equal weights" work in whole basis points in the browser (weights, not money: 0.1 + 0.2 + 99.7 is exactly 100); the backend's check is the one that counts
+- Live: bucket *Core 40/25/20/15* (Parag Parikh Flexi Cap, Nippon India Large Cap, Motilal Oswal Midcap, Nippon India Small Cap, all Direct Growth) against the UTI Nifty 50 Index Fund; NAVs for all four from 25 Feb 2014
+- Tests: create, read, edit (weights, order, members), delete, totals of 99.99 and 100.01 refused with the reason, JSON numbers refused, a stock refused, a fund listed twice, duplicate names, tracking and untracking; frontend: editor, exact totals, equal weights, refused save, dashboard
+- Windows CI green: run #8, https://github.com/ragnar2801/EDITH/actions/runs/40160688693
+
 **Done when**
 - A bucket of four funds with weights adding to 100 saves; 99.99 is rejected with the reason
 - Its funds and benchmark are tracked and their NAVs sync
@@ -158,7 +173,7 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12.
 ---
 
 ## T1-14 · Backtests: lump sum, SIP, SWP and custom, vs Nifty 50
-`Feature` · Owner: Claude · Status: todo · Depends on: T1-12, T1-13
+`Feature` · Owner: Claude · Status: done · Depends on: T1-12, T1-13
 
 **Goal:** I can see how a bucket would have done in the past, invested as a lump sum, as a SIP, drawn down as an SWP, or along my own timeline of buys and sells, next to the same money in the Nifty 50 index fund.
 
@@ -174,6 +189,16 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12.
 - Decided: engine semantics as in Friday: NAVs aligned on the union of dates and carried forward; a run starts when every fund has a NAV (and says so if that clips the requested start); SIP instalments on the first NAV date of each period; SWP sells pro rata to value; Custom executes on the first NAV date on or after each trade, sells before buys on the same day. **Amounts and units are exact `Decimal`s** like a ledger (D-032); ratios (XIRR, CAGR, volatility, Sharpe, Sortino, drawdown) are floats rounded to 2 places. A NAV more than 1.8× or under 0.55× the median of its neighbours is treated as a bad tick and replaced, **with a warning** (Friday did it silently). The **benchmark gets the same cash flows** as the bucket (Friday scaled a lump sum, which misleads for SIPs and SWPs). Risk-free rate is an input, default 0. Costs, exit loads and taxes are off (D-048)
 - Decided: every run is stored; the last 20 unsaved runs are kept, saved runs stay until deleted. **Interval figures come from the backend** for a stored run (Modified Dietz return, max drawdown, start and end value, money in and out in the window), so the UI does no arithmetic (D-049)
 - Decided: charts use **Friday's own SVG line chart, ported to React**; no chart library yet. Coordinates use JavaScript numbers for drawing only; every figure shown as text comes from the API. Chart libraries stay candidates for T1-17 (D-050)
+
+**Progress (2026-10-25)**
+- Built: `friday.core.backtest` (engine, request and result models, service), table `backtest_runs` (migration 0005), endpoints `POST /backtests`, `GET /buckets/{id}/backtests`, `GET`/`PATCH`/`DELETE /backtests/{id}`, `GET /backtests/{id}/interval`; Backtest page in Friday's layout (controls on the left; figures next to the benchmark; chart with zoom presets, hover, drag to measure and trade markers; window figures; funds at the end, or P&L per fund and the trade log for custom runs); save with a name, load, delete
+- Changed from Friday, found while porting: the benchmark gets the **same cash flows** (Friday compared a SIP with a lump sum); bad-tick replacement now **warns**, and compares each NAV with up to 5 neighbours each side **within 15 days** (Friday's 2-neighbour window let two bad ticks in a row overwrite a good NAV next to them; without the day limit a gap in the history looked like a spike); CAGR is **time-weighted for every strategy** and drawdown, volatility, Sharpe and Sortino come from the same time-weighted index, so SIPs and SWPs are comparable with lump sums; a **same-day sell and buy nets off** in money put in and taken out; weekly SIPs use ISO weeks (Monday start); custom trades always execute at the NAV (Friday allowed a price override, which has no meaning for funds); window figures come from the backend (D-049)
+- Live (2026-10-25, *Core 40/25/20/15*, 1 Jan 2015 to 23 Oct 2026): SIP of ₹10,000 a month: ₹14.2 lakh in, ₹40.31 lakh at the end, XIRR 16.56% vs 10.15% for the same SIP in the Nifty 50 index fund. Lump sum of ₹1 lakh: ₹5.61 lakh, CAGR 15.72% vs 9.91%. SWP from ₹50 lakh at ₹40,000 a month: the money lasted; ₹56.4 lakh withdrawn and ₹1.19 crore left (the index fund: ₹47.5 lakh left). Max drawdown 35% (2020). Each run takes 0.2–0.35 s
+- Not ported from Friday: its Help page (EDITH's README and docs cover it), its Settings page (the theme follows the system; the risk-free rate is a backtest field) and NSE stock prices from Yahoo (Phase 6)
+- Tests: 26 engine tests on hand-worked examples (Friday's own, plus rebalancing, SIP and SWP by hand, weekly SIP dates, pro-rata SWP, a switch netting off, oversell, holiday execution, benchmark replay and its cap, growth index, Modified Dietz by hand, despiking cases) and 17 API tests (runs, start clipped, save/list/load/delete, pruning to 20, window figures, custom runs, refused parameters, funds outside the bucket, no NAVs yet, bucket deletion); frontend: run, window figures, save and load, refused run, choosing a bucket
+- Totals across the repo: backend 228 tests, frontend 35; `just lint`, `just test`, `just api-check`, `just smoke` pass on Linux; screenshots checked at desktop and phone width, light and dark
+- Windows CI: run #9, https://github.com/ragnar2801/EDITH/actions/runs/40161747646
+- Worth doing once on my laptop: `just setup`, `just instruments --source amfi`, then build my real bucket and run a SIP backtest
 
 **Done when**
 - Hand-worked examples pass as unit tests: lump sum doubling, weighted split, SIP at a flat NAV (XIRR ≈ 0), SWP depletion, a Custom rotation, a capped oversell, the benchmark getting the same SIP
@@ -284,6 +309,26 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12.
 **Done when**
 - Units, cost and value match my statements within rounding, or every difference is explained
 - A week of daily updates shows every NAV date filled once, no duplicates
+
+---
+
+## T1-20 · Plan and option for every fund
+`Feature` · Owner: Claude · Status: todo · Depends on: T1-02
+
+**Goal:** search and buckets always show whether a fund variant is Direct or Regular, Growth or IDCW, so I never pick the wrong one.
+
+**Scope**
+- Found in T1-12 (2026-10-25): 5,623 of the 14,412 rows in AMFI's `NAVAll.txt` have blank Plan and Option columns, and some active funds' names don't say either (e.g. Motilal Oswal Midcap: 127042 is Direct Growth, 127044 Direct IDCW; search showed 127044 first, unlabelled). The wrong pick understates backtest returns
+- AMFI's scheme master (`portal.amfiindia.com/DownloadSchemeData_Po.aspx?mf=0`, CSV, checked 2026-10-25) has a *Scheme NAV Name* such as "Motilal Oswal Midcap Fund-Direct Plan-Growth Option", plus launch dates and minimum amounts
+- Import it alongside `NAVAll.txt` and fill plan and option where they're blank; keep "Direct + Growth first" in search (D-042)
+
+**Decisions**
+- Source and refresh rhythm for the scheme master; what to do when the two files disagree
+
+**Done when**
+- Searching "motilal oswal midcap" shows 127042 first, labelled Direct · Growth
+- No active scheme with a scheme-master entry is left without a plan and option
+- Refresh twice changes nothing; tests cover the parser on a slice of the real file
 
 ---
 
