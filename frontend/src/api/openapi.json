@@ -36,6 +36,190 @@
         "title": "Alias",
         "type": "object"
       },
+      "BucketFundIn": {
+        "properties": {
+          "instrument_id": {
+            "title": "Instrument Id",
+            "type": "integer"
+          },
+          "weight": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Weight",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instrument_id",
+          "weight"
+        ],
+        "title": "BucketFundIn",
+        "type": "object"
+      },
+      "BucketFundOut": {
+        "properties": {
+          "coverage": {
+            "$ref": "#/components/schemas/CoverageOut"
+          },
+          "fund": {
+            "$ref": "#/components/schemas/FundRef"
+          },
+          "weight": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Weight",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fund",
+          "coverage",
+          "weight"
+        ],
+        "title": "BucketFundOut",
+        "type": "object"
+      },
+      "BucketIn": {
+        "properties": {
+          "benchmark_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "funds": {
+            "items": {
+              "$ref": "#/components/schemas/BucketFundIn"
+            },
+            "minItems": 1,
+            "title": "Funds",
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "rebalance": {
+            "default": "none",
+            "enum": [
+              "none",
+              "monthly",
+              "quarterly",
+              "yearly"
+            ],
+            "title": "Rebalance",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "funds"
+        ],
+        "title": "BucketIn",
+        "type": "object"
+      },
+      "BucketOut": {
+        "properties": {
+          "benchmark": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FundWithCoverage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "common_start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Common Start"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "funds": {
+            "items": {
+              "$ref": "#/components/schemas/BucketFundOut"
+            },
+            "title": "Funds",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "rebalance": {
+            "enum": [
+              "none",
+              "monthly",
+              "quarterly",
+              "yearly"
+            ],
+            "title": "Rebalance",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "rebalance",
+          "benchmark",
+          "funds",
+          "common_start",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "BucketOut",
+        "type": "object"
+      },
       "ClassificationOut": {
         "properties": {
           "allocation": {
@@ -310,6 +494,22 @@
           "message"
         ],
         "title": "FundResultOut",
+        "type": "object"
+      },
+      "FundWithCoverage": {
+        "properties": {
+          "coverage": {
+            "$ref": "#/components/schemas/CoverageOut"
+          },
+          "fund": {
+            "$ref": "#/components/schemas/FundRef"
+          }
+        },
+        "required": [
+          "fund",
+          "coverage"
+        ],
+        "title": "FundWithCoverage",
         "type": "object"
       },
       "Health": {
@@ -1451,6 +1651,247 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/buckets": {
+      "get": {
+        "operationId": "listBuckets",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BucketOut"
+                  },
+                  "title": "Response Listbuckets",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "List All",
+        "tags": [
+          "buckets"
+        ]
+      },
+      "post": {
+        "description": "Weights must add up to exactly 100. Every fund and the benchmark become tracked.",
+        "operationId": "createBucket",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BucketIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BucketOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Create",
+        "tags": [
+          "buckets"
+        ]
+      }
+    },
+    "/api/v1/buckets/default-benchmark": {
+      "get": {
+        "description": "The Nifty 50 index fund new buckets are compared with (D-043), if the fund list has it.",
+        "operationId": "getDefaultBenchmark",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/FundRef"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Getdefaultbenchmark"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Get Default Benchmark",
+        "tags": [
+          "buckets"
+        ]
+      }
+    },
+    "/api/v1/buckets/{bucket_id}": {
+      "delete": {
+        "description": "Delete a bucket and its saved backtests. Its funds' NAVs stay.",
+        "operationId": "deleteBucket",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bucket_id",
+            "required": true,
+            "schema": {
+              "title": "Bucket Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Delete",
+        "tags": [
+          "buckets"
+        ]
+      },
+      "get": {
+        "operationId": "getBucket",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bucket_id",
+            "required": true,
+            "schema": {
+              "title": "Bucket Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BucketOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Get",
+        "tags": [
+          "buckets"
+        ]
+      },
+      "put": {
+        "operationId": "updateBucket",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bucket_id",
+            "required": true,
+            "schema": {
+              "title": "Bucket Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BucketIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BucketOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Update",
+        "tags": [
+          "buckets"
+        ]
+      }
+    },
     "/api/v1/diagnostics/echo": {
       "post": {
         "description": "Return the payload unchanged, so tests can prove amounts and timestamps survive.",

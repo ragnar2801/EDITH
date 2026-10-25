@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from friday.api.deps import SessionDep
+from friday.api.schemas import CoverageOut, FundRef, NavPointOut
 from friday.core.instruments.models import Instrument
 from friday.core.navs.models import NavSync
 from friday.core.navs.service import (
@@ -31,31 +32,9 @@ from friday.core.navs.service import (
     untrack,
 )
 from friday.core.navs.sources import NavPoint
-from friday.core.schema_types import Nav, Percent, UtcDatetime
+from friday.core.schema_types import Percent, UtcDatetime
 
 router = APIRouter(tags=["navs"])
-
-
-class NavPointOut(BaseModel):
-    date: date
-    nav: Nav
-
-
-class FundRef(BaseModel):
-    id: int
-    name: str
-    amfi_code: str | None
-    fund_house: str | None
-    fund_category: str | None
-    plan: str | None
-    option: str | None
-    is_active: bool
-
-
-class CoverageOut(BaseModel):
-    first: date | None
-    last: date | None
-    count: int
 
 
 class FundResultOut(BaseModel):

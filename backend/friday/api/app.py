@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from friday import __version__
 from friday.api.errors import PROBLEM_RESPONSES, install_error_handlers
 from friday.api.frontend import mount_frontend
-from friday.api.routes import instruments, navs, system
+from friday.api.routes import buckets, instruments, navs, system
 from friday.config import Settings
 from friday.core.db import make_engine, make_session_factory, upgrade_database
 from friday.core.navs.download import HttpNavFetcher
@@ -39,5 +39,6 @@ def create_app(settings: Settings | None = None, *, migrate: bool = True) -> Fas
     app.include_router(system.router, prefix=API_PREFIX, responses=PROBLEM_RESPONSES)
     app.include_router(instruments.router, prefix=API_PREFIX, responses=PROBLEM_RESPONSES)
     app.include_router(navs.router, prefix=API_PREFIX, responses=PROBLEM_RESPONSES)
+    app.include_router(buckets.router, prefix=API_PREFIX, responses=PROBLEM_RESPONSES)
     mount_frontend(app, settings.frontend_dist)  # must be last: it catches every other path
     return app

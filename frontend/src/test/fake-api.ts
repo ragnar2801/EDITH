@@ -144,3 +144,38 @@ export function syncRun(extra: Partial<Schemas['SyncRunOut']> = {}): Schemas['Sy
     ...extra,
   }
 }
+
+export const nifty: Schemas['InstrumentSummary'] = {
+  ...parag,
+  id: 9,
+  name: 'UTI Nifty 50 Index Fund',
+  amfi_code: '120716',
+  isin: 'INF789F01XA0',
+  fund_house: 'UTI Mutual Fund',
+  fund_category: 'Other Scheme - Index Funds',
+  variants: [],
+}
+
+export function fundRef(summary: Schemas['InstrumentSummary']): Schemas['FundRef'] {
+  const { id, name, amfi_code, fund_house, fund_category, plan, option, is_active } = summary
+  return { id, name, amfi_code, fund_house, fund_category, plan, option, is_active }
+}
+
+export function bucket(extra: Partial<Schemas['BucketOut']> = {}): Schemas['BucketOut'] {
+  const coverage = { first: '2013-05-28', last: '2026-10-23', count: 3298 }
+  return {
+    id: 1,
+    name: 'Core',
+    description: null,
+    rebalance: 'yearly',
+    benchmark: { fund: fundRef(nifty), coverage },
+    funds: [
+      { fund: fundRef(parag), weight: '60', coverage },
+      { fund: fundRef(nifty), weight: '40', coverage },
+    ],
+    common_start: '2013-05-28',
+    created_at: '2026-10-25T04:00:00Z',
+    updated_at: '2026-10-25T04:00:00Z',
+    ...extra,
+  }
+}

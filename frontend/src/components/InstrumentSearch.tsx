@@ -19,6 +19,8 @@ type Props = {
   label?: string
   placeholder?: string
   autoFocus?: boolean
+  /** Only this kind, e.g. mutual funds for buckets (D-043). */
+  kind?: InstrumentSummary['kind']
 }
 
 /**
@@ -30,13 +32,14 @@ export function InstrumentSearch({
   label = 'Search instruments',
   placeholder = 'Name, symbol, scheme code or ISIN',
   autoFocus,
+  kind,
 }: Props) {
   const listId = useId()
   const [text, setText] = useState('')
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
   const query = useDebouncedValue(text.trim(), 200)
-  const search = useInstrumentSearch(query)
+  const search = useInstrumentSearch(query, kind)
   const results = query ? (search.data ?? []) : []
   const showList = open && query.length > 0
 

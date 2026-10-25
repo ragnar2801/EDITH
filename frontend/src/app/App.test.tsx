@@ -15,8 +15,16 @@ function renderApp(path = '/') {
   )
 }
 
+/** Answer the health check with `response`; every other endpoint is offline. */
 function stubHealth(response: () => Promise<Response>) {
-  vi.stubGlobal('fetch', vi.fn(response))
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (request: Request) =>
+      new URL(request.url).pathname === '/api/v1/health'
+        ? response()
+        : new Response('offline', { status: 503 }),
+    ),
+  )
 }
 
 afterEach(() => {

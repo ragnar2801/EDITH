@@ -4,6 +4,69 @@
  */
 
 export interface paths {
+    "/api/v1/buckets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List All */
+        get: operations["listBuckets"];
+        put?: never;
+        /**
+         * Create
+         * @description Weights must add up to exactly 100. Every fund and the benchmark become tracked.
+         */
+        post: operations["createBucket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/buckets/default-benchmark": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Default Benchmark
+         * @description The Nifty 50 index fund new buckets are compared with (D-043), if the fund list has it.
+         */
+        get: operations["getDefaultBenchmark"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/buckets/{bucket_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get */
+        get: operations["getBucket"];
+        /** Update */
+        put: operations["updateBucket"];
+        post?: never;
+        /**
+         * Delete
+         * @description Delete a bucket and its saved backtests. Its funds' NAVs stay.
+         */
+        delete: operations["deleteBucket"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/diagnostics/echo": {
         parameters: {
             query?: never;
@@ -242,6 +305,66 @@ export interface components {
             /** Value */
             value: string;
         };
+        /** BucketFundIn */
+        BucketFundIn: {
+            /** Instrument Id */
+            instrument_id: number;
+            /** Weight */
+            weight: string;
+        };
+        /** BucketFundOut */
+        BucketFundOut: {
+            coverage: components["schemas"]["CoverageOut"];
+            fund: components["schemas"]["FundRef"];
+            /** Weight */
+            weight: string;
+        };
+        /** BucketIn */
+        BucketIn: {
+            /** Benchmark Id */
+            benchmark_id?: number | null;
+            /** Description */
+            description?: string | null;
+            /** Funds */
+            funds: components["schemas"]["BucketFundIn"][];
+            /** Name */
+            name: string;
+            /**
+             * Rebalance
+             * @default none
+             * @enum {string}
+             */
+            rebalance: "none" | "monthly" | "quarterly" | "yearly";
+        };
+        /** BucketOut */
+        BucketOut: {
+            benchmark: components["schemas"]["FundWithCoverage"] | null;
+            /** Common Start */
+            common_start: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string | null;
+            /** Funds */
+            funds: components["schemas"]["BucketFundOut"][];
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /**
+             * Rebalance
+             * @enum {string}
+             */
+            rebalance: "none" | "monthly" | "quarterly" | "yearly";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** ClassificationOut */
         ClassificationOut: {
             /** Allocation */
@@ -322,6 +445,11 @@ export interface components {
              * @enum {string}
              */
             status: "ok" | "fallback" | "failed";
+        };
+        /** FundWithCoverage */
+        FundWithCoverage: {
+            coverage: components["schemas"]["CoverageOut"];
+            fund: components["schemas"]["FundRef"];
         };
         /** Health */
         Health: {
@@ -694,6 +822,192 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listBuckets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BucketOut"][];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    createBucket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BucketIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BucketOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getDefaultBenchmark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FundRef"] | null;
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getBucket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bucket_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BucketOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    updateBucket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bucket_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BucketIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BucketOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    deleteBucket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bucket_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     echo: {
         parameters: {
             query?: never;

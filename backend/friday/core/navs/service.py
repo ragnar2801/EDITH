@@ -14,6 +14,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from sqlalchemy import func, insert, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
+from friday.core.buckets.service import bucket_reasons
 from friday.core.db import session_scope
 from friday.core.instruments.download import FetchError
 from friday.core.instruments.models import Instrument
@@ -47,8 +48,7 @@ def require_fund(instrument: Instrument) -> None:
 
 
 def _bucket_reasons(session: Session) -> dict[int, list[str]]:
-    """Funds that buckets use, with why. Filled in by T1-13 (buckets)."""
-    return {}
+    return bucket_reasons(session)
 
 
 def tracking_reasons(session: Session) -> dict[int, list[str]]:

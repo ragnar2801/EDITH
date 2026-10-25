@@ -20,12 +20,12 @@ export function useHealth() {
   })
 }
 
-export function useInstrumentSearch(q: string) {
+export function useInstrumentSearch(q: string, kind?: Schemas['InstrumentSummary']['kind']) {
   return useQuery({
-    queryKey: ['instrument-search', q],
+    queryKey: ['instrument-search', q, kind ?? 'any'],
     queryFn: async () => {
       const { data, error } = await api.GET('/api/v1/instruments/search', {
-        params: { query: { q, limit: 12 } },
+        params: { query: { q, limit: 12, ...(kind ? { kind } : {}) } },
       })
       if (error) throw failure(error)
       return data
@@ -192,5 +192,74 @@ export function useUntrackFund(id: number) {
       return data
     },
     onSettled: () => invalidateNavs(queryClient),
+  })
+}
+
+export function useBuckets() {
+  return useQuery({
+    queryKey: ['buckets'],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/api/v1/buckets')
+      if (error) throw failure(error)
+      return data
+    },
+  })
+}
+
+export function useDefaultBenchmark() {
+  return useQuery({
+    queryKey: ['default-benchmark'],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/api/v1/buckets/default-benchmark')
+      if (error) throw failure(error)
+      return data ?? null
+    },
+    staleTime: Infinity,
+  })
+}
+
+/** Create a bucket (no `id`) or replace one. Then download NAVs for funds that have none. */
+export function useSaveBucket() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, body }: { id?: number; body: Schemas['BucketIn'] }) => {
+      const { data, error } = id
+        ? await api.PUT('/api/v1/buckets/{bucket_id}', {
+            params: { path: { bucket_id: id } },
+            body,
+          })
+        : await api.POST('/api/v1/buckets', { body })
+      if (error) throw failure(error)
+      const missing = [...data.funds, ...(data.benchmark ? [data.benchmark] : [])]
+        .filter((member) => member.coverage.count === 0)
+        .map((member) => member.fund.id)
+      if (missing.length > 0) {
+        const sync = await api.POST('/api/v1/navs/sync', { body: { instrument_ids: missing } })
+        if (sync.error) throw failure(sync.error)
+      }
+      return data
+    },
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['buckets'] }),
+        invalidateNavs(queryClient),
+      ]),
+  })
+}
+
+export function useDeleteBucket() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { error } = await api.DELETE('/api/v1/buckets/{bucket_id}', {
+        params: { path: { bucket_id: id } },
+      })
+      if (error) throw failure(error)
+    },
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['buckets'] }),
+        queryClient.invalidateQueries({ queryKey: ['nav-status'] }),
+      ]),
   })
 }
