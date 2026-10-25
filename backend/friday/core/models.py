@@ -2,6 +2,7 @@
 
 from friday.core.backtest.models import BacktestRun
 from friday.core.buckets.models import Bucket, BucketFund
+from friday.core.cash.models import CashAccount, PlanSettings
 from friday.core.holdings.models import Lot, LotSale, Sip
 from friday.core.instruments.models import (
     ClassificationOverride,
@@ -15,6 +16,7 @@ __all__ = [
     "BacktestRun",
     "Bucket",
     "BucketFund",
+    "CashAccount",
     "ClassificationOverride",
     "FundNav",
     "Instrument",
@@ -23,6 +25,7 @@ __all__ = [
     "Lot",
     "LotSale",
     "NavSync",
+    "PlanSettings",
     "Sip",
     "TrackedFund",
 ]

@@ -6,7 +6,7 @@
 > **Already fixed:** React frontend + Python backend (D-023) · SQLite on the laptop (D-013) · free data only (D-012) · scheduled fetch + catch-up (D-022) · Windows + Task Scheduler (D-027) · Nifty 50 benchmark (D-043).
 > Everything else is decided **inside the task that needs it** (see each task's *Decisions* list). How this board works: [`README.md`](README.md)
 
-**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7) · **Done:** 6 / 11
+**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7) · **Done:** 7 / 11
 
 ---
 
@@ -20,7 +20,7 @@
 | T1-13 | Buckets: my target split | Feature | Claude | done | T1-12 |
 | T1-14 | Backtests: lump sum, SIP, SWP and custom, vs Nifty 50 | Feature | Claude | done | T1-12, T1-13 |
 | T1-15 | Fund holdings: lump sums, SIPs and sells | Feature | Claude | done | T1-12 |
-| T1-16 | Cash, and "I have ₹X, where does it go?" | Feature | Claude | todo | T1-13, T1-15 |
+| T1-16 | Cash, and "I have ₹X, where does it go?" | Feature | Claude | done | T1-13, T1-15 |
 | T1-17 | Portfolio view vs target: value, P&L, XIRR, drift | Feature | Claude | todo | T1-13, T1-15, T1-16 |
 | T1-18 | Daily NAV update on Windows | Infra | both | todo | T1-12 |
 | T1-19 | Phase 1 acceptance: my real funds, reconciled | Verify | both | todo | T1-12 to T1-18 |
@@ -239,7 +239,7 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12.
 ---
 
 ## T1-16 · Cash, and "I have ₹X, where does it go?"
-`Feature` · Owner: Claude · Status: todo · Depends on: T1-13, T1-15
+`Feature` · Owner: Claude · Status: done · Depends on: T1-13, T1-15
 
 **Goal:** I record my INR cash (with an emergency earmark), choose which bucket is my target, and Friday tells me exactly how much to put in each fund so I move towards the target without selling.
 
@@ -249,11 +249,17 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12.
 - Plan: top up emergency first, then send new cash to the funds furthest below target (no sells), with the resulting split; a stagger plan (STP via a liquid or arbitrage fund over N months) when the amount is above a threshold
 - Plan page and API; the plan is arithmetic only (no AI)
 
-**Decisions**
-- Cash model: current balance only, or balance history
-- Plan rule details: how to split when several funds are below target; rounding to whole rupees; minimum amount per fund
-- Stagger threshold and default months
-- Where outside holdings (stocks, US) fit, if at all, before Phase 3
+**Decisions** (approved 2026-10-25)
+- Decided: cash accounts hold the **current balance only**, INR, with an earmark: emergency, deployable or reserved (D-056)
+- Decided: one row of **plan settings**: target bucket, emergency goal and fund, stagger fund, threshold (default ₹5,00,000) and months (default 6), minimum per fund (default ₹500) (D-057)
+- Decided: the plan **tops up emergency money first**, then **water-fills** the target bucket on value ÷ weight (the lowest funds rise to one level; nothing is sold or pushed above target), in **whole rupees** with spare rupees to the largest remainders; a share under the minimum is dropped and the rest re-planned. Funds outside the bucket are listed and ignored; **stocks and US holdings stay out until Phase 3** (D-058)
+- Decided: at or above the threshold, a **monthly transfer table** (STP) over the set months, equal whole-rupee transfers with the last month taking the rounding (D-059)
+
+**Progress (2026-10-25)**
+- Built: tables `cash_accounts` and `plan_settings` (migration 0007); `friday.core.cash.plan` (pure arithmetic: emergency top-up, water-filling, whole rupees, minimum per fund, stagger table) and `friday.core.cash.service` (accounts, settings, fund values at the latest NAV, emergency status, the plan); endpoints `GET /cash`, `POST`/`PUT`/`DELETE /cash/accounts`, `GET`/`PUT /plan/settings`, `POST /plan` (blank amount = all deployable cash)
+- UI: Cash page with totals per earmark and the emergency goal, the plan (per fund: target, value and share now, invest, share after; the stagger table; funds left out), cash accounts, and plan settings (target bucket, emergency and stagger funds picked with `InstrumentSearch`)
+- Checked on a copy of the live database with the CORE bucket (35 / 20 / 15 / 25 / 5): ₹6,00,000 deployable against a ₹3,00,000 emergency goal planned ₹3,00,000 to emergency and ₹3,00,000 split 1,05,000 / 60,000 / 45,000 / 75,000 / 15,000; ₹12,00,000 added a six-month table of ₹1,50,000 a month. Phone width has no sideways scroll
+- Tests: 8 hand-worked plan cases (on target, one fund far below, sharing beyond the lowest fund, whole rupees with the spare rupee, minimum per fund, emergency first, a six-month stagger, below the threshold) and 5 API tests (totals and emergency status, the full plan with the emergency fund kept out, staggering, settings rules, account edits); frontend: plan with stagger table, blank amount and errors, adding an account
 
 **Done when**
 - Plans for three hand-worked cases (all below target, one far below, a large amount needing staggering) match a hand calculation

@@ -484,3 +484,98 @@ export function useDeleteSale(instrumentId: number) {
     api.DELETE('/api/v1/sales/{sale_id}', { params: { path: { sale_id: id } } }),
   )
 }
+
+export type Cash = Schemas['CashOut']
+export type CashAccount = Schemas['AccountOut']
+export type PlanSettings = Schemas['SettingsOut']
+export type CashPlan = Schemas['PlanOut']
+
+export function useCash() {
+  return useQuery({
+    queryKey: ['cash'],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/api/v1/cash')
+      if (error) throw failure(error)
+      return data
+    },
+  })
+}
+
+/** Cash and settings feed the plan, so every change refreshes all three. */
+function invalidateCash(queryClient: ReturnType<typeof useQueryClient>) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: ['cash'] }),
+    queryClient.invalidateQueries({ queryKey: ['plan-settings'] }),
+    queryClient.invalidateQueries({ queryKey: ['plan'] }),
+  ])
+}
+
+/** Add an account (no `id`) or change one. */
+export function useSaveCashAccount() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, body }: { id?: number; body: Schemas['AccountIn'] }) => {
+      const { data, error } = id
+        ? await api.PUT('/api/v1/cash/accounts/{account_id}', {
+            params: { path: { account_id: id } },
+            body,
+          })
+        : await api.POST('/api/v1/cash/accounts', { body })
+      if (error) throw failure(error)
+      return data
+    },
+    onSuccess: () => invalidateCash(queryClient),
+  })
+}
+
+export function useDeleteCashAccount() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { error } = await api.DELETE('/api/v1/cash/accounts/{account_id}', {
+        params: { path: { account_id: id } },
+      })
+      if (error) throw failure(error)
+    },
+    onSuccess: () => invalidateCash(queryClient),
+  })
+}
+
+export function usePlanSettings() {
+  return useQuery({
+    queryKey: ['plan-settings'],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/api/v1/plan/settings')
+      if (error) throw failure(error)
+      return data
+    },
+  })
+}
+
+export function useSavePlanSettings() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (body: Schemas['SettingsIn']) => {
+      const { data, error } = await api.PUT('/api/v1/plan/settings', { body })
+      if (error) throw failure(error)
+      return data
+    },
+    onSuccess: () => invalidateCash(queryClient),
+  })
+}
+
+/** The plan for `amount` ('' = all deployable cash); nothing is asked until it's not null. */
+export function useCashPlan(amount: string | null) {
+  return useQuery({
+    queryKey: ['plan', amount],
+    queryFn: async () => {
+      const { data, error } = await api.POST('/api/v1/plan', {
+        body: amount ? { amount } : {},
+      })
+      if (error) throw failure(error)
+      return data
+    },
+    enabled: amount !== null,
+    retry: false,
+  })
+}

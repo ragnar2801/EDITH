@@ -1,6 +1,101 @@
 {
   "components": {
     "schemas": {
+      "AccountIn": {
+        "properties": {
+          "balance": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Balance",
+            "type": "string"
+          },
+          "earmark": {
+            "enum": [
+              "emergency",
+              "deployable",
+              "reserved"
+            ],
+            "title": "Earmark",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "name",
+          "balance",
+          "earmark"
+        ],
+        "title": "AccountIn",
+        "type": "object"
+      },
+      "AccountOut": {
+        "properties": {
+          "balance": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Balance",
+            "type": "string"
+          },
+          "earmark": {
+            "enum": [
+              "emergency",
+              "deployable",
+              "reserved"
+            ],
+            "title": "Earmark",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "balance",
+          "earmark",
+          "note",
+          "updated_at"
+        ],
+        "title": "AccountOut",
+        "type": "object"
+      },
       "Alias": {
         "properties": {
           "changed_on": {
@@ -540,6 +635,56 @@
         "title": "BucketOut",
         "type": "object"
       },
+      "BucketRef": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "BucketRef",
+        "type": "object"
+      },
+      "CashOut": {
+        "properties": {
+          "accounts": {
+            "items": {
+              "$ref": "#/components/schemas/AccountOut"
+            },
+            "title": "Accounts",
+            "type": "array"
+          },
+          "deployable": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Deployable",
+            "type": "string"
+          },
+          "emergency": {
+            "$ref": "#/components/schemas/EmergencyOut"
+          },
+          "reserved": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Reserved",
+            "type": "string"
+          }
+        },
+        "required": [
+          "accounts",
+          "deployable",
+          "reserved",
+          "emergency"
+        ],
+        "title": "CashOut",
+        "type": "object"
+      },
       "ClassificationOut": {
         "properties": {
           "allocation": {
@@ -790,6 +935,49 @@
           "at"
         ],
         "title": "Echo",
+        "type": "object"
+      },
+      "EmergencyOut": {
+        "properties": {
+          "cash": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Cash",
+            "type": "string"
+          },
+          "fund": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FundValueOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "goal": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Goal",
+            "type": "string"
+          },
+          "shortfall": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Shortfall",
+            "type": "string"
+          },
+          "total": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "goal",
+          "cash",
+          "fund",
+          "total",
+          "shortfall"
+        ],
+        "title": "EmergencyOut",
         "type": "object"
       },
       "FieldError": {
@@ -1064,6 +1252,56 @@
           "message"
         ],
         "title": "FundResultOut",
+        "type": "object"
+      },
+      "FundValueOut": {
+        "properties": {
+          "fund": {
+            "$ref": "#/components/schemas/FundRef"
+          },
+          "nav": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nav"
+          },
+          "nav_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nav Date"
+          },
+          "units": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Units",
+            "type": "string"
+          },
+          "value": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fund",
+          "units",
+          "nav",
+          "nav_date",
+          "value"
+        ],
+        "title": "FundValueOut",
         "type": "object"
       },
       "FundWithCoverage": {
@@ -2444,6 +2682,246 @@
         "title": "OverrideIn",
         "type": "object"
       },
+      "PlanFundOut": {
+        "properties": {
+          "fund": {
+            "$ref": "#/components/schemas/FundRef"
+          },
+          "invest": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Invest",
+            "type": "string"
+          },
+          "nav": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nav"
+          },
+          "nav_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nav Date"
+          },
+          "share_after": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share After"
+          },
+          "share_now": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share Now"
+          },
+          "units": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Units",
+            "type": "string"
+          },
+          "value_after": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Value After",
+            "type": "string"
+          },
+          "value_now": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Value Now",
+            "type": "string"
+          },
+          "weight": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Weight",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fund",
+          "weight",
+          "units",
+          "nav",
+          "nav_date",
+          "value_now",
+          "share_now",
+          "invest",
+          "value_after",
+          "share_after"
+        ],
+        "title": "PlanFundOut",
+        "type": "object"
+      },
+      "PlanIn": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          }
+        },
+        "title": "PlanIn",
+        "type": "object"
+      },
+      "PlanMonthOut": {
+        "properties": {
+          "amounts": {
+            "items": {
+              "pattern": "^-?\\d+(\\.\\d+)?$",
+              "type": "string"
+            },
+            "title": "Amounts",
+            "type": "array"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "total": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "month",
+          "total",
+          "amounts"
+        ],
+        "title": "PlanMonthOut",
+        "type": "object"
+      },
+      "PlanOut": {
+        "properties": {
+          "amount": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "bucket": {
+            "$ref": "#/components/schemas/BucketRef"
+          },
+          "emergency": {
+            "$ref": "#/components/schemas/EmergencyOut"
+          },
+          "emergency_topup": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Emergency Topup",
+            "type": "string"
+          },
+          "funds": {
+            "items": {
+              "$ref": "#/components/schemas/PlanFundOut"
+            },
+            "title": "Funds",
+            "type": "array"
+          },
+          "ignored": {
+            "items": {
+              "$ref": "#/components/schemas/FundValueOut"
+            },
+            "title": "Ignored",
+            "type": "array"
+          },
+          "invested": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Invested",
+            "type": "string"
+          },
+          "left": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Left",
+            "type": "string"
+          },
+          "min_per_fund": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Min Per Fund",
+            "type": "string"
+          },
+          "months": {
+            "items": {
+              "$ref": "#/components/schemas/PlanMonthOut"
+            },
+            "title": "Months",
+            "type": "array"
+          },
+          "stagger_fund": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FundRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "to_funds": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "To Funds",
+            "type": "string"
+          },
+          "value_after": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Value After",
+            "type": "string"
+          },
+          "value_now": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Value Now",
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "bucket",
+          "emergency",
+          "emergency_topup",
+          "to_funds",
+          "invested",
+          "left",
+          "funds",
+          "value_now",
+          "value_after",
+          "stagger_fund",
+          "months",
+          "ignored",
+          "min_per_fund"
+        ],
+        "title": "PlanOut",
+        "type": "object"
+      },
       "Position": {
         "description": "Hold a fund from ``entry`` to ``exit`` (or to the end), buying for ``amount``.",
         "properties": {
@@ -2713,6 +3191,155 @@
           "amount"
         ],
         "title": "SaleOut",
+        "type": "object"
+      },
+      "SettingsIn": {
+        "properties": {
+          "emergency_fund_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Fund Id"
+          },
+          "emergency_goal": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Emergency Goal",
+            "type": "string"
+          },
+          "min_per_fund": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Min Per Fund",
+            "type": "string"
+          },
+          "stagger_fund_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stagger Fund Id"
+          },
+          "stagger_months": {
+            "maximum": 24.0,
+            "minimum": 2.0,
+            "title": "Stagger Months",
+            "type": "integer"
+          },
+          "stagger_threshold": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stagger Threshold"
+          },
+          "target_bucket_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Bucket Id"
+          }
+        },
+        "required": [
+          "emergency_goal",
+          "stagger_months",
+          "min_per_fund"
+        ],
+        "title": "SettingsIn",
+        "type": "object"
+      },
+      "SettingsOut": {
+        "properties": {
+          "emergency_fund": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FundRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "emergency_goal": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Emergency Goal",
+            "type": "string"
+          },
+          "min_per_fund": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Min Per Fund",
+            "type": "string"
+          },
+          "stagger_fund": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FundRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stagger_months": {
+            "title": "Stagger Months",
+            "type": "integer"
+          },
+          "stagger_threshold": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stagger Threshold"
+          },
+          "target_bucket": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BucketRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_bucket",
+          "emergency_goal",
+          "emergency_fund",
+          "stagger_fund",
+          "stagger_threshold",
+          "stagger_months",
+          "min_per_fund",
+          "updated_at"
+        ],
+        "title": "SettingsOut",
         "type": "object"
       },
       "Share": {
@@ -3854,6 +4481,164 @@
         ]
       }
     },
+    "/api/v1/cash": {
+      "get": {
+        "description": "My cash accounts, totals per earmark, and the emergency money against its goal.",
+        "operationId": "getCash",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Get Cash",
+        "tags": [
+          "cash"
+        ]
+      }
+    },
+    "/api/v1/cash/accounts": {
+      "post": {
+        "operationId": "addCashAccount",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Add Account",
+        "tags": [
+          "cash"
+        ]
+      }
+    },
+    "/api/v1/cash/accounts/{account_id}": {
+      "delete": {
+        "operationId": "deleteCashAccount",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Remove Account",
+        "tags": [
+          "cash"
+        ]
+      },
+      "put": {
+        "operationId": "updateCashAccount",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "account_id",
+            "required": true,
+            "schema": {
+              "title": "Account Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Change Account",
+        "tags": [
+          "cash"
+        ]
+      }
+    },
     "/api/v1/diagnostics/echo": {
       "post": {
         "description": "Return the payload unchanged, so tests can prove amounts and timestamps survive.",
@@ -4707,6 +5492,119 @@
         "summary": "Sync",
         "tags": [
           "navs"
+        ]
+      }
+    },
+    "/api/v1/plan": {
+      "post": {
+        "description": "Where new cash should go: emergency top-up first, then the funds furthest below\nthe target split, never selling (D-058). Large amounts come with a monthly stagger\nplan (D-059). Nothing is saved.",
+        "operationId": "makeCashPlan",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Make",
+        "tags": [
+          "cash"
+        ]
+      }
+    },
+    "/api/v1/plan/settings": {
+      "get": {
+        "description": "Target bucket, emergency goal and fund, and the staggering rule (D-057).",
+        "operationId": "getPlanSettings",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Read Settings",
+        "tags": [
+          "cash"
+        ]
+      },
+      "put": {
+        "operationId": "updatePlanSettings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Change Settings",
+        "tags": [
+          "cash"
         ]
       }
     },

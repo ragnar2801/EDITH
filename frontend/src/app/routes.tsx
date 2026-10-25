@@ -5,6 +5,7 @@ import { SECTIONS } from '@/app/navigation'
 import { AppShell } from '@/components/layout/AppShell'
 import { BacktestPage } from '@/pages/BacktestPage'
 import { BucketsPage } from '@/pages/BucketsPage'
+import { CashPage } from '@/pages/CashPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { DataStatusPage } from '@/pages/DataStatusPage'
 import { HoldingPage } from '@/pages/HoldingPage'
@@ -20,6 +21,7 @@ const BUILT: Record<string, ReactElement> = {
   '/buckets': <BucketsPage />,
   '/backtest': <BacktestPage />,
   '/holdings': <HoldingsPage />,
+  '/cash': <CashPage />,
   '/instruments': <InstrumentsPage />,
   '/status': <DataStatusPage />,
 }

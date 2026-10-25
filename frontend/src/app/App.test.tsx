@@ -66,7 +66,7 @@ test('navigates between sections', async () => {
   await userEvent.click(screen.getByRole('link', { name: 'Cash' }))
 
   expect(screen.getByRole('heading', { name: 'Cash' })).toBeInTheDocument()
-  expect(screen.getByText(/Arrives in T1-16/)).toBeInTheDocument()
+  expect(screen.getByText(/where new cash should go/)).toBeInTheDocument()
 })
 
 test('unknown paths show a not-found page', () => {

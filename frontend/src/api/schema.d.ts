@@ -149,6 +149,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cash": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Cash
+         * @description My cash accounts, totals per earmark, and the emergency money against its goal.
+         */
+        get: operations["getCash"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cash/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Account */
+        post: operations["addCashAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cash/accounts/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Change Account */
+        put: operations["updateCashAccount"];
+        post?: never;
+        /** Remove Account */
+        delete: operations["deleteCashAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/diagnostics/echo": {
         parameters: {
             query?: never;
@@ -456,6 +511,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Make
+         * @description Where new cash should go: emergency top-up first, then the funds furthest below
+         *     the target split, never selling (D-058). Large amounts come with a monthly stagger
+         *     plan (D-059). Nothing is saved.
+         */
+        post: operations["makeCashPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plan/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read Settings
+         * @description Target bucket, emergency goal and fund, and the staggering rule (D-057).
+         */
+        get: operations["getPlanSettings"];
+        /** Change Settings */
+        put: operations["updatePlanSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sales": {
         parameters: {
             query?: never;
@@ -545,6 +643,41 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccountIn */
+        AccountIn: {
+            /** Balance */
+            balance: string;
+            /**
+             * Earmark
+             * @enum {string}
+             */
+            earmark: "emergency" | "deployable" | "reserved";
+            /** Name */
+            name: string;
+            /** Note */
+            note?: string | null;
+        };
+        /** AccountOut */
+        AccountOut: {
+            /** Balance */
+            balance: string;
+            /**
+             * Earmark
+             * @enum {string}
+             */
+            earmark: "emergency" | "deployable" | "reserved";
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Note */
+            note: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** Alias */
         Alias: {
             /** Changed On */
@@ -708,6 +841,23 @@ export interface components {
              */
             updated_at: string;
         };
+        /** BucketRef */
+        BucketRef: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+        };
+        /** CashOut */
+        CashOut: {
+            /** Accounts */
+            accounts: components["schemas"]["AccountOut"][];
+            /** Deployable */
+            deployable: string;
+            emergency: components["schemas"]["EmergencyOut"];
+            /** Reserved */
+            reserved: string;
+        };
         /** ClassificationOut */
         ClassificationOut: {
             /** Allocation */
@@ -808,6 +958,18 @@ export interface components {
             at: string;
             money: components["schemas"]["Money"];
         };
+        /** EmergencyOut */
+        EmergencyOut: {
+            /** Cash */
+            cash: string;
+            fund: components["schemas"]["FundValueOut"] | null;
+            /** Goal */
+            goal: string;
+            /** Shortfall */
+            shortfall: string;
+            /** Total */
+            total: string;
+        };
         /** FieldError */
         FieldError: {
             /** Loc */
@@ -876,6 +1038,18 @@ export interface components {
              * @enum {string}
              */
             status: "ok" | "fallback" | "failed";
+        };
+        /** FundValueOut */
+        FundValueOut: {
+            fund: components["schemas"]["FundRef"];
+            /** Nav */
+            nav: string | null;
+            /** Nav Date */
+            nav_date: string | null;
+            /** Units */
+            units: string;
+            /** Value */
+            value: string;
         };
         /** FundWithCoverage */
         FundWithCoverage: {
@@ -1312,6 +1486,73 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /** PlanFundOut */
+        PlanFundOut: {
+            fund: components["schemas"]["FundRef"];
+            /** Invest */
+            invest: string;
+            /** Nav */
+            nav: string | null;
+            /** Nav Date */
+            nav_date: string | null;
+            /** Share After */
+            share_after: string | null;
+            /** Share Now */
+            share_now: string | null;
+            /** Units */
+            units: string;
+            /** Value After */
+            value_after: string;
+            /** Value Now */
+            value_now: string;
+            /** Weight */
+            weight: string;
+        };
+        /** PlanIn */
+        PlanIn: {
+            /** Amount */
+            amount?: string | null;
+        };
+        /** PlanMonthOut */
+        PlanMonthOut: {
+            /** Amounts */
+            amounts: string[];
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Total */
+            total: string;
+        };
+        /** PlanOut */
+        PlanOut: {
+            /** Amount */
+            amount: string;
+            bucket: components["schemas"]["BucketRef"];
+            emergency: components["schemas"]["EmergencyOut"];
+            /** Emergency Topup */
+            emergency_topup: string;
+            /** Funds */
+            funds: components["schemas"]["PlanFundOut"][];
+            /** Ignored */
+            ignored: components["schemas"]["FundValueOut"][];
+            /** Invested */
+            invested: string;
+            /** Left */
+            left: string;
+            /** Min Per Fund */
+            min_per_fund: string;
+            /** Months */
+            months: components["schemas"]["PlanMonthOut"][];
+            stagger_fund: components["schemas"]["FundRef"] | null;
+            /** To Funds */
+            to_funds: string;
+            /** Value After */
+            value_after: string;
+            /** Value Now */
+            value_now: string;
+        };
         /**
          * Position
          * @description Hold a fund from ``entry`` to ``exit`` (or to the end), buying for ``amount``.
@@ -1410,6 +1651,42 @@ export interface components {
             sale_date: string;
             /** Units */
             units: string;
+        };
+        /** SettingsIn */
+        SettingsIn: {
+            /** Emergency Fund Id */
+            emergency_fund_id?: number | null;
+            /** Emergency Goal */
+            emergency_goal: string;
+            /** Min Per Fund */
+            min_per_fund: string;
+            /** Stagger Fund Id */
+            stagger_fund_id?: number | null;
+            /** Stagger Months */
+            stagger_months: number;
+            /** Stagger Threshold */
+            stagger_threshold?: string | null;
+            /** Target Bucket Id */
+            target_bucket_id?: number | null;
+        };
+        /** SettingsOut */
+        SettingsOut: {
+            emergency_fund: components["schemas"]["FundRef"] | null;
+            /** Emergency Goal */
+            emergency_goal: string;
+            /** Min Per Fund */
+            min_per_fund: string;
+            stagger_fund: components["schemas"]["FundRef"] | null;
+            /** Stagger Months */
+            stagger_months: number;
+            /** Stagger Threshold */
+            stagger_threshold: string | null;
+            target_bucket: components["schemas"]["BucketRef"] | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** Share */
         Share: {
@@ -2013,6 +2290,132 @@ export interface operations {
             };
         };
     };
+    getCash: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    addCashAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    updateCashAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    deleteCashAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     echo: {
         parameters: {
             query?: never;
@@ -2570,6 +2973,101 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SyncRunOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    makeCashPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getPlanSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    updatePlanSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SettingsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsOut"];
                 };
             };
             /** @description Problem details (RFC 9457) */
