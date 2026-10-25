@@ -41,10 +41,10 @@ I keep a **target split** across a few funds (large cap, mid cap, small cap, fle
 | | |
 |---|---|
 | **Goal** | See all my funds with correct numbers, test target splits on history, and know exactly where new cash should go |
-| **Builds** | Instruments *(done: T1-02)* · daily and historical fund NAVs (D2) with catch-up · **buckets**: my target split with weights, rebalance policy and benchmark · **backtests** of a bucket: lump sum, SIP, SWP and a custom timeline, against the Nifty 50 (these three come from the earlier `ragnar2801/Friday` app, D-043) · fund holdings I type in (lump sums, SIPs, sells; one lot per buy) · cash accounts with an emergency earmark · "I have ₹X, where does it go?" plan towards the target split · portfolio view vs target: value, P&L, XIRR, drift · daily NAV update on Windows |
+| **Builds** | Instruments *(done: T1-02)* · daily and historical fund NAVs (D2) with catch-up · **buckets**: my target split with weights, rebalance policy and benchmark · **backtests** of a bucket: lump sum, SIP, SWP and a custom timeline, against the Nifty 50 (these three come from the earlier `ragnar2801/Friday` app, D-043) · fund holdings I type in (lump sums, SIPs, sells; one lot per buy) · cash accounts with an emergency earmark · "I have ₹X, where does it go?" plan towards the target split · portfolio view vs target: value, P&L, XIRR, drift · NAVs synced by hand (no scheduler until Phase 4a, D-068) |
 | **Not yet** | Any AI, watchers, alerts |
 | **Journeys** | J1 (without research), J4 (the plan is arithmetic, no AI yet) |
-| **Done when** | All my real funds are in, NAVs update daily by themselves, the numbers match my statements, and the cash plan matches a hand calculation |
+| **Done when** | All my real funds are in, a NAV sync brings every fund up to date, the numbers match my statements, and the cash plan matches a hand calculation |
 | **Stack** | React + Python backend (D-023); details decided in the tasks |
 | **Tasks** | [`tasks/phase-1.md`](tasks/phase-1.md) |
 
@@ -77,7 +77,7 @@ I keep a **target split** across a few funds (large cap, mid cap, small cap, fle
 | | |
 |---|---|
 | **Goal** | Friday watches my funds and tells me when something needs attention |
-| **Builds** | `friday tick` replaces the Phase 1 scheduler entry (D-018, Python jobs only): `job_runs`, catch-up after sleep, no duplicate runs, retries · watchers for funds: Drift Monitor (W2), Cash Monitor (W3), a big market fall (Nifty 50 index fund down a set % from its high), Data Health (W5) · `events` table with urgency · in-app notifications · Housekeeper: daily backups, expiring old notes (S2) · daily grading of suggestions (F1) |
+| **Builds** | `friday tick` and the first Task Scheduler entry (D-018, D-027; Phase 1 had none, D-068; Python jobs only): `job_runs`, catch-up after sleep, no duplicate runs, retries · watchers for funds: Drift Monitor (W2), Cash Monitor (W3), a big market fall (Nifty 50 index fund down a set % from its high), Data Health (W5) · `events` table with urgency · in-app notifications · Housekeeper: daily backups, expiring old notes (S2) · daily grading of suggestions (F1) |
 | **How I use it** | Get an alert, then run the suggested command myself |
 | **Journeys** | J4 (cash flagged), J5 (big fall alert), J9 (Python jobs), J10 (daily grading) |
 | **Done when** | Two weeks with no missed or duplicated jobs, and alerts that are useful rather than noisy |

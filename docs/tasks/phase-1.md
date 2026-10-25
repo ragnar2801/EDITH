@@ -1,12 +1,12 @@
 # Phase 1 — Fund tracker and planner · Task board
 
-> **Goal:** see all my mutual funds in one place with correct numbers, test target splits on history, and know where new cash should go. No AI. NAVs update daily by themselves.
-> **Exit:** all my real funds are in, NAVs update daily, numbers match my statements, and the cash plan matches a hand calculation ([`phases.md`](../phases.md)).
+> **Goal:** see all my mutual funds in one place with correct numbers, test target splits on history, and know where new cash should go. No AI. I update NAVs by hand (D-068).
+> **Exit:** all my real funds are in, a NAV sync brings every fund up to date, numbers match my statements, and the cash plan matches a hand calculation ([`phases.md`](../phases.md)).
 > **Scope (D-043):** mutual funds only. Indian stocks and ETFs come in Phase 6, US holdings and LRS in Phase 7. Buckets, backtests and NAV history come from the earlier `ragnar2801/Friday` app, rebuilt here on EDITH's stack.
 > **Already fixed:** React frontend + Python backend (D-023) · SQLite on the laptop (D-013) · free data only (D-012) · scheduled fetch + catch-up (D-022) · Windows + Task Scheduler (D-027) · Nifty 50 benchmark (D-043).
 > Everything else is decided **inside the task that needs it** (see each task's *Decisions* list). How this board works: [`README.md`](README.md)
 
-**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7) · **Done:** 9 / 13
+**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7; T1-18 dropped, D-068) · **Done:** 9 / 12
 
 ---
 
@@ -22,8 +22,8 @@
 | T1-15 | Fund holdings: lump sums, SIPs and sells | Feature | Claude | done | T1-12 |
 | T1-16 | Cash, and "I have ₹X, where does it go?" | Feature | Claude | done | T1-13, T1-15 |
 | T1-17 | Portfolio view vs target: value, P&L, XIRR, drift | Feature | Claude | todo | T1-13, T1-15, T1-16, T1-22 |
-| T1-18 | Daily NAV update on Windows | Infra | both | todo | T1-12 |
-| T1-19 | Phase 1 acceptance: my real funds, reconciled | Verify | both | todo | T1-12 to T1-18 |
+| T1-18 | Daily NAV update on Windows | Infra | both | dropped | — (D-068: I sync NAVs by hand in Phase 1) |
+| T1-19 | Phase 1 acceptance: my real funds, reconciled | Verify | both | todo | T1-12 to T1-17, T1-20 |
 | T1-20 | Plan and option for every fund (AMFI leaves 5,623 blank) | Feature | Claude | todo | T1-02 |
 | T1-21 | UI kit and copy clean-up: no prose, info icons, no build talk | Feature | Claude | done | T1-16 |
 | T1-22 | Journeys: new navigation, one fund page, Invest, Models, Settings | Feature | Claude | done | T1-21 |
@@ -33,10 +33,10 @@
 T1-01 ─► T1-02 ─► T1-12 ─┬─► T1-13 ─┬─► T1-14
                          │          └──────────────┐
                          ├─► T1-15 ─► T1-16 ─► T1-17 ─┐
-                         └─► T1-18 ───────────────────┴─► T1-19
+T1-02 ─► T1-20 ───────────────────────────────────────┴─► T1-19
 ```
 
-T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12. T1-21 and T1-22 (UI rework, [`ui-redesign.md`](../ui-redesign.md)) come before T1-17, so the portfolio view is built once in its final place.
+T1-14 and T1-15 can be built in parallel. T1-18 was dropped (D-068): in Phase 1 I update NAVs myself from the NAV freshness indicator or `just navs`. T1-21 and T1-22 (UI rework, [`ui-redesign.md`](../ui-redesign.md)) come before T1-17, so the portfolio view is built once in its final place.
 
 ---
 
@@ -121,14 +121,14 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12. 
 **Scope**
 - A NAV table keyed by (fund, date), filled from the full history on first sync and only the missing days after that
 - "Tracked" funds: the ones I mark, plus every fund in a bucket and every bucket's benchmark
-- Sync for all tracked funds or one fund: from the UI (Data status page, instrument page), `friday navs sync` / `just navs`, and later Task Scheduler (T1-18); a run log
+- Sync for all tracked funds or one fund: from the UI (Data status page, instrument page), `friday navs sync` / `just navs`, a run log (no scheduled run in Phase 1: T1-18 dropped, D-068)
 - Instrument page: NAV chart with ranges, latest NAV, 1-day / 1-year / since-launch change, CAGR, 52-week range, recent NAVs
 - Data status page: tracked funds with first and last NAV dates, last sync, sync buttons
 
 **Decisions** (2026-10-25, decided while bringing Friday's features in; review welcome)
 - Decided: NAV history and daily updates from **mfapi.in** (`api.mfapi.in/mf/<scheme code>`, a free mirror of AMFI data with full history in one request per fund; checked 2026-10-25). **AMFI `NAVAll.txt`** is the fallback for the latest NAV when mfapi fails (D-044)
 - Decided: NAVs are stored **exactly as published, up to 8 decimal places** (some AMCs publish 8, e.g. Bandhan's arbitrage and debt funds), with a new API type `Nav`; zero and missing NAVs are skipped. Amends D-032's 4 places for NAVs (D-045)
-- Decided: **one sync model, from Friday:** catch up to today for every tracked fund, upserting on (fund, date) so a re-run adds nothing. Tracked = marked by me, in a bucket, or a bucket's benchmark. Sync runs on demand in Phase 1 (button, CLI) and daily from T1-18. Each run is logged with per-fund results. Mutual funds and AMFI-listed schemes only (D-046)
+- Decided: **one sync model, from Friday:** catch up to today for every tracked fund, upserting on (fund, date) so a re-run adds nothing. Tracked = marked by me, in a bucket, or a bucket's benchmark. Sync runs on demand in Phase 1 (button, CLI); the daily run waits for `friday tick` in Phase 4a (D-068). Each run is logged with per-fund results. Mutual funds and AMFI-listed schemes only (D-046)
 - Decided: NAV statistics (changes, CAGR, 52-week range) are computed in the backend, like every other figure (D-032, D-046)
 
 **Progress (2026-10-25)**
@@ -290,7 +290,9 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12. 
 ---
 
 ## T1-18 · Daily NAV update on Windows
-`Infra` · Owner: both · Status: todo · Depends on: T1-12
+`Infra` · Owner: both · Status: dropped · Depends on: T1-12
+
+> **Dropped 2026-10-25 (D-068).** Not needed in Phase 1: I update NAVs by hand from the NAV freshness indicator in the top bar, Settings · Data, or `just navs`. Sync catches up every missed day (D-046), so nothing is lost between runs. Automatic daily runs come with `friday tick` in Phase 4a. The section is kept as written, for history.
 
 **Goal:** NAVs update every day without me doing anything, including after the laptop was asleep.
 
@@ -310,7 +312,7 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12. 
 ---
 
 ## T1-19 · Phase 1 acceptance: my real funds, reconciled
-`Verify` · Owner: both · Status: todo · Depends on: T1-12 to T1-18
+`Verify` · Owner: both · Status: todo · Depends on: T1-12 to T1-17, T1-20
 
 **Goal:** prove Phase 1 does what it promised, on my real funds.
 
@@ -431,7 +433,7 @@ Dropped on 2026-10-25 when Phase 1 was re-planned for mutual funds first (D-043)
 | T1-06 | US prices and USD/INR | Phase 7 |
 | T1-07 | Watchlist | Phase 2 |
 | T1-08 | Portfolio view | Funds: T1-17 · stocks and USD views: Phases 6–7 |
-| T1-09 | Daily automation on Windows | T1-18 |
+| T1-09 | Daily automation on Windows | T1-18, itself dropped (D-068); Phase 4a |
 | T1-10 | Phase 1 acceptance | T1-19 |
 | T1-11 | REITs, InvITs and BSE-only listings | Phase 6 |
 
