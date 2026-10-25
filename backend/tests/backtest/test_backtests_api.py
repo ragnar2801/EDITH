@@ -1,0 +1,199 @@
+"""Backtest endpoints: run, store, save, list, interval, delete, and refusals (D-048, D-049)."""
+
+import pytest
+from fastapi.testclient import TestClient
+from navs.conftest import NIFTY, PARAG, FakeNavFetcher
+
+from friday.core.backtest import service
+
+
+@pytest.fixture
+def api(client: TestClient, funds: dict[str, int], fetcher: FakeNavFetcher) -> TestClient:
+    client.app.state.nav_fetcher = fetcher
+    return client
+
+
+@pytest.fixture
+def bucket(api: TestClient, funds) -> dict:
+    created = api.post(
+        "/api/v1/buckets",
+        json={
+            "name": "Core",
+            "benchmark_id": funds[NIFTY],
+            "funds": [
+                {"instrument_id": funds[PARAG], "weight": "60"},
+                {"instrument_id": funds[NIFTY], "weight": "40"},
+            ],
+        },
+    ).json()
+    api.post("/api/v1/navs/sync")
+    return created
+
+
+def run(api: TestClient, bucket: dict, params: dict, **extra):
+    return api.post(
+        "/api/v1/backtests", json={"bucket_id": bucket["id"], "params": params, **extra}
+    )
+
+
+def test_sip_run_with_the_same_sip_in_the_benchmark(api: TestClient, bucket) -> None:
+    response = run(api, bucket, {"strategy": "sip", "amount": "10000", "start": "2026-10-01"})
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    result = body["result"]
+    assert (body["bucket_name"], body["saved"], body["strategy"]) == ("Core", False, "sip")
+    assert result["metrics"]["start_date"] == "2026-10-09"  # first NAV date both funds share
+    assert result["metrics"]["total_invested"] == "10000.00"  # one October instalment
+    assert result["benchmark"]["metrics"]["total_invested"] == "10000.00"
+    assert result["benchmark"]["name"] == "UTI Nifty 50 Index Fund"
+    assert [f["weight"] for f in result["funds"]] == ["60", "40"]
+    point = result["curve"][0]
+    assert set(point) == {"date", "value", "invested", "withdrawn", "index"}
+    assert point["index"] == "100.000000"
+    assert all(isinstance(v, str) for v in result["metrics"].values() if v is not None)
+
+
+def test_a_requested_start_before_the_data_is_reported(api: TestClient, bucket) -> None:
+    result = run(api, bucket, {"strategy": "regular", "capital": "100000", "start": "2013-01-01"})
+
+    warnings = result.json()["result"]["warnings"]
+    assert warnings == [
+        "Started on 2013-05-28 instead of 2013-01-01: Parag Parikh Flexi Cap Fund has no NAV "
+        "before then."
+    ]
+
+
+def test_save_list_load_and_delete(api: TestClient, bucket) -> None:
+    first = run(api, bucket, {"strategy": "regular", "capital": "100000"}).json()
+    run(api, bucket, {"strategy": "swp", "corpus": "500000", "amount": "4000"})
+
+    saved = api.patch(f"/api/v1/backtests/{first['id']}", json={"saved": True, "name": " Lump "})
+    assert saved.json()["name"] == "Lump"
+    listed = api.get(f"/api/v1/buckets/{bucket['id']}/backtests").json()
+    assert [(r["id"], r["name"], r["params"]["capital"]) for r in listed] == [
+        (first["id"], "Lump", "100000")
+    ]
+    loaded = api.get(f"/api/v1/backtests/{first['id']}").json()
+    assert loaded["result"] == first["result"]
+
+    assert api.delete(f"/api/v1/backtests/{first['id']}").status_code == 204
+    assert api.get(f"/api/v1/backtests/{first['id']}").status_code == 404
+
+
+def test_run_and_save_in_one_go(api: TestClient, bucket) -> None:
+    body = run(api, bucket, {"strategy": "regular", "capital": "1000"}, save=True, name="x").json()
+
+    assert (body["saved"], body["name"]) == (True, "x")
+
+
+def test_only_the_latest_unsaved_runs_are_kept(api: TestClient, bucket, monkeypatch) -> None:
+    monkeypatch.setattr(service, "KEEP_UNSAVED", 2)
+    kept = run(api, bucket, {"strategy": "regular", "capital": "1"}, save=True).json()
+    ids = [run(api, bucket, {"strategy": "regular", "capital": "1"}).json()["id"] for _ in range(3)]
+
+    assert api.get(f"/api/v1/backtests/{ids[0]}").status_code == 404
+    assert all(api.get(f"/api/v1/backtests/{i}").status_code == 200 for i in [*ids[1:], kept["id"]])
+
+
+def test_interval_of_a_stored_run(api: TestClient, bucket) -> None:
+    body = run(
+        api, bucket, {"strategy": "regular", "capital": "100000", "start": "2026-10-01"}
+    ).json()
+    curve = body["result"]["curve"]
+
+    window = api.get(
+        f"/api/v1/backtests/{body['id']}/interval",
+        params={"start": curve[1]["date"], "end": curve[-1]["date"]},
+    )
+
+    assert window.status_code == 200, window.text
+    data = window.json()
+    assert (data["start_value"], data["end_value"]) == (curve[1]["value"], curve[-1]["value"])
+    assert (data["invested"], data["withdrawn"]) == ("0.00", "0.00")
+    assert data["benchmark_return_pct"] is not None
+    too_small = api.get(
+        f"/api/v1/backtests/{body['id']}/interval", params={"start": curve[-1]["date"]}
+    )
+    assert too_small.status_code == 422
+
+
+def test_custom_positions_and_trades(api: TestClient, bucket, funds) -> None:
+    params = {
+        "strategy": "custom",
+        "positions": [
+            {
+                "instrument_id": funds[PARAG],
+                "entry": "2026-10-09",
+                "exit": "2026-10-16",
+                "amount": "50000",
+            }
+        ],
+        "trades": [
+            {"instrument_id": funds[NIFTY], "date": "2026-10-16", "side": "buy", "amount": "50000"}
+        ],
+    }
+
+    result = run(api, bucket, params).json()["result"]
+
+    assert [(t["side"], t["name"], t["date"]) for t in result["trades"]] == [
+        ("buy", "Parag Parikh Flexi Cap Fund", "2026-10-09"),
+        ("sell", "Parag Parikh Flexi Cap Fund", "2026-10-16"),
+        ("buy", "UTI Nifty 50 Index Fund", "2026-10-16"),
+    ]
+    parag = result["funds"][0]
+    assert (parag["invested"], parag["units"]) == ("50000.00", "0.00000000")
+    assert parag["pnl"] is not None
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"strategy": "sip", "amount": 10000},  # amounts are strings (D-032)
+        {"strategy": "sip", "amount": "0"},
+        {"strategy": "sip", "amount": "1", "frequency": "daily"},
+        {"strategy": "sip", "amount": "1", "start": "2026-01-02", "end": "2026-01-01"},
+        {"strategy": "custom"},
+        {
+            "strategy": "custom",
+            "trades": [{"instrument_id": 1, "date": "2026-10-09", "side": "buy"}],  # no amount
+        },
+        {"strategy": "lump"},
+    ],
+)
+def test_bad_parameters_are_refused(api: TestClient, bucket, params) -> None:
+    assert run(api, bucket, params).status_code == 422
+
+
+def test_a_fund_outside_the_bucket_is_refused(api: TestClient, bucket, funds) -> None:
+    params = {
+        "strategy": "custom",
+        "trades": [
+            {"instrument_id": funds["108844"], "date": "2026-10-09", "side": "buy", "amount": "1"}
+        ],
+    }
+
+    response = run(api, bucket, params)
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Trade 1: that fund isn't in this bucket."
+
+
+def test_no_navs_yet_is_explained(api: TestClient, funds) -> None:
+    bucket = api.post(
+        "/api/v1/buckets",
+        json={"name": "Empty", "funds": [{"instrument_id": funds[PARAG], "weight": "100"}]},
+    ).json()
+
+    response = run(api, bucket, {"strategy": "regular", "capital": "1000"})
+
+    assert response.status_code == 422
+    assert "No NAVs yet for Parag Parikh Flexi Cap Fund" in response.json()["detail"]
+
+
+def test_deleting_a_bucket_deletes_its_runs(api: TestClient, bucket) -> None:
+    body = run(api, bucket, {"strategy": "regular", "capital": "1000"}, save=True).json()
+
+    api.delete(f"/api/v1/buckets/{bucket['id']}")
+
+    assert api.get(f"/api/v1/backtests/{body['id']}").status_code == 404

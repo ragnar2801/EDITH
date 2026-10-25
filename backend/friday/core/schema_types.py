@@ -61,6 +61,12 @@ FxRate = _decimal_string(6)
 Percent = _decimal_string(2)
 """Percentage, e.g. an allocation share: 2 decimal places."""
 
+Figure = _decimal_string(2)
+"""A plain figure such as a Sharpe ratio or a number of years: 2 decimal places."""
+
+Ratio = _decimal_string(6)
+"""A growth index or ratio, e.g. 100 → 123.456789: 6 decimal places."""
+
 
 def _to_utc(value: datetime) -> datetime:
     return value.astimezone(UTC)

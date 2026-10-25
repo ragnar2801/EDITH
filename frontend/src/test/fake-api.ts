@@ -179,3 +179,95 @@ export function bucket(extra: Partial<Schemas['BucketOut']> = {}): Schemas['Buck
     ...extra,
   }
 }
+
+const metrics = (extra: Partial<Schemas['MetricsOut']> = {}): Schemas['MetricsOut'] => ({
+  start_date: '2025-01-01',
+  end_date: '2026-10-23',
+  years: '1.81',
+  start_value: '10000.00',
+  end_value: '252000.00',
+  total_invested: '220000.00',
+  total_withdrawn: '0.00',
+  absolute_return_pct: '14.55',
+  cagr_pct: '15.62',
+  xirr_pct: '16.56',
+  max_drawdown_pct: '35.14',
+  volatility_pct: '13.89',
+  sharpe: '1.23',
+  sortino: '1.80',
+  depletion_date: null,
+  ...extra,
+})
+
+const curve: Schemas['CurvePoint'][] = [
+  {
+    date: '2025-01-01',
+    value: '10000.00',
+    invested: '10000.00',
+    withdrawn: '0.00',
+    index: '100.000000',
+  },
+  {
+    date: '2025-10-23',
+    value: '120000.00',
+    invested: '110000.00',
+    withdrawn: '0.00',
+    index: '108.000000',
+  },
+  {
+    date: '2026-10-23',
+    value: '252000.00',
+    invested: '220000.00',
+    withdrawn: '0.00',
+    index: '118.000000',
+  },
+]
+
+export function backtestRun(
+  extra: Partial<Schemas['BacktestRunOut']> = {},
+): Schemas['BacktestRunOut'] {
+  return {
+    id: 41,
+    bucket_id: 1,
+    bucket_name: 'Core',
+    strategy: 'sip',
+    saved: false,
+    name: null,
+    created_at: '2026-10-25T04:00:00Z',
+    params: {
+      strategy: 'sip',
+      amount: '10000',
+      frequency: 'monthly',
+      start: null,
+      end: null,
+      risk_free_pct: '0',
+    },
+    result: {
+      strategy: 'sip',
+      curve,
+      metrics: metrics(),
+      funds: [
+        {
+          instrument_id: parag.id,
+          name: parag.name,
+          weight: '60',
+          units: '1690.12345678',
+          end_value: '151200.00',
+          invested: null,
+          proceeds: null,
+          pnl: null,
+          pnl_pct: null,
+        },
+      ],
+      trades: [],
+      benchmark: {
+        instrument_id: nifty.id,
+        name: nifty.name,
+        curve: curve.map((point) => ({ ...point, value: point.invested })),
+        metrics: metrics({ xirr_pct: '10.15', cagr_pct: '9.91', end_value: '220000.00' }),
+      },
+      warnings: [],
+    },
+    ...extra,
+  }
+}

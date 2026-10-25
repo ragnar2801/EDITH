@@ -118,6 +118,7 @@ def _get(session: Session, bucket_id: int) -> Bucket:
 
 
 def _sentence(error: Exception) -> str:
+    """An error message as a sentence: first letter up, full stop."""
     text = str(error)
     return text[:1].upper() + text[1:] + "."
 

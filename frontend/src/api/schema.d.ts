@@ -4,6 +4,68 @@
  */
 
 export interface paths {
+    "/api/v1/backtests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run
+         * @description Run a backtest on the bucket's stored NAVs and keep it; ``save`` keeps it for good.
+         */
+        post: operations["runBacktest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/backtests/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get */
+        get: operations["getBacktest"];
+        put?: never;
+        post?: never;
+        /** Delete */
+        delete: operations["deleteBacktest"];
+        options?: never;
+        head?: never;
+        /**
+         * Update
+         * @description Save a run (with an optional name), or unsave it.
+         */
+        patch: operations["updateBacktest"];
+        trace?: never;
+    };
+    "/api/v1/backtests/{run_id}/interval": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Interval
+         * @description Return, drawdown and money in and out for a window of a run (D-049).
+         */
+        get: operations["getBacktestInterval"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/buckets": {
         parameters: {
             query?: never;
@@ -62,6 +124,26 @@ export interface paths {
          * @description Delete a bucket and its saved backtests. Its funds' NAVs stay.
          */
         delete: operations["deleteBucket"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/buckets/{bucket_id}/backtests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Saved
+         * @description Saved runs of a bucket, newest first.
+         */
+        get: operations["listSavedBacktests"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -305,6 +387,97 @@ export interface components {
             /** Value */
             value: string;
         };
+        /** BacktestIn */
+        BacktestIn: {
+            /** Bucket Id */
+            bucket_id: number;
+            /** Name */
+            name?: string | null;
+            /** Params */
+            params: components["schemas"]["RegularParams"] | components["schemas"]["SipParams"] | components["schemas"]["SwpParams"] | components["schemas"]["CustomParams"];
+            /**
+             * Save
+             * @default false
+             */
+            save: boolean;
+        };
+        /** BacktestResult */
+        BacktestResult: {
+            benchmark: components["schemas"]["BenchmarkOut"] | null;
+            /** Curve */
+            curve: components["schemas"]["CurvePoint"][];
+            /** Funds */
+            funds: components["schemas"]["FundOutcomeOut"][];
+            metrics: components["schemas"]["MetricsOut"];
+            /**
+             * Strategy
+             * @enum {string}
+             */
+            strategy: "regular" | "sip" | "swp" | "custom";
+            /** Trades */
+            trades: components["schemas"]["TradeOut"][];
+            /** Warnings */
+            warnings: string[];
+        };
+        /** BacktestRunOut */
+        BacktestRunOut: {
+            /** Bucket Id */
+            bucket_id: number;
+            /** Bucket Name */
+            bucket_name: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: number;
+            /** Name */
+            name: string | null;
+            /** Params */
+            params: components["schemas"]["RegularParams"] | components["schemas"]["SipParams"] | components["schemas"]["SwpParams"] | components["schemas"]["CustomParams"];
+            result: components["schemas"]["BacktestResult"];
+            /** Saved */
+            saved: boolean;
+            /**
+             * Strategy
+             * @enum {string}
+             */
+            strategy: "regular" | "sip" | "swp" | "custom";
+        };
+        /** BacktestRunSummary */
+        BacktestRunSummary: {
+            /** Bucket Id */
+            bucket_id: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id: number;
+            /** Name */
+            name: string | null;
+            /** Params */
+            params: components["schemas"]["RegularParams"] | components["schemas"]["SipParams"] | components["schemas"]["SwpParams"] | components["schemas"]["CustomParams"];
+            /** Saved */
+            saved: boolean;
+            /**
+             * Strategy
+             * @enum {string}
+             */
+            strategy: "regular" | "sip" | "swp" | "custom";
+        };
+        /** BenchmarkOut */
+        BenchmarkOut: {
+            /** Curve */
+            curve: components["schemas"]["CurvePoint"][];
+            /** Instrument Id */
+            instrument_id: number;
+            metrics: components["schemas"]["MetricsOut"];
+            /** Name */
+            name: string;
+        };
         /** BucketFundIn */
         BucketFundIn: {
             /** Instrument Id */
@@ -389,6 +562,73 @@ export interface components {
             /** Last */
             last: string | null;
         };
+        /** CurvePoint */
+        CurvePoint: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Index */
+            index: string;
+            /** Invested */
+            invested: string;
+            /** Value */
+            value: string;
+            /** Withdrawn */
+            withdrawn: string;
+        };
+        /**
+         * CustomParams
+         * @description My own timeline over the bucket's funds; weights don't apply.
+         */
+        CustomParams: {
+            /** End */
+            end?: string | null;
+            /** Positions */
+            positions?: components["schemas"]["Position"][];
+            /**
+             * Risk Free Pct
+             * @default 0
+             */
+            risk_free_pct: string;
+            /** Start */
+            start?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            strategy: "custom";
+            /** Trades */
+            trades?: components["schemas"]["CustomTradeIn"][];
+        };
+        /**
+         * CustomTradeIn
+         * @description One buy or sell: by amount, by units, or (sells only) everything held.
+         */
+        CustomTradeIn: {
+            /** Amount */
+            amount?: string | null;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Instrument Id */
+            instrument_id: number;
+            /**
+             * Sell All
+             * @default false
+             */
+            sell_all: boolean;
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "buy" | "sell";
+            /** Units */
+            units?: string | null;
+        };
         /** Echo */
         Echo: {
             /**
@@ -406,6 +646,27 @@ export interface components {
             msg: string;
             /** Type */
             type: string;
+        };
+        /** FundOutcomeOut */
+        FundOutcomeOut: {
+            /** End Value */
+            end_value: string;
+            /** Instrument Id */
+            instrument_id: number;
+            /** Invested */
+            invested: string | null;
+            /** Name */
+            name: string;
+            /** Pnl */
+            pnl: string | null;
+            /** Pnl Pct */
+            pnl_pct: string | null;
+            /** Proceeds */
+            proceeds: string | null;
+            /** Units */
+            units: string;
+            /** Weight */
+            weight: string | null;
         };
         /** FundRef */
         FundRef: {
@@ -624,6 +885,72 @@ export interface components {
             /** Variants */
             variants?: components["schemas"]["Variant"][];
         };
+        /** IntervalOut */
+        IntervalOut: {
+            /** Benchmark Return Pct */
+            benchmark_return_pct: string | null;
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
+            /** End Value */
+            end_value: string;
+            /** Invested */
+            invested: string;
+            /** Max Drawdown Pct */
+            max_drawdown_pct: string;
+            /** Return Pct */
+            return_pct: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Start Value */
+            start_value: string;
+            /** Withdrawn */
+            withdrawn: string;
+        };
+        /** MetricsOut */
+        MetricsOut: {
+            /** Absolute Return Pct */
+            absolute_return_pct: string | null;
+            /** Cagr Pct */
+            cagr_pct: string | null;
+            /** Depletion Date */
+            depletion_date: string | null;
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
+            /** End Value */
+            end_value: string;
+            /** Max Drawdown Pct */
+            max_drawdown_pct: string;
+            /** Sharpe */
+            sharpe: string | null;
+            /** Sortino */
+            sortino: string | null;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Start Value */
+            start_value: string;
+            /** Total Invested */
+            total_invested: string;
+            /** Total Withdrawn */
+            total_withdrawn: string;
+            /** Volatility Pct */
+            volatility_pct: string;
+            /** Xirr Pct */
+            xirr_pct: string | null;
+            /** Years */
+            years: string;
+        };
         /** Money */
         Money: {
             /** Amount */
@@ -715,6 +1042,23 @@ export interface components {
             note?: string | null;
         };
         /**
+         * Position
+         * @description Hold a fund from ``entry`` to ``exit`` (or to the end), buying for ``amount``.
+         */
+        Position: {
+            /** Amount */
+            amount: string;
+            /**
+             * Entry
+             * Format: date
+             */
+            entry: string;
+            /** Exit */
+            exit?: string | null;
+            /** Instrument Id */
+            instrument_id: number;
+        };
+        /**
          * ProblemDetails
          * @description Error body for every 4xx/5xx response.
          */
@@ -730,6 +1074,37 @@ export interface components {
             /** Type */
             type: string;
         };
+        /**
+         * RegularParams
+         * @description A lump sum, optionally rebalanced to the bucket's weights.
+         */
+        RegularParams: {
+            /** Capital */
+            capital: string;
+            /** End */
+            end?: string | null;
+            /** Rebalance */
+            rebalance?: ("none" | "monthly" | "quarterly" | "yearly") | null;
+            /**
+             * Risk Free Pct
+             * @default 0
+             */
+            risk_free_pct: string;
+            /** Start */
+            start?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            strategy: "regular";
+        };
+        /** RunUpdate */
+        RunUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Saved */
+            saved: boolean;
+        };
         /** Share */
         Share: {
             /**
@@ -739,6 +1114,31 @@ export interface components {
             bucket: "equity" | "debt" | "gold" | "silver" | "other";
             /** Percent */
             percent: string;
+        };
+        /** SipParams */
+        SipParams: {
+            /** Amount */
+            amount: string;
+            /** End */
+            end?: string | null;
+            /**
+             * Frequency
+             * @default monthly
+             * @enum {string}
+             */
+            frequency: "weekly" | "monthly" | "quarterly";
+            /**
+             * Risk Free Pct
+             * @default 0
+             */
+            risk_free_pct: string;
+            /** Start */
+            start?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            strategy: "sip";
         };
         /** SourceOut */
         SourceOut: {
@@ -751,6 +1151,33 @@ export interface components {
              * @enum {string}
              */
             source: "nse" | "amfi" | "us";
+        };
+        /** SwpParams */
+        SwpParams: {
+            /** Amount */
+            amount: string;
+            /** Corpus */
+            corpus: string;
+            /** End */
+            end?: string | null;
+            /**
+             * Frequency
+             * @default monthly
+             * @enum {string}
+             */
+            frequency: "weekly" | "monthly" | "quarterly";
+            /**
+             * Risk Free Pct
+             * @default 0
+             */
+            risk_free_pct: string;
+            /** Start */
+            start?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            strategy: "swp";
         };
         /** SyncIn */
         SyncIn: {
@@ -797,6 +1224,29 @@ export interface components {
             /** Used By */
             used_by: string[];
         };
+        /** TradeOut */
+        TradeOut: {
+            /** Amount */
+            amount: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Instrument Id */
+            instrument_id: number;
+            /** Name */
+            name: string;
+            /** Nav */
+            nav: string;
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "buy" | "sell";
+            /** Units */
+            units: string;
+        };
         /**
          * Variant
          * @description Another plan or option of the same mutual fund scheme.
@@ -822,6 +1272,168 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    runBacktest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BacktestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BacktestRunOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getBacktest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BacktestRunOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    deleteBacktest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    updateBacktest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BacktestRunSummary"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getBacktestInterval: {
+        parameters: {
+            query?: {
+                start?: string | null;
+                end?: string | null;
+            };
+            header?: never;
+            path: {
+                run_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntervalOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     listBuckets: {
         parameters: {
             query?: never;
@@ -996,6 +1608,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    listSavedBacktests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bucket_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BacktestRunSummary"][];
+                };
             };
             /** @description Problem details (RFC 9457) */
             "4XX": {

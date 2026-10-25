@@ -3,6 +3,7 @@ import type { RouteObject } from 'react-router'
 
 import { SECTIONS } from '@/app/navigation'
 import { AppShell } from '@/components/layout/AppShell'
+import { BacktestPage } from '@/pages/BacktestPage'
 import { BucketsPage } from '@/pages/BucketsPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { DataStatusPage } from '@/pages/DataStatusPage'
@@ -15,6 +16,7 @@ import { SectionPage } from '@/pages/SectionPage'
 const BUILT: Record<string, ReactElement> = {
   '/': <DashboardPage />,
   '/buckets': <BucketsPage />,
+  '/backtest': <BacktestPage />,
   '/instruments': <InstrumentsPage />,
   '/status': <DataStatusPage />,
 }
@@ -28,6 +30,7 @@ export const routes: RouteObject[] = [
         element: BUILT[section.path] ?? <SectionPage section={section} />,
       })),
       { path: '/instruments/:id', element: <InstrumentPage /> },
+      { path: '/backtest/:bucketId', element: <BacktestPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

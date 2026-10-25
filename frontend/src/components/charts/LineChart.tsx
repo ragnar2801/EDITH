@@ -84,7 +84,8 @@ export function LineChart({
       }
     }
     const pad = (hi - lo) * 0.08 || Math.abs(hi) * 0.1 || 1
-    lo -= pad
+    // Money and NAVs never go below zero, so neither does the axis.
+    lo = lo >= 0 ? Math.max(0, lo - pad) : lo - pad
     hi += pad
 
     const x = (i: number) => PAD.left + (n <= 1 ? plotW / 2 : (i / (n - 1)) * plotW)
@@ -178,7 +179,14 @@ export function LineChart({
           const boxW = Math.min(220, W - PAD.left - PAD.right)
           const boxH = 24 + rows.length * 16
           const hx = g.x(hover)
-          return { date, rows, boxW, boxH, x: hx, tx: hx + boxW + 14 > W ? hx - boxW - 8 : hx + 8 }
+          return {
+            date,
+            rows,
+            boxW,
+            boxH,
+            x: hx,
+            tx: Math.max(0, Math.min(W - boxW, hx + boxW + 14 > W ? hx - boxW - 8 : hx + 8)),
+          }
         })()
       : null
 

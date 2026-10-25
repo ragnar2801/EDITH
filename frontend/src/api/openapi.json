@@ -36,6 +36,326 @@
         "title": "Alias",
         "type": "object"
       },
+      "BacktestIn": {
+        "properties": {
+          "bucket_id": {
+            "title": "Bucket Id",
+            "type": "integer"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "params": {
+            "discriminator": {
+              "mapping": {
+                "custom": "#/components/schemas/CustomParams",
+                "regular": "#/components/schemas/RegularParams",
+                "sip": "#/components/schemas/SipParams",
+                "swp": "#/components/schemas/SwpParams"
+              },
+              "propertyName": "strategy"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RegularParams"
+              },
+              {
+                "$ref": "#/components/schemas/SipParams"
+              },
+              {
+                "$ref": "#/components/schemas/SwpParams"
+              },
+              {
+                "$ref": "#/components/schemas/CustomParams"
+              }
+            ],
+            "title": "Params"
+          },
+          "save": {
+            "default": false,
+            "title": "Save",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "bucket_id",
+          "params"
+        ],
+        "title": "BacktestIn",
+        "type": "object"
+      },
+      "BacktestResult": {
+        "properties": {
+          "benchmark": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BenchmarkOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "curve": {
+            "items": {
+              "$ref": "#/components/schemas/CurvePoint"
+            },
+            "title": "Curve",
+            "type": "array"
+          },
+          "funds": {
+            "items": {
+              "$ref": "#/components/schemas/FundOutcomeOut"
+            },
+            "title": "Funds",
+            "type": "array"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/MetricsOut"
+          },
+          "strategy": {
+            "enum": [
+              "regular",
+              "sip",
+              "swp",
+              "custom"
+            ],
+            "title": "Strategy",
+            "type": "string"
+          },
+          "trades": {
+            "items": {
+              "$ref": "#/components/schemas/TradeOut"
+            },
+            "title": "Trades",
+            "type": "array"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "strategy",
+          "curve",
+          "metrics",
+          "funds",
+          "trades",
+          "benchmark",
+          "warnings"
+        ],
+        "title": "BacktestResult",
+        "type": "object"
+      },
+      "BacktestRunOut": {
+        "properties": {
+          "bucket_id": {
+            "title": "Bucket Id",
+            "type": "integer"
+          },
+          "bucket_name": {
+            "title": "Bucket Name",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "params": {
+            "discriminator": {
+              "mapping": {
+                "custom": "#/components/schemas/CustomParams",
+                "regular": "#/components/schemas/RegularParams",
+                "sip": "#/components/schemas/SipParams",
+                "swp": "#/components/schemas/SwpParams"
+              },
+              "propertyName": "strategy"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RegularParams"
+              },
+              {
+                "$ref": "#/components/schemas/SipParams"
+              },
+              {
+                "$ref": "#/components/schemas/SwpParams"
+              },
+              {
+                "$ref": "#/components/schemas/CustomParams"
+              }
+            ],
+            "title": "Params"
+          },
+          "result": {
+            "$ref": "#/components/schemas/BacktestResult"
+          },
+          "saved": {
+            "title": "Saved",
+            "type": "boolean"
+          },
+          "strategy": {
+            "enum": [
+              "regular",
+              "sip",
+              "swp",
+              "custom"
+            ],
+            "title": "Strategy",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "bucket_id",
+          "strategy",
+          "saved",
+          "name",
+          "created_at",
+          "params",
+          "bucket_name",
+          "result"
+        ],
+        "title": "BacktestRunOut",
+        "type": "object"
+      },
+      "BacktestRunSummary": {
+        "properties": {
+          "bucket_id": {
+            "title": "Bucket Id",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "params": {
+            "discriminator": {
+              "mapping": {
+                "custom": "#/components/schemas/CustomParams",
+                "regular": "#/components/schemas/RegularParams",
+                "sip": "#/components/schemas/SipParams",
+                "swp": "#/components/schemas/SwpParams"
+              },
+              "propertyName": "strategy"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RegularParams"
+              },
+              {
+                "$ref": "#/components/schemas/SipParams"
+              },
+              {
+                "$ref": "#/components/schemas/SwpParams"
+              },
+              {
+                "$ref": "#/components/schemas/CustomParams"
+              }
+            ],
+            "title": "Params"
+          },
+          "saved": {
+            "title": "Saved",
+            "type": "boolean"
+          },
+          "strategy": {
+            "enum": [
+              "regular",
+              "sip",
+              "swp",
+              "custom"
+            ],
+            "title": "Strategy",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "bucket_id",
+          "strategy",
+          "saved",
+          "name",
+          "created_at",
+          "params"
+        ],
+        "title": "BacktestRunSummary",
+        "type": "object"
+      },
+      "BenchmarkOut": {
+        "properties": {
+          "curve": {
+            "items": {
+              "$ref": "#/components/schemas/CurvePoint"
+            },
+            "title": "Curve",
+            "type": "array"
+          },
+          "instrument_id": {
+            "title": "Instrument Id",
+            "type": "integer"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/MetricsOut"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instrument_id",
+          "name",
+          "curve",
+          "metrics"
+        ],
+        "title": "BenchmarkOut",
+        "type": "object"
+      },
       "BucketFundIn": {
         "properties": {
           "instrument_id": {
@@ -299,6 +619,161 @@
         "title": "CoverageOut",
         "type": "object"
       },
+      "CurvePoint": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "index": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Index",
+            "type": "string"
+          },
+          "invested": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Invested",
+            "type": "string"
+          },
+          "value": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Value",
+            "type": "string"
+          },
+          "withdrawn": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Withdrawn",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "value",
+          "invested",
+          "withdrawn",
+          "index"
+        ],
+        "title": "CurvePoint",
+        "type": "object"
+      },
+      "CustomParams": {
+        "description": "My own timeline over the bucket's funds; weights don't apply.",
+        "properties": {
+          "end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "positions": {
+            "items": {
+              "$ref": "#/components/schemas/Position"
+            },
+            "title": "Positions",
+            "type": "array"
+          },
+          "risk_free_pct": {
+            "default": "0",
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Risk Free Pct",
+            "type": "string"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "strategy": {
+            "const": "custom",
+            "title": "Strategy",
+            "type": "string"
+          },
+          "trades": {
+            "items": {
+              "$ref": "#/components/schemas/CustomTradeIn"
+            },
+            "title": "Trades",
+            "type": "array"
+          }
+        },
+        "required": [
+          "strategy"
+        ],
+        "title": "CustomParams",
+        "type": "object"
+      },
+      "CustomTradeIn": {
+        "description": "One buy or sell: by amount, by units, or (sells only) everything held.",
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "instrument_id": {
+            "title": "Instrument Id",
+            "type": "integer"
+          },
+          "sell_all": {
+            "default": false,
+            "title": "Sell All",
+            "type": "boolean"
+          },
+          "side": {
+            "enum": [
+              "buy",
+              "sell"
+            ],
+            "title": "Side",
+            "type": "string"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
+          }
+        },
+        "required": [
+          "instrument_id",
+          "date",
+          "side"
+        ],
+        "title": "CustomTradeIn",
+        "type": "object"
+      },
       "Echo": {
         "properties": {
           "at": {
@@ -348,6 +823,101 @@
           "type"
         ],
         "title": "FieldError",
+        "type": "object"
+      },
+      "FundOutcomeOut": {
+        "properties": {
+          "end_value": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "End Value",
+            "type": "string"
+          },
+          "instrument_id": {
+            "title": "Instrument Id",
+            "type": "integer"
+          },
+          "invested": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invested"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pnl": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pnl"
+          },
+          "pnl_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pnl Pct"
+          },
+          "proceeds": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proceeds"
+          },
+          "units": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Units",
+            "type": "string"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weight"
+          }
+        },
+        "required": [
+          "instrument_id",
+          "name",
+          "weight",
+          "units",
+          "end_value",
+          "invested",
+          "proceeds",
+          "pnl",
+          "pnl_pct"
+        ],
+        "title": "FundOutcomeOut",
         "type": "object"
       },
       "FundRef": {
@@ -1058,6 +1628,222 @@
         "title": "InstrumentSummary",
         "type": "object"
       },
+      "IntervalOut": {
+        "properties": {
+          "benchmark_return_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark Return Pct"
+          },
+          "end_date": {
+            "format": "date",
+            "title": "End Date",
+            "type": "string"
+          },
+          "end_value": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "End Value",
+            "type": "string"
+          },
+          "invested": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Invested",
+            "type": "string"
+          },
+          "max_drawdown_pct": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Max Drawdown Pct",
+            "type": "string"
+          },
+          "return_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Pct"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "start_value": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Start Value",
+            "type": "string"
+          },
+          "withdrawn": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Withdrawn",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_date",
+          "end_date",
+          "start_value",
+          "end_value",
+          "return_pct",
+          "max_drawdown_pct",
+          "invested",
+          "withdrawn",
+          "benchmark_return_pct"
+        ],
+        "title": "IntervalOut",
+        "type": "object"
+      },
+      "MetricsOut": {
+        "properties": {
+          "absolute_return_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Absolute Return Pct"
+          },
+          "cagr_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cagr Pct"
+          },
+          "depletion_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depletion Date"
+          },
+          "end_date": {
+            "format": "date",
+            "title": "End Date",
+            "type": "string"
+          },
+          "end_value": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "End Value",
+            "type": "string"
+          },
+          "max_drawdown_pct": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Max Drawdown Pct",
+            "type": "string"
+          },
+          "sharpe": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sharpe"
+          },
+          "sortino": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sortino"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "start_value": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Start Value",
+            "type": "string"
+          },
+          "total_invested": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Total Invested",
+            "type": "string"
+          },
+          "total_withdrawn": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Total Withdrawn",
+            "type": "string"
+          },
+          "volatility_pct": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Volatility Pct",
+            "type": "string"
+          },
+          "xirr_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Xirr Pct"
+          },
+          "years": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Years",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start_date",
+          "end_date",
+          "years",
+          "start_value",
+          "end_value",
+          "total_invested",
+          "total_withdrawn",
+          "absolute_return_pct",
+          "cagr_pct",
+          "xirr_pct",
+          "max_drawdown_pct",
+          "volatility_pct",
+          "sharpe",
+          "sortino",
+          "depletion_date"
+        ],
+        "title": "MetricsOut",
+        "type": "object"
+      },
       "Money": {
         "properties": {
           "amount": {
@@ -1345,6 +2131,44 @@
         "title": "OverrideIn",
         "type": "object"
       },
+      "Position": {
+        "description": "Hold a fund from ``entry`` to ``exit`` (or to the end), buying for ``amount``.",
+        "properties": {
+          "amount": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "entry": {
+            "format": "date",
+            "title": "Entry",
+            "type": "string"
+          },
+          "exit": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exit"
+          },
+          "instrument_id": {
+            "title": "Instrument Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "instrument_id",
+          "entry",
+          "amount"
+        ],
+        "title": "Position",
+        "type": "object"
+      },
       "ProblemDetails": {
         "description": "Error body for every 4xx/5xx response.",
         "properties": {
@@ -1394,6 +2218,99 @@
         "title": "ProblemDetails",
         "type": "object"
       },
+      "RegularParams": {
+        "description": "A lump sum, optionally rebalanced to the bucket's weights.",
+        "properties": {
+          "capital": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Capital",
+            "type": "string"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "rebalance": {
+            "anyOf": [
+              {
+                "enum": [
+                  "none",
+                  "monthly",
+                  "quarterly",
+                  "yearly"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rebalance"
+          },
+          "risk_free_pct": {
+            "default": "0",
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Risk Free Pct",
+            "type": "string"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "strategy": {
+            "const": "regular",
+            "title": "Strategy",
+            "type": "string"
+          }
+        },
+        "required": [
+          "strategy",
+          "capital"
+        ],
+        "title": "RegularParams",
+        "type": "object"
+      },
+      "RunUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "saved": {
+            "title": "Saved",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "saved"
+        ],
+        "title": "RunUpdate",
+        "type": "object"
+      },
       "Share": {
         "properties": {
           "bucket": {
@@ -1418,6 +2335,66 @@
           "percent"
         ],
         "title": "Share",
+        "type": "object"
+      },
+      "SipParams": {
+        "properties": {
+          "amount": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "frequency": {
+            "default": "monthly",
+            "enum": [
+              "weekly",
+              "monthly",
+              "quarterly"
+            ],
+            "title": "Frequency",
+            "type": "string"
+          },
+          "risk_free_pct": {
+            "default": "0",
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Risk Free Pct",
+            "type": "string"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "strategy": {
+            "const": "sip",
+            "title": "Strategy",
+            "type": "string"
+          }
+        },
+        "required": [
+          "strategy",
+          "amount"
+        ],
+        "title": "SipParams",
         "type": "object"
       },
       "SourceOut": {
@@ -1463,6 +2440,72 @@
           "last_success"
         ],
         "title": "SourceOut",
+        "type": "object"
+      },
+      "SwpParams": {
+        "properties": {
+          "amount": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "corpus": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Corpus",
+            "type": "string"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "frequency": {
+            "default": "monthly",
+            "enum": [
+              "weekly",
+              "monthly",
+              "quarterly"
+            ],
+            "title": "Frequency",
+            "type": "string"
+          },
+          "risk_free_pct": {
+            "default": "0",
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Risk Free Pct",
+            "type": "string"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "strategy": {
+            "const": "swp",
+            "title": "Strategy",
+            "type": "string"
+          }
+        },
+        "required": [
+          "strategy",
+          "corpus",
+          "amount"
+        ],
+        "title": "SwpParams",
         "type": "object"
       },
       "SyncIn": {
@@ -1588,6 +2631,57 @@
         "title": "TrackedFundOut",
         "type": "object"
       },
+      "TradeOut": {
+        "properties": {
+          "amount": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "instrument_id": {
+            "title": "Instrument Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "nav": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Nav",
+            "type": "string"
+          },
+          "side": {
+            "enum": [
+              "buy",
+              "sell"
+            ],
+            "title": "Side",
+            "type": "string"
+          },
+          "units": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Units",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "instrument_id",
+          "name",
+          "side",
+          "units",
+          "nav",
+          "amount"
+        ],
+        "title": "TradeOut",
+        "type": "object"
+      },
       "Variant": {
         "description": "Another plan or option of the same mutual fund scheme.",
         "properties": {
@@ -1651,6 +2745,251 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/backtests": {
+      "post": {
+        "description": "Run a backtest on the bucket's stored NAVs and keep it; ``save`` keeps it for good.",
+        "operationId": "runBacktest",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BacktestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BacktestRunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Run",
+        "tags": [
+          "backtests"
+        ]
+      }
+    },
+    "/api/v1/backtests/{run_id}": {
+      "delete": {
+        "operationId": "deleteBacktest",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Delete",
+        "tags": [
+          "backtests"
+        ]
+      },
+      "get": {
+        "operationId": "getBacktest",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BacktestRunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Get",
+        "tags": [
+          "backtests"
+        ]
+      },
+      "patch": {
+        "description": "Save a run (with an optional name), or unsave it.",
+        "operationId": "updateBacktest",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BacktestRunSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Update",
+        "tags": [
+          "backtests"
+        ]
+      }
+    },
+    "/api/v1/backtests/{run_id}/interval": {
+      "get": {
+        "description": "Return, drawdown and money in and out for a window of a run (D-049).",
+        "operationId": "getBacktestInterval",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntervalOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Interval",
+        "tags": [
+          "backtests"
+        ]
+      }
+    },
     "/api/v1/buckets": {
       "get": {
         "operationId": "listBuckets",
@@ -1889,6 +3228,53 @@
         "summary": "Update",
         "tags": [
           "buckets"
+        ]
+      }
+    },
+    "/api/v1/buckets/{bucket_id}/backtests": {
+      "get": {
+        "description": "Saved runs of a bucket, newest first.",
+        "operationId": "listSavedBacktests",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bucket_id",
+            "required": true,
+            "schema": {
+              "title": "Bucket Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BacktestRunSummary"
+                  },
+                  "title": "Response Listsavedbacktests",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "List Saved",
+        "tags": [
+          "backtests"
         ]
       }
     },

@@ -2,9 +2,14 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 
 import { api, type ProblemDetails, type Schemas } from './client'
 
-/** Turn a problem-details body (D-035) into an Error with its human-readable detail. */
+/** Turn a problem-details body (D-035) into an Error with its human-readable detail, and
+ * which fields were wrong when the request didn't validate. */
 function failure(error: ProblemDetails): Error {
-  return new Error(error.detail ?? error.title)
+  const fields = (error.errors ?? []).map(
+    (field) => `${field.loc.filter((part) => part !== 'body').join(' › ')}: ${field.msg}`,
+  )
+  const detail = error.detail ?? error.title
+  return new Error(fields.length ? `${detail} ${fields.join('; ')}` : detail)
 }
 
 export function useHealth() {
@@ -261,5 +266,105 @@ export function useDeleteBucket() {
         queryClient.invalidateQueries({ queryKey: ['buckets'] }),
         queryClient.invalidateQueries({ queryKey: ['nav-status'] }),
       ]),
+  })
+}
+
+export type BacktestRun = Schemas['BacktestRunOut']
+
+export function useRunBacktest() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (body: Schemas['BacktestIn']) => {
+      const { data, error } = await api.POST('/api/v1/backtests', { body })
+      if (error) throw failure(error)
+      return data
+    },
+    onSuccess: (run) => {
+      queryClient.setQueryData(['backtest', run.id], run)
+      if (run.saved) {
+        return queryClient.invalidateQueries({ queryKey: ['saved-backtests', run.bucket_id] })
+      }
+    },
+  })
+}
+
+export function useSavedBacktests(bucketId: number | null) {
+  return useQuery({
+    queryKey: ['saved-backtests', bucketId],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/api/v1/buckets/{bucket_id}/backtests', {
+        params: { path: { bucket_id: bucketId! } },
+      })
+      if (error) throw failure(error)
+      return data
+    },
+    enabled: bucketId !== null,
+  })
+}
+
+/** Fetch a stored run (a saved one being loaded). */
+export function useLoadBacktest() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: number) =>
+      queryClient.fetchQuery({
+        queryKey: ['backtest', id],
+        queryFn: async () => {
+          const { data, error } = await api.GET('/api/v1/backtests/{run_id}', {
+            params: { path: { run_id: id } },
+          })
+          if (error) throw failure(error)
+          return data
+        },
+      }),
+  })
+}
+
+export function useSaveBacktest() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: number; name: string }) => {
+      const { data, error } = await api.PATCH('/api/v1/backtests/{run_id}', {
+        params: { path: { run_id: id } },
+        body: { saved: true, name: name || null },
+      })
+      if (error) throw failure(error)
+      return data
+    },
+    onSuccess: (run) =>
+      queryClient.invalidateQueries({ queryKey: ['saved-backtests', run.bucket_id] }),
+  })
+}
+
+export function useDeleteBacktest() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id }: { id: number; bucketId: number }) => {
+      const { error } = await api.DELETE('/api/v1/backtests/{run_id}', {
+        params: { path: { run_id: id } },
+      })
+      if (error) throw failure(error)
+    },
+    onSuccess: (_, { bucketId }) =>
+      queryClient.invalidateQueries({ queryKey: ['saved-backtests', bucketId] }),
+  })
+}
+
+/** Figures for a window of a stored run (D-049); `null` window = nothing to ask. */
+export function useBacktestInterval(
+  runId: number | undefined,
+  window: { start: string; end: string } | null,
+) {
+  return useQuery({
+    queryKey: ['backtest-interval', runId, window?.start, window?.end],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/api/v1/backtests/{run_id}/interval', {
+        params: { path: { run_id: runId! }, query: window! },
+      })
+      if (error) throw failure(error)
+      return data
+    },
+    enabled: runId !== undefined && window !== null,
+    placeholderData: keepPreviousData,
   })
 }
