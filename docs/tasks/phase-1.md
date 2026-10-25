@@ -6,7 +6,7 @@
 > **Already fixed:** React frontend + Python backend (D-023) · SQLite on the laptop (D-013) · free data only (D-012) · scheduled fetch + catch-up (D-022) · Windows + Task Scheduler (D-027) · Nifty 50 benchmark (D-043).
 > Everything else is decided **inside the task that needs it** (see each task's *Decisions* list). How this board works: [`README.md`](README.md)
 
-**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7) · **Done:** 7 / 13
+**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7) · **Done:** 8 / 13
 
 ---
 
@@ -25,7 +25,7 @@
 | T1-18 | Daily NAV update on Windows | Infra | both | todo | T1-12 |
 | T1-19 | Phase 1 acceptance: my real funds, reconciled | Verify | both | todo | T1-12 to T1-18 |
 | T1-20 | Plan and option for every fund (AMFI leaves 5,623 blank) | Feature | Claude | todo | T1-02 |
-| T1-21 | UI kit and copy clean-up: no prose, info icons, no build talk | Feature | Claude | todo | T1-16 |
+| T1-21 | UI kit and copy clean-up: no prose, info icons, no build talk | Feature | Claude | done | T1-16 |
 | T1-22 | Journeys: new navigation, one fund page, Invest, Models, Settings | Feature | Claude | todo | T1-21 |
 | ~~T1-03 to T1-11~~ | Board v2 tasks for stocks, US, LRS and the watchlist | — | — | dropped | see [Dropped tasks](#dropped-tasks-board-v2) |
 
@@ -347,7 +347,7 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12. 
 ---
 
 ## T1-21 · UI kit and copy clean-up: no prose, info icons, no build talk
-`Feature` · Owner: Claude · Status: todo · Depends on: T1-16
+`Feature` · Owner: Claude · Status: done · Depends on: T1-16
 
 **Goal:** every screen looks and reads like a finished product: a title and its actions, figures and controls, and an info icon where a term needs defining. No paragraphs, task IDs, CLI commands or "coming soon".
 
@@ -357,8 +357,17 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12. 
 - Apply them to today's screens without moving anything: strip prose and build talk, hint lines → info tips or placeholders, `window.confirm` → confirm dialog, "Saved." → toast, row buttons → `⋯` menu, AMFI codes out of list rows, `SectionPage` deleted
 - Screen rules (`ui-redesign.md` section 2) added to `CLAUDE.md`
 
-**Decisions** (candidates in `ui-redesign.md` section 9)
-- Screen rules into `CLAUDE.md` (#1); toast component (#7); UI words: bucket, lot, earmark, deployable (#3 to #5)
+**Decisions** (approved 2026-10-25)
+- Decided: screen rules in `CLAUDE.md`: one job per screen, info icons instead of prose, no build talk, dialogs for small edits, toasts and confirm dialogs (D-060)
+- Decided: UI words Model, Purchase, Purpose, Investable, Invest rules, Invest, Funds; code and API names unchanged (D-061)
+- Decided: toasts with sonner (D-062)
+
+**Progress (2026-10-25)**
+- Built: shadcn `dialog`, `alert-dialog`, `tooltip`, `tabs`, `dropdown-menu`, `skeleton`, `sonner` (by hand, on the installed `radix-ui`); app kit `PageHeader`, `Section`, `InfoTip`, `Field` + `ErrorText`, `DataTable`, `RowActions`, `EmptyState`, `Loading`, `ConfirmProvider` + `useConfirm`; `Stat` takes an info tip
+- Every screen: subtitles and explanatory card text gone; hints → info tips or placeholders; deletes confirm in a dialog; saves, deletes and syncs toast; row buttons → `⋯` menus; AMFI codes out of list rows (kept on the fund's identifiers); `SectionPage` deleted; nav lists only built screens
+- Split for T1-22 to move without rewriting: `components/cash/` (summary, accounts, plan, invest rules), `components/holdings/` (transaction forms in dialogs, SIPs and purchases tables), `components/fund/FundDetails`, `components/data/` (NAV sync, tracked funds, fund lists), `components/models/ModelEditor`
+- Small changes on the way: the model editor is a page of its own (`/buckets/new`, `/buckets/:id/edit`), and a new model lands on its backtest; the planner's amount starts at the investable cash and shows "Choose a target model" when none is set; NAV, units and notes sit under "More options"; tracking reasons read "Model Core", "Holding"
+- Tests: 46 frontend (kit tests for the info tip and confirm dialog, a delete-with-confirm test), 211 backend unchanged. `lint`, `test` pass on Linux; screenshots on real AMFI data at desktop and phone width, light and dark
 
 **Done when**
 - No page has a subtitle paragraph or an explanatory card description; no UI string contains a task ID, a `just` command or a data-source name
@@ -383,8 +392,12 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12. 
 - Settings: invest rules and data (sync log, tracked funds, list status)
 - Redirects from the old routes; fund search limited to mutual funds
 
-**Decisions** (candidates in `ui-redesign.md` section 9)
-- Top bar or sidebar (#2); where cash accounts live (#6); fund-list download from the UI (#8); hide stocks and US listings (#9)
+**Decisions** (approved 2026-10-25)
+- Decided: top bar with Portfolio · Invest · Models · Funds, NAV freshness, + Add and Settings; bottom tabs on phones; backtest as a model tab; one fund page; redirects (D-063)
+- Decided: cash accounts on a Portfolio · Cash tab, Invest on its own, rules under Settings (D-064)
+- Decided: `POST /api/v1/instruments/refresh`, a button in Settings · Data and a first-run banner (D-065)
+- Decided: mutual funds only in Phase 1 search (D-066)
+- Decided: T1-21 → T1-22 → T1-17 (D-067)
 
 **Done when**
 - Journeys J1 to J8 in `ui-redesign.md` work as written, checked in the running app

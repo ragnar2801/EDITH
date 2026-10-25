@@ -6,16 +6,21 @@ export type Tone = 'positive' | 'negative'
 
 type Props = {
   label: string
+  /** An <InfoTip> next to the label. */
+  info?: ReactNode
   value: ReactNode
   hint?: ReactNode
   tone?: Tone
 }
 
 /** One headline figure: a label above a value. The value is always text from the API. */
-export function Stat({ label, value, hint, tone }: Props) {
+export function Stat({ label, info, value, hint, tone }: Props) {
   return (
     <div className="bg-card flex min-w-0 flex-col gap-0.5 rounded-lg border px-3 py-2.5">
-      <dt className="text-muted-foreground text-xs">{label}</dt>
+      <dt className="text-muted-foreground flex items-center gap-1 text-xs">
+        {label}
+        {info}
+      </dt>
       <dd
         className={cn(
           'truncate text-lg font-semibold tabular-nums',

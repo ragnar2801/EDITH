@@ -1,14 +1,17 @@
 import { Link } from 'react-router'
 
+import { PageHeader } from '@/components/PageHeader'
+import { Button } from '@/components/ui/button'
+
 export function NotFoundPage() {
   return (
-    <div className="mx-auto max-w-3xl">
-      <h1 className="text-2xl font-semibold tracking-tight">Page not found</h1>
-      <p className="text-muted-foreground mt-1">
-        <Link to="/" className="underline underline-offset-4">
-          Back to the dashboard
-        </Link>
-      </p>
+    <div className="mx-auto flex max-w-3xl flex-col gap-4">
+      <PageHeader title="Page not found" />
+      <div>
+        <Button asChild variant="outline">
+          <Link to="/">Go home</Link>
+        </Button>
+      </div>
     </div>
   )
 }

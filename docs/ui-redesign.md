@@ -1,6 +1,6 @@
 # UI rework: user journeys and screens
 
-> Proposal for tasks T1-21 and T1-22 (board: [`tasks/phase-1.md`](tasks/phase-1.md)). Nothing here is decided until its D-### row is in `agents.md`.
+> Tasks T1-21 and T1-22 (board: [`tasks/phase-1.md`](tasks/phase-1.md)). Approved 2026-10-25 as D-060 to D-067 in `agents.md`, all with the recommendations in section 9.
 > Scope: what Phase 1 has built today. Later phases get their screens when they are built, not before.
 
 ---

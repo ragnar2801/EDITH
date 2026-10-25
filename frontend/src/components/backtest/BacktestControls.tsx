@@ -1,7 +1,9 @@
 import { Loader2, Plus, X } from 'lucide-react'
-import { cloneElement, isValidElement, useId, type ReactElement } from 'react'
+import { cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react'
 
 import type { Schemas } from '@/api/client'
+import { Field as BaseField } from '@/components/Field'
+import { InfoTip } from '@/components/InfoTip'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
@@ -31,25 +33,20 @@ type Props = {
   running: boolean
 }
 
-/** A label above one form control; the control gets the label's id. */
+/** A compact label above one form control; the control gets the label's id. */
 function Field({
   label,
   children,
-  hint,
+  info,
 }: {
   label: string
   children: ReactElement<{ id?: string }>
-  hint?: string
+  info?: ReactNode
 }) {
-  const id = useId()
   return (
-    <div className="flex min-w-0 flex-col gap-1">
-      <label htmlFor={id} className="text-muted-foreground text-xs font-medium">
-        {label}
-      </label>
-      {isValidElement(children) ? cloneElement(children, { id }) : children}
-      {hint && <p className="text-muted-foreground text-xs">{hint}</p>}
-    </div>
+    <BaseField label={label} info={info} size="sm">
+      {(id) => (isValidElement(children) ? cloneElement(children, { id }) : children)}
+    </BaseField>
   )
 }
 
@@ -123,12 +120,12 @@ export function BacktestControls({
         onRun()
       }}
     >
-      <Field label="Bucket">
+      <Field label="Model">
         <NativeSelect
           value={bucket?.id ?? ''}
           onChange={(event) => onBucket(event.target.value ? Number(event.target.value) : null)}
         >
-          <option value="">Choose a bucket…</option>
+          <option value="">Choose a model…</option>
           {buckets.map((b) => (
             <option key={b.id} value={b.id}>
               {b.name}
@@ -159,7 +156,7 @@ export function BacktestControls({
               }
             >
               <option value="">
-                Bucket’s own ({bucket ? REBALANCE_LABELS[bucket.rebalance].toLowerCase() : '—'})
+                Model’s own ({bucket ? REBALANCE_LABELS[bucket.rebalance].toLowerCase() : '—'})
               </option>
               {(Object.keys(REBALANCE_LABELS) as (keyof typeof REBALANCE_LABELS)[]).map((key) => (
                 <option key={key} value={key}>
@@ -199,7 +196,7 @@ export function BacktestControls({
 
       <div className="grid gap-2">
         {form.strategy !== 'custom' && (
-          <Field label="From (optional)">
+          <Field label="From" info="Blank: from the first date every fund has a NAV.">
             <Input
               type="date"
               value={form.start}
@@ -207,7 +204,7 @@ export function BacktestControls({
             />
           </Field>
         )}
-        <Field label="To (optional)">
+        <Field label="To" info="Blank: to the latest NAV.">
           <Input
             type="date"
             value={form.end}
@@ -215,7 +212,7 @@ export function BacktestControls({
           />
         </Field>
       </div>
-      <Field label="Risk-free rate (% a year)" hint="Used for Sharpe and Sortino.">
+      <Field label="Risk-free rate (% a year)" info="Used for Sharpe and Sortino.">
         <Input
           inputMode="decimal"
           value={form.riskFree}
@@ -296,18 +293,23 @@ function CustomBuilder({
 
   return (
     <div className="flex flex-col gap-3">
-      <Segmented
-        label="Custom timeline as"
-        value={form.customMode}
-        options={{ positions: 'Positions', trades: 'Trades' }}
-        onChange={(customMode) => set({ customMode })}
-      />
+      <div className="flex items-center gap-1.5">
+        <div className="flex-1">
+          <Segmented
+            label="Custom timeline as"
+            value={form.customMode}
+            options={{ positions: 'Positions', trades: 'Trades' }}
+            onChange={(customMode) => set({ customMode })}
+          />
+        </div>
+        <InfoTip label="Custom timeline">
+          {form.customMode === 'positions'
+            ? 'Hold a fund between two dates; leave the exit empty to hold to the end. Several positions model switches.'
+            : 'Buys and sells at that day’s NAV, or the next NAV date on holidays.'}
+        </InfoTip>
+      </div>
       {form.customMode === 'positions' ? (
         <>
-          <p className="text-muted-foreground text-xs">
-            Hold a fund between two dates (leave the exit empty to hold to the end). Add several to
-            model switches.
-          </p>
           {form.positions.map((row, i) => (
             <fieldset key={i} className="bg-muted/40 flex flex-col gap-2 rounded-md border p-2">
               <legend className="sr-only">Position {i + 1}</legend>
@@ -363,9 +365,6 @@ function CustomBuilder({
         </>
       ) : (
         <>
-          <p className="text-muted-foreground text-xs">
-            Individual buys and sells at that day’s NAV (the next NAV date on holidays).
-          </p>
           {form.trades.map((row, i) => (
             <fieldset key={i} className="bg-muted/40 flex flex-col gap-2 rounded-md border p-2">
               <legend className="sr-only">Trade {i + 1}</legend>

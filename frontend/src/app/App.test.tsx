@@ -45,7 +45,7 @@ test('shows the app shell and a healthy backend', async () => {
 
   expect(await screen.findByText('backend: ok')).toBeInTheDocument()
   expect(screen.getByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
-  for (const label of ['Buckets', 'Backtest', 'Holdings', 'Cash', 'Data status']) {
+  for (const label of ['Holdings', 'Cash', 'Models', 'Backtest', 'Funds', 'Data status']) {
     expect(screen.getByRole('link', { name: label })).toBeInTheDocument()
   }
 })
@@ -66,7 +66,6 @@ test('navigates between sections', async () => {
   await userEvent.click(screen.getByRole('link', { name: 'Cash' }))
 
   expect(screen.getByRole('heading', { name: 'Cash' })).toBeInTheDocument()
-  expect(screen.getByText(/where new cash should go/)).toBeInTheDocument()
 })
 
 test('unknown paths show a not-found page', () => {

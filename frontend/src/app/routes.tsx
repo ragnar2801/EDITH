@@ -12,11 +12,10 @@ import { HoldingPage } from '@/pages/HoldingPage'
 import { HoldingsPage } from '@/pages/HoldingsPage'
 import { InstrumentPage } from '@/pages/InstrumentPage'
 import { InstrumentsPage } from '@/pages/InstrumentsPage'
+import { ModelEditorPage } from '@/pages/ModelEditorPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
-import { SectionPage } from '@/pages/SectionPage'
 
-/** Sections whose task has built them. The rest show a placeholder. */
-const BUILT: Record<string, ReactElement> = {
+const PAGES: Record<string, ReactElement> = {
   '/': <DashboardPage />,
   '/buckets': <BucketsPage />,
   '/backtest': <BacktestPage />,
@@ -32,9 +31,11 @@ export const routes: RouteObject[] = [
     children: [
       ...SECTIONS.map((section) => ({
         path: section.path,
-        element: BUILT[section.path] ?? <SectionPage section={section} />,
+        element: PAGES[section.path],
       })),
       { path: '/instruments/:id', element: <InstrumentPage /> },
+      { path: '/buckets/new', element: <ModelEditorPage /> },
+      { path: '/buckets/:id/edit', element: <ModelEditorPage /> },
       { path: '/backtest/:bucketId', element: <BacktestPage /> },
       { path: '/holdings/:id', element: <HoldingPage /> },
       { path: '*', element: <NotFoundPage /> },

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 
@@ -20,6 +20,9 @@ afterEach(() => {
 })
 
 const PATH = `/api/v1/holdings/${parag.id}`
+
+const dialogClosed = () =>
+  waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
 
 async function setDate(form: HTMLElement, label: string, value: string) {
   const input = within(form).getByLabelText(label)
@@ -61,13 +64,15 @@ test('a lump sum into a fund without NAVs: track it, download NAVs, then save', 
   })
   renderAt(`/holdings/${parag.id}`)
 
-  await userEvent.click(await screen.findByRole('button', { name: /Add lump sum/ }))
+  // The header and the empty state both offer it.
+  await userEvent.click((await screen.findAllByRole('button', { name: /Add lump sum/ }))[0])
   const form = screen.getByRole('form', { name: 'Lump sum' })
   await setDate(form, 'Date', '2026-01-06')
   await userEvent.type(within(form).getByLabelText('Amount (₹)'), '100000')
-  await userEvent.click(within(form).getByRole('button', { name: 'Save lump sum' }))
+  await userEvent.click(within(form).getByRole('button', { name: 'Save' }))
 
-  await screen.findByRole('button', { name: /Add lump sum/ }) // the form closed
+  await dialogClosed()
+  expect(await screen.findByText('₹1,00,000.00 added to Parag Parikh Flexi Cap Fund')).toBeVisible()
   const order = calls.map((call) => `${call.method} ${new URL(call.url).pathname}`)
   expect(order.indexOf('POST /api/v1/navs/sync')).toBeLessThan(order.indexOf('POST /api/v1/lots'))
   const post = calls.find((call) => call.method === 'POST' && call.url.endsWith('/lots'))
@@ -110,7 +115,7 @@ test('sell: units per lot I pick, blank lots are left alone', async () => {
   await userEvent.type(within(rows[2]).getByRole('textbox'), '30')
   await userEvent.click(within(form).getByRole('button', { name: 'Sell' }))
 
-  await screen.findByRole('button', { name: 'Sell units' })
+  await dialogClosed()
   const post = calls.find((call) => call.url.endsWith('/sales'))
   expect(await post?.json()).toEqual({
     sale_date: '2026-04-10',
@@ -158,7 +163,7 @@ test('start a SIP; lots show what was sold from them, with an undo', async () =>
   await setDate(form, 'Start date', '2026-01-01')
   await userEvent.click(within(form).getByRole('button', { name: 'Start SIP' }))
 
-  await screen.findByRole('button', { name: /Start a SIP/ })
+  await dialogClosed()
   expect(calls.some((call) => call.method === 'DELETE' && call.url.endsWith('/sales/21'))).toBe(
     true,
   )

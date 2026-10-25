@@ -105,7 +105,10 @@ test('the plan shows the API figures, with a stagger table for large amounts', a
   renderCash()
 
   const form = await screen.findByRole('form', { name: 'Make a plan' })
-  await userEvent.type(within(form).getByLabelText('Amount (₹)'), '650000')
+  const amount = within(form).getByLabelText('Amount (₹)')
+  expect(amount).toHaveValue('100000.00') // investable cash, to start with
+  await userEvent.clear(amount)
+  await userEvent.type(amount, '650000')
   await userEvent.click(within(form).getByRole('button', { name: 'Make plan' }))
 
   const table = await screen.findByRole('table', { name: 'Plan per fund' })
@@ -114,13 +117,13 @@ test('the plan shows the API figures, with a stagger table for large amounts', a
   expect(within(row).getByText('75.00%')).toBeInTheDocument()
   const months = screen.getByRole('table', { name: 'Monthly transfers' })
   expect(within(months).getByText('₹64,666.00')).toBeInTheDocument()
-  expect(screen.getByText(/park it in a liquid or arbitrage fund/)).toBeInTheDocument()
+  expect(screen.getByText(/From a liquid or arbitrage fund · 2 months/)).toBeInTheDocument()
 
   const request = calls.find((call) => call.url.endsWith('/api/v1/plan'))!
   expect(await request.json()).toEqual({ amount: '650000' })
 })
 
-test('a blank amount asks for all deployable cash, and errors are shown', async () => {
+test('a blank amount asks for all investable cash, and errors are shown', async () => {
   const calls = fakeApi({
     'GET /api/v1/cash': () => cash,
     'GET /api/v1/plan/settings': () => settings,
@@ -128,7 +131,8 @@ test('a blank amount asks for all deployable cash, and errors are shown', async 
   })
   renderCash()
 
-  await userEvent.click(await screen.findByRole('button', { name: 'Make plan' }))
+  await userEvent.clear(await screen.findByLabelText('Amount (₹)'))
+  await userEvent.click(screen.getByRole('button', { name: 'Make plan' }))
 
   expect(await screen.findByRole('alert')).toHaveTextContent('sync NAVs first')
   const request = calls.find((call) => call.url.endsWith('/api/v1/plan'))!
@@ -143,12 +147,12 @@ test('adding an account sends the balance as a string', async () => {
   })
   renderCash()
 
-  expect(await screen.findByRole('button', { name: 'Make plan' })).toBeDisabled()
+  expect(await screen.findByText('Choose a target model')).toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Add account' }))
   const form = screen.getByRole('form', { name: 'Add account' })
   await userEvent.type(within(form).getByLabelText('Name'), 'Savings')
   await userEvent.type(within(form).getByLabelText('Balance (₹)'), '250000.50')
-  await userEvent.selectOptions(within(form).getByLabelText('Earmark'), 'emergency')
+  await userEvent.selectOptions(within(form).getByLabelText('Purpose'), 'emergency')
   await userEvent.click(within(form).getByRole('button', { name: 'Add account' }))
 
   const request = calls.find((call) => call.method === 'POST')!
@@ -158,4 +162,21 @@ test('adding an account sends the balance as a string', async () => {
     earmark: 'emergency',
     note: null,
   })
+})
+
+test('deleting an account asks first, then confirms with a toast', async () => {
+  const calls = fakeApi({
+    'GET /api/v1/cash': () => cash,
+    'GET /api/v1/plan/settings': () => settings,
+    'DELETE /api/v1/cash/accounts/1': () => new Response(null, { status: 204 }),
+  })
+  renderCash()
+
+  await userEvent.click(await screen.findByRole('button', { name: 'Actions for Salary' }))
+  await userEvent.click(screen.getByRole('menuitem', { name: 'Delete' }))
+  const dialog = screen.getByRole('alertdialog', { name: 'Delete Salary?' })
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Delete' }))
+
+  expect(await screen.findByText('Salary deleted')).toBeInTheDocument()
+  expect(calls.some((call) => call.method === 'DELETE')).toBe(true)
 })

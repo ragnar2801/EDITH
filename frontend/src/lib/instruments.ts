@@ -61,3 +61,8 @@ export function planLabel(instrument: Pick<InstrumentSummary, 'plan' | 'option'>
     instrument.plan === 'direct' ? 'Direct' : instrument.plan === 'regular' ? 'Regular' : null
   return [plan, instrument.option].filter(Boolean).join(' · ')
 }
+
+/** Where a fund (or any instrument) lives in the app. */
+export function fundPath(id: number): string {
+  return `/instruments/${id}`
+}

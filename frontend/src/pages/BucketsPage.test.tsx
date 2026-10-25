@@ -24,7 +24,7 @@ async function addFund(name: RegExp) {
   await userEvent.click(await screen.findByRole('option', { name }))
 }
 
-test('create a bucket: exact weights, default benchmark, then its NAVs are downloaded', async () => {
+test('create a model: exact weights, default benchmark, NAVs downloaded, then backtest it', async () => {
   let saved: ReturnType<typeof bucket>[] = []
   const created = bucket({
     funds: bucket().funds.map((member) => ({
@@ -45,8 +45,8 @@ test('create a bucket: exact weights, default benchmark, then its NAVs are downl
   })
   renderAt('/buckets')
 
-  await userEvent.click(await screen.findByRole('button', { name: /New bucket/ }))
-  const form = screen.getByRole('form', { name: 'Bucket' })
+  await userEvent.click((await screen.findAllByRole('link', { name: /New model/ }))[0])
+  const form = await screen.findByRole('form', { name: 'Model' })
   await userEvent.type(within(form).getByLabelText('Name'), 'Core')
   await userEvent.selectOptions(within(form).getByLabelText('Rebalance'), 'yearly')
   expect(within(form).getByText('UTI Nifty 50 Index Fund')).toBeInTheDocument() // default
@@ -58,11 +58,9 @@ test('create a bucket: exact weights, default benchmark, then its NAVs are downl
   await userEvent.clear(within(form).getByLabelText(/Weight of UTI/))
   await userEvent.type(within(form).getByLabelText(/Weight of UTI/), '40')
   expect(within(form).getByText('Total 100%')).toHaveClass('text-positive')
-  await userEvent.click(within(form).getByRole('button', { name: 'Save bucket' }))
+  await userEvent.click(within(form).getByRole('button', { name: 'Save model' }))
 
-  await screen.findByText('vs UTI Nifty 50 Index Fund', { exact: false })
-  const links = screen.getAllByRole('link', { name: 'Backtest' })
-  expect(links.map((link) => link.getAttribute('href'))).toContain('/backtest/1')
+  expect(await screen.findByRole('heading', { name: 'Backtest' })).toBeInTheDocument()
   const post = calls.find((call) => call.method === 'POST' && call.url.endsWith('/buckets'))
   expect(await post?.json()).toEqual({
     name: 'Core',
@@ -86,7 +84,8 @@ test('equal weights split 100 exactly', async () => {
   })
   renderAt('/buckets')
 
-  await userEvent.click((await screen.findAllByRole('button', { name: /New bucket/ }))[0])
+  await userEvent.click((await screen.findAllByRole('link', { name: /New model/ }))[0])
+  await screen.findByRole('form', { name: 'Model' })
   await addFund(/Parag Parikh/)
   await addFund(/UTI Nifty 50/)
   await addFund(/Third/)
@@ -97,7 +96,7 @@ test('equal weights split 100 exactly', async () => {
   expect(screen.getByText('Total 100%')).toBeInTheDocument()
 })
 
-test('a refused bucket shows the reason', async () => {
+test('a refused model shows the reason', async () => {
   fakeApi({
     'GET /api/v1/buckets': () => [bucket()],
     'GET /api/v1/buckets/default-benchmark': () => fundRef(nifty),
@@ -105,13 +104,14 @@ test('a refused bucket shows the reason', async () => {
   })
   renderAt('/buckets')
 
-  await userEvent.click(await screen.findByRole('button', { name: 'Edit' }))
-  await userEvent.click(screen.getByRole('button', { name: 'Save bucket' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Actions for Core' }))
+  await userEvent.click(screen.getByRole('menuitem', { name: 'Edit' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Save model' }))
 
   expect(await screen.findByRole('alert')).toHaveTextContent('not 99.99')
 })
 
-test('the dashboard lists buckets', async () => {
+test('the dashboard lists models', async () => {
   fakeApi({
     'GET /api/v1/buckets': () => [bucket()],
     'GET /api/v1/navs/status': () => ({ last_run: syncRun(), funds: [] }),

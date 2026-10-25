@@ -29,8 +29,8 @@ type Props = {
  */
 export function InstrumentSearch({
   onSelect,
-  label = 'Search instruments',
-  placeholder = 'Name, symbol, scheme code or ISIN',
+  label = 'Search funds',
+  placeholder = 'Fund name or scheme code',
   autoFocus,
   kind,
 }: Props) {
@@ -125,12 +125,16 @@ export function InstrumentSearch({
             >
               <span className="font-medium">{instrument.name}</span>
               <span className="text-muted-foreground flex flex-wrap items-center gap-1.5 text-xs">
-                <span>{listingLabel(instrument)}</span>
-                {planLabel(instrument) && <span>· {planLabel(instrument)}</span>}
-                <Badge variant="outline">{KIND_LABELS[instrument.kind]}</Badge>
+                {instrument.kind === 'mutual_fund' ? (
+                  planLabel(instrument) && <span>{planLabel(instrument)}</span>
+                ) : (
+                  <>
+                    <span>{listingLabel(instrument)}</span>
+                    <Badge variant="outline">{KIND_LABELS[instrument.kind]}</Badge>
+                  </>
+                )}
                 <Badge variant="outline">{ASSET_CLASS_LABELS[instrument.asset_class]}</Badge>
-                <Badge variant="outline">{instrument.currency}</Badge>
-                {!instrument.is_active && <Badge variant="secondary">inactive</Badge>}
+                {!instrument.is_active && <Badge variant="secondary">Inactive</Badge>}
                 {instrument.variants.length > 0 && (
                   <span>
                     · {instrument.variants.length} other plan

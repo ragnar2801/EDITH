@@ -36,7 +36,7 @@ test('run a SIP and see it next to the benchmark', async () => {
   await userEvent.click(within(form).getByRole('radio', { name: 'SIP' }))
   await userEvent.clear(within(form).getByLabelText('SIP amount (₹)'))
   await userEvent.type(within(form).getByLabelText('SIP amount (₹)'), '15000.50')
-  await userEvent.type(within(form).getByLabelText('From (optional)'), '2015-01-01')
+  await userEvent.type(within(form).getByLabelText('From'), '2015-01-01')
   await userEvent.click(within(form).getByRole('button', { name: 'Run backtest' }))
 
   expect(await screen.findByText('Final value')).toBeInTheDocument()
@@ -191,9 +191,9 @@ test('choosing a bucket changes the address', async () => {
   })
   const router = renderAt('/backtest')
 
-  expect(await screen.findByText('Choose a bucket')).toBeInTheDocument()
+  expect(await screen.findByText('Choose a model')).toBeInTheDocument()
   await screen.findByRole('option', { name: 'Index only' })
-  await userEvent.selectOptions(screen.getByLabelText('Bucket'), '2')
+  await userEvent.selectOptions(screen.getByLabelText('Model'), '2')
 
   expect(router.state.location.pathname).toBe('/backtest/2')
   expect(await screen.findByText('Ready to backtest Index only')).toBeInTheDocument()

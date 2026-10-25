@@ -8,16 +8,33 @@ import {
   type ChartSelection,
   type ChartSeries,
 } from '@/components/charts/LineChart'
+import { Table, TBody, Td, Th, THead, Tr } from '@/components/DataTable'
+import { ErrorText } from '@/components/Field'
+import { InfoTip } from '@/components/InfoTip'
+import { Section } from '@/components/Section'
 import { Stat, StatGrid } from '@/components/Stat'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { inr, inrShort, formatNav } from '@/lib/money'
 import { formatPercent, toneOf } from '@/lib/percent'
 import { RANGES, rangeStart, usefulRanges, type RangeKey } from '@/lib/ranges'
 import { formatDate } from '@/lib/time'
 
 const axisMoney = (value: number) => inrShort(value.toFixed(0))
+
+/** One-line definitions for the figures (D-060). */
+const METRIC_INFO = {
+  xirr: 'Annual return on your actual cash flows, money-weighted.',
+  cagr: 'Annual growth of the funds themselves, time-weighted; ignores when money went in.',
+  absolute: 'Total gain as a share of the money put in.',
+  drawdown: 'The largest fall from a peak before a new high.',
+  volatility: 'How much daily returns swing, a year.',
+  sharpe: 'Return above the risk-free rate per unit of volatility. Higher is better.',
+  window: 'Money-weighted return over the window: money put in or taken out isn’t gain.',
+}
+
+const tip = (label: string, text: string) => <InfoTip label={label}>{text}</InfoTip>
 
 /** Everything a run returned (T1-14): figures vs the benchmark, chart, interval, tables. */
 export function BacktestResults({ run }: { run: BacktestRun }) {
@@ -99,35 +116,41 @@ export function BacktestResults({ run }: { run: BacktestRun }) {
         )}
         <Stat
           label="XIRR"
+          info={tip('XIRR', METRIC_INFO.xirr)}
           value={formatPercent(m.xirr_pct)}
           tone={toneOf(m.xirr_pct)}
           hint={vs(b?.xirr_pct)}
         />
         <Stat
-          label="CAGR (time-weighted)"
+          label="CAGR"
+          info={tip('CAGR', METRIC_INFO.cagr)}
           value={formatPercent(m.cagr_pct)}
           tone={toneOf(m.cagr_pct)}
           hint={vs(b?.cagr_pct)}
         />
         <Stat
           label="Absolute return"
+          info={tip('Absolute return', METRIC_INFO.absolute)}
           value={formatPercent(m.absolute_return_pct)}
           tone={toneOf(m.absolute_return_pct)}
           hint={vs(b?.absolute_return_pct)}
         />
         <Stat
           label="Max drawdown"
+          info={tip('Max drawdown', METRIC_INFO.drawdown)}
           value={`−${formatPercent(m.max_drawdown_pct, { sign: false })}`}
           tone="negative"
           hint={b ? `Benchmark: −${formatPercent(b.max_drawdown_pct, { sign: false })}` : undefined}
         />
         <Stat
           label="Volatility"
+          info={tip('Volatility', METRIC_INFO.volatility)}
           value={formatPercent(m.volatility_pct, { sign: false })}
           hint={vs(b?.volatility_pct, false)}
         />
         <Stat
           label="Sharpe"
+          info={tip('Sharpe', METRIC_INFO.sharpe)}
           value={m.sharpe ?? '—'}
           hint={b ? `Benchmark: ${b.sharpe ?? '—'}` : undefined}
         />
@@ -141,17 +164,15 @@ export function BacktestResults({ run }: { run: BacktestRun }) {
         )}
       </StatGrid>
       <p className="text-muted-foreground text-xs">
-        {formatDate(m.start_date)} to {formatDate(m.end_date)} ({m.years} years).
-        {result.benchmark &&
-          ` The benchmark line is the same money, on the same dates, in ${result.benchmark.name}.`}{' '}
-        CAGR and drawdown measure the funds themselves; XIRR measures your actual cash flows.
+        {formatDate(m.start_date)} – {formatDate(m.end_date)} · {m.years} years
+        {result.benchmark && ` · vs ${result.benchmark.name}`}
       </p>
 
       <Card>
         <CardContent className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-muted-foreground mr-auto text-xs">
-              Drag across the chart to measure a window
+            <span className="mr-auto">
+              <InfoTip label="Chart">Drag across the chart to measure a window.</InfoTip>
             </span>
             <div className="flex flex-wrap gap-1" role="group" aria-label="Chart range">
               {usefulRanges(first, last).map((option) => (
@@ -206,13 +227,12 @@ export function BacktestResults({ run }: { run: BacktestRun }) {
                   <X />
                 </Button>
               </div>
-              {interval.isError && (
-                <p className="text-destructive text-sm">{interval.error.message}</p>
-              )}
+              <ErrorText error={interval.error} />
               {interval.data && (
                 <StatGrid>
                   <Stat
                     label="Return in window"
+                    info={tip('Return in window', METRIC_INFO.window)}
                     value={formatPercent(interval.data.return_pct)}
                     tone={toneOf(interval.data.return_pct)}
                     hint={
@@ -239,10 +259,6 @@ export function BacktestResults({ run }: { run: BacktestRun }) {
                   )}
                 </StatGrid>
               )}
-              <p className="text-muted-foreground mt-2 text-xs">
-                Money-weighted return over the window (Modified Dietz): money put in or taken out
-                isn’t counted as gain. A slice of this run, not a new one.
-              </p>
             </div>
           )}
         </CardContent>
@@ -255,112 +271,92 @@ export function BacktestResults({ run }: { run: BacktestRun }) {
 
 function EndHoldings({ run }: { run: BacktestRun }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Funds at the end</CardTitle>
-      </CardHeader>
-      <CardContent className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="text-muted-foreground text-left text-xs">
-            <tr className="border-b">
-              <th className="py-2 pr-3 font-medium">Fund</th>
-              <th className="py-2 pr-3 text-right font-medium">Weight</th>
-              <th className="py-2 pr-3 text-right font-medium">Units</th>
-              <th className="py-2 text-right font-medium">Value</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {run.result.funds.map((fund) => (
-              <tr key={fund.instrument_id}>
-                <td className="py-2 pr-3">{fund.name}</td>
-                <td className="py-2 pr-3 text-right tabular-nums">{fund.weight}%</td>
-                <td className="py-2 pr-3 text-right tabular-nums">{fund.units}</td>
-                <td className="py-2 text-right tabular-nums">{inr(fund.end_value)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </CardContent>
-    </Card>
+    <Section title="Funds at the end">
+      <Table label="Funds at the end">
+        <THead>
+          <Th>Fund</Th>
+          <Th numeric>Weight</Th>
+          <Th numeric>Units</Th>
+          <Th numeric>Value</Th>
+        </THead>
+        <TBody>
+          {run.result.funds.map((fund) => (
+            <Tr key={fund.instrument_id}>
+              <Td>{fund.name}</Td>
+              <Td numeric>{fund.weight}%</Td>
+              <Td numeric>{fund.units}</Td>
+              <Td numeric>{inr(fund.end_value)}</Td>
+            </Tr>
+          ))}
+        </TBody>
+      </Table>
+    </Section>
   )
 }
 
 function CustomTables({ run }: { run: BacktestRun }) {
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Profit and loss per fund</CardTitle>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full min-w-[32rem] text-sm">
-            <thead className="text-muted-foreground text-left text-xs">
-              <tr className="border-b">
-                <th className="py-2 pr-3 font-medium">Fund</th>
-                <th className="py-2 pr-3 text-right font-medium">Bought</th>
-                <th className="py-2 pr-3 text-right font-medium">Sold</th>
-                <th className="py-2 pr-3 text-right font-medium">Value at end</th>
-                <th className="py-2 pr-3 text-right font-medium">P&amp;L</th>
-                <th className="py-2 text-right font-medium">Return</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {run.result.funds.map((fund) => (
-                <tr key={fund.instrument_id}>
-                  <td className="py-2 pr-3">{fund.name}</td>
-                  <td className="py-2 pr-3 text-right tabular-nums">{inr(fund.invested ?? '0')}</td>
-                  <td className="py-2 pr-3 text-right tabular-nums">{inr(fund.proceeds ?? '0')}</td>
-                  <td className="py-2 pr-3 text-right tabular-nums">{inr(fund.end_value)}</td>
-                  <td
-                    className={`py-2 pr-3 text-right tabular-nums ${toneOf(fund.pnl) === 'negative' ? 'text-destructive' : ''}`}
-                  >
-                    {fund.pnl ? inr(fund.pnl) : '—'}
-                  </td>
-                  <td className="py-2 text-right tabular-nums">{formatPercent(fund.pnl_pct)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Trades</CardTitle>
-          <CardDescription>
-            As executed, on the first NAV date on or after each date.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full min-w-[32rem] text-sm">
-            <thead className="text-muted-foreground text-left text-xs">
-              <tr className="border-b">
-                <th className="py-2 pr-3 font-medium">Date</th>
-                <th className="py-2 pr-3 font-medium">Side</th>
-                <th className="py-2 pr-3 font-medium">Fund</th>
-                <th className="py-2 pr-3 text-right font-medium">Units</th>
-                <th className="py-2 pr-3 text-right font-medium">NAV</th>
-                <th className="py-2 text-right font-medium">Amount</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {run.result.trades.map((trade, i) => (
-                <tr key={i}>
-                  <td className="py-2 pr-3 whitespace-nowrap">{formatDate(trade.date)}</td>
-                  <td className="py-2 pr-3">
-                    <Badge variant={trade.side === 'buy' ? 'outline' : 'secondary'}>
-                      {trade.side}
-                    </Badge>
-                  </td>
-                  <td className="py-2 pr-3">{trade.name}</td>
-                  <td className="py-2 pr-3 text-right tabular-nums">{trade.units}</td>
-                  <td className="py-2 pr-3 text-right tabular-nums">{formatNav(trade.nav)}</td>
-                  <td className="py-2 text-right tabular-nums">{inr(trade.amount)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+      <Section title="Profit and loss per fund">
+        <Table label="Profit and loss per fund">
+          <THead>
+            <Th>Fund</Th>
+            <Th numeric>Bought</Th>
+            <Th numeric>Sold</Th>
+            <Th numeric>Value at end</Th>
+            <Th numeric>P&amp;L</Th>
+            <Th numeric>Return</Th>
+          </THead>
+          <TBody>
+            {run.result.funds.map((fund) => (
+              <Tr key={fund.instrument_id}>
+                <Td>{fund.name}</Td>
+                <Td numeric>{inr(fund.invested ?? '0')}</Td>
+                <Td numeric>{inr(fund.proceeds ?? '0')}</Td>
+                <Td numeric>{inr(fund.end_value)}</Td>
+                <Td
+                  numeric
+                  className={toneOf(fund.pnl) === 'negative' ? 'text-destructive' : undefined}
+                >
+                  {fund.pnl ? inr(fund.pnl) : '—'}
+                </Td>
+                <Td numeric>{formatPercent(fund.pnl_pct)}</Td>
+              </Tr>
+            ))}
+          </TBody>
+        </Table>
+      </Section>
+      <Section
+        title="Trades"
+        info={<InfoTip label="Trades">On the first NAV date on or after each date.</InfoTip>}
+      >
+        <Table label="Trades">
+          <THead>
+            <Th>Date</Th>
+            <Th>Side</Th>
+            <Th>Fund</Th>
+            <Th numeric>Units</Th>
+            <Th numeric>NAV</Th>
+            <Th numeric>Amount</Th>
+          </THead>
+          <TBody>
+            {run.result.trades.map((trade, i) => (
+              <Tr key={i}>
+                <Td className="whitespace-nowrap">{formatDate(trade.date)}</Td>
+                <Td>
+                  <Badge variant={trade.side === 'buy' ? 'outline' : 'secondary'}>
+                    {trade.side === 'buy' ? 'Buy' : 'Sell'}
+                  </Badge>
+                </Td>
+                <Td>{trade.name}</Td>
+                <Td numeric>{trade.units}</Td>
+                <Td numeric>{formatNav(trade.nav)}</Td>
+                <Td numeric>{inr(trade.amount)}</Td>
+              </Tr>
+            ))}
+          </TBody>
+        </Table>
+      </Section>
     </>
   )
 }

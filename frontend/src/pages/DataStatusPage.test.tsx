@@ -49,8 +49,10 @@ test('lists tracked funds with their NAV dates and the last sync', async () => {
   expect(within(row).getByText('3,298')).toBeInTheDocument()
   expect(within(row).getByText('28 May 2013')).toBeInTheDocument()
   expect(within(row).getByText('23 Oct 2026')).toBeInTheDocument()
-  expect(within(row).getByText('you, bucket Core')).toBeInTheDocument()
-  expect(screen.getByText(/Last sync 25 Oct 2026, 9:30 am · 2 funds · 26 NAVs added/)).toBeVisible()
+  expect(within(row).getByText('You, Model Core')).toBeInTheDocument()
+  expect(
+    screen.getByText(/Last sync 25 Oct 2026, 9:30 am · 26 NAVs added for 2 funds/),
+  ).toBeVisible()
 })
 
 test('sync all and sync one fund', async () => {
@@ -84,6 +86,6 @@ test('says how to start when nothing is tracked', async () => {
   fakeApi({ 'GET /api/v1/navs/status': () => ({ last_run: null, funds: [] }) })
   renderAt('/status')
 
-  expect(await screen.findByText(/No funds tracked yet/)).toBeInTheDocument()
+  expect(await screen.findByText('No funds tracked')).toBeInTheDocument()
   expect(screen.getByRole('button', { name: 'Sync all NAVs' })).toBeDisabled()
 })

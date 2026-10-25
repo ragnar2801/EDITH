@@ -1,12 +1,15 @@
-import { Loader2, RefreshCw } from 'lucide-react'
+import { LineChart as ChartIcon, Loader2, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 
 import { useNavSummary, useNavs, useSyncNavs, useTrackFund, useUntrackFund } from '@/api/queries'
 import { LineChart } from '@/components/charts/LineChart'
+import { EmptyState } from '@/components/EmptyState'
+import { ErrorText } from '@/components/Field'
+import { Section } from '@/components/Section'
 import { Stat, StatGrid } from '@/components/Stat'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatNav } from '@/lib/money'
+import { reasonLabel } from '@/lib/navs'
 import { formatPercent, toneOf } from '@/lib/percent'
 import { rangeStart, usefulRanges, type RangeKey } from '@/lib/ranges'
 import { formatDate } from '@/lib/time'
@@ -32,50 +35,52 @@ export function NavHistoryCard({ instrumentId }: { instrumentId: number }) {
   const error = track.error ?? sync.error ?? untrack.error
   const stats = data.stats
 
+  const trackButton = (
+    <Button onClick={() => track.mutate()} disabled={busy}>
+      {track.isPending && <Loader2 className="animate-spin" />}
+      Track NAVs
+    </Button>
+  )
+
+  if (!data.tracked) {
+    return (
+      <Section title="NAV history">
+        <EmptyState icon={ChartIcon} title="Not tracked" action={trackButton} />
+        <ErrorText error={error} />
+      </Section>
+    )
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>NAV history</CardTitle>
-        <CardDescription>
-          {data.tracked
-            ? `Kept up to date${data.used_by.length ? ` (used by ${data.used_by.join(', ')})` : ''}. ${
-                first && last
-                  ? `${data.coverage.count.toLocaleString('en-IN')} NAVs from ${formatDate(first)} to ${formatDate(last)}.`
-                  : 'No NAVs downloaded yet.'
-              }`
-            : 'Not tracked. Track it to download every NAV since launch and keep it up to date.'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex flex-wrap gap-2">
-          {!data.tracked && (
-            <Button onClick={() => track.mutate()} disabled={busy}>
-              {track.isPending && <Loader2 className="animate-spin" />}
-              Track NAVs
-            </Button>
-          )}
-          {data.tracked && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => sync.mutate([instrumentId])}
-              disabled={busy}
-            >
-              {sync.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
-              Sync now
-            </Button>
-          )}
+    <Section
+      title="NAV history"
+      actions={
+        <>
           {data.tracked_by_me && data.used_by.length === 0 && (
             <Button variant="ghost" size="sm" onClick={() => untrack.mutate()} disabled={busy}>
               Stop tracking
             </Button>
           )}
-        </div>
-        {error && (
-          <p role="alert" className="text-destructive text-sm">
-            {error.message}
-          </p>
-        )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => sync.mutate([instrumentId])}
+            disabled={busy}
+          >
+            {sync.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+            Sync now
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <p className="text-muted-foreground text-xs">
+          {first && last
+            ? `${data.coverage.count.toLocaleString('en-IN')} NAVs · ${formatDate(first)} – ${formatDate(last)}`
+            : 'No NAVs yet'}
+          {data.used_by.length > 0 && ` · ${data.used_by.map(reasonLabel).join(', ')}`}
+        </p>
+        <ErrorText error={error} />
         {stats && (
           <StatGrid>
             <Stat
@@ -168,7 +173,7 @@ export function NavHistoryCard({ instrumentId }: { instrumentId: number }) {
             </table>
           </details>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </Section>
   )
 }

@@ -61,9 +61,7 @@ test('the instruments page searches and opens the chosen instrument', async () =
   })
   const router = renderAt('/instruments')
 
-  expect(
-    await screen.findByText(/2,968 active · refreshed 24 Oct 2026, 9:30 pm/),
-  ).toBeInTheDocument()
+  expect(await screen.findByText(/2,968 active · 24 Oct 2026, 9:30 pm/)).toBeInTheDocument()
   await userEvent.type(screen.getByRole('combobox'), 'infos')
   await userEvent.click(await screen.findByRole('option', { name: /Infosys/ }))
 
@@ -78,7 +76,7 @@ test('a fund page lists its other plans', async () => {
   fakeApi({ 'GET /api/v1/instruments/7': () => detail(parag) })
   renderAt('/instruments/7')
 
-  const plans = (await screen.findByText('Other plans and options')).closest('[data-slot=card]')
+  const plans = await screen.findByRole('region', { name: 'Other plans' })
   expect(
     within(plans as HTMLElement).getByRole('link', { name: 'Regular · Growth' }),
   ).toHaveAttribute('href', '/instruments/8')
@@ -104,18 +102,18 @@ test('setting my own classification sends exact strings and shows the result', a
   })
   renderAt('/instruments/7')
 
-  await userEvent.click(await screen.findByRole('button', { name: 'Set my own classification' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Set my own' }))
   const form = screen.getByRole('form', { name: 'My classification' })
   await userEvent.clear(within(form).getByLabelText('Equity'))
   await userEvent.type(within(form).getByLabelText('Equity'), '65')
   await userEvent.type(within(form).getByLabelText('Debt'), '35')
   await userEvent.selectOptions(within(form).getByLabelText('Exposure'), 'GLOBAL')
-  await userEvent.type(within(form).getByLabelText('Note (optional)'), 'holds US stocks')
+  await userEvent.type(within(form).getByLabelText('Note'), 'holds US stocks')
   await userEvent.click(within(form).getByRole('button', { name: 'Save' }))
 
   expect(await screen.findByText('Note: holds US stocks')).toBeInTheDocument()
   expect(screen.getByText('Equity 65%')).toBeInTheDocument()
-  expect(screen.getByRole('button', { name: 'Use the rules again' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Use the rules' })).toBeInTheDocument()
   const put = calls.find((call) => call.method === 'PUT')
   expect(await put?.json()).toEqual({
     allocation: [
@@ -135,7 +133,7 @@ test('a rejected classification shows the reason', async () => {
   })
   renderAt('/instruments/7')
 
-  await userEvent.click(await screen.findByRole('button', { name: 'Set my own classification' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Set my own' }))
   const equity = screen.getByLabelText('Equity')
   await userEvent.clear(equity)
   await userEvent.type(equity, '90')
@@ -148,7 +146,7 @@ test('an unknown instrument says so', async () => {
   fakeApi({ 'GET /api/v1/instruments/999': () => problem(404, 'No instrument with id 999.') })
   renderAt('/instruments/999')
 
-  expect(await screen.findByRole('heading', { name: 'Instrument not found' })).toBeInTheDocument()
+  expect(await screen.findByRole('heading', { name: 'Fund not found' })).toBeInTheDocument()
   expect(screen.getByText('No instrument with id 999.')).toBeInTheDocument()
 })
 
@@ -160,7 +158,7 @@ test('a tracked fund shows its NAV figures and chart', async () => {
   })
   renderAt('/instruments/7')
 
-  const card = (await screen.findByText('NAV history')).closest('[data-slot=card]') as HTMLElement
+  const card = await screen.findByRole('region', { name: 'NAV history' })
   expect(await within(card).findByText('Latest NAV')).toBeInTheDocument()
   expect(within(card).getAllByText('₹88.9695')[0]).toBeInTheDocument()
   expect(within(card).getByText('−0.49%')).toHaveClass('text-destructive')

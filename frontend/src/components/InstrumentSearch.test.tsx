@@ -19,16 +19,15 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-test('typing searches and shows each result with its type, asset class and plans', async () => {
+test('typing searches and shows each result with its plan, asset class and other plans', async () => {
   const calls = fakeApi({ 'GET /api/v1/instruments/search': () => [parag, infosys] })
   renderSearch()
 
   await userEvent.type(screen.getByRole('combobox'), 'parag parikh flexi')
 
   const option = await screen.findByRole('option', { name: /Parag Parikh Flexi Cap Fund/ })
-  expect(option).toHaveTextContent('AMFI 122639')
+  expect(option).not.toHaveTextContent('122639') // identity, not identifiers (D-060)
   expect(option).toHaveTextContent('Direct · Growth')
-  expect(option).toHaveTextContent('Mutual fund')
   expect(option).toHaveTextContent('Equity')
   expect(option).toHaveTextContent('1 other plan')
   expect(screen.getByRole('option', { name: /Infosys Limited/ })).toHaveTextContent('NSE · INFY')
