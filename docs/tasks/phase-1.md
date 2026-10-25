@@ -407,6 +407,8 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12. 
 - Tests: 66 frontend (shell, freshness and redirects; 3-step add; first-run banner and checklist; set as target; fund page tabs; weekday helper), 267 backend. `lint`, `test`, `api-check` pass on Linux
 - Not yet: value, weight and drift columns on Portfolio and the model Overview come with T1-17
 - Windows CI caught that the root `data/` ignore rule also hid `frontend/src/components/data/` (the T1-21 commit didn't build from a clean clone); the folder is now `components/status/`
+- Windows CI passed (run #17, https://github.com/ragnar2801/EDITH/actions/runs/40196195842): `just setup`, `lint`, `test`, `api-check`, `smoke`
+- Worth doing once on my laptop: `just run`, then press **Download** on the Portfolio banner if the fund list isn't there yet, and follow the checklist
 
 **Done when**
 - Journeys J1 to J8 in `ui-redesign.md` work as written, checked in the running app
