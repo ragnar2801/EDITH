@@ -29,10 +29,10 @@ test('run a SIP and see it next to the benchmark', async () => {
     'GET /api/v1/buckets/1/backtests': () => [],
     'POST /api/v1/backtests': () => backtestRun(),
   })
-  renderAt('/backtest/1')
+  renderAt('/models/1/backtest')
 
   const form = await screen.findByRole('form', { name: 'Backtest settings' })
-  expect(await within(form).findByDisplayValue('Core')).toBeInTheDocument()
+  expect(screen.getByRole('heading', { name: 'Core' })).toBeInTheDocument() // the model is the page
   await userEvent.click(within(form).getByRole('radio', { name: 'SIP' }))
   await userEvent.clear(within(form).getByLabelText('SIP amount (₹)'))
   await userEvent.type(within(form).getByLabelText('SIP amount (₹)'), '15000.50')
@@ -77,7 +77,7 @@ test('a zoom preset asks the backend for the window figures', async () => {
       benchmark_return_pct: '-1.20',
     }),
   })
-  renderAt('/backtest/1')
+  renderAt('/models/1/backtest')
   await userEvent.click(await screen.findByRole('button', { name: 'Run backtest' }))
   await screen.findByText('Final value')
 
@@ -141,7 +141,7 @@ test('save a run, then load a saved custom run into the form', async () => {
     },
     'GET /api/v1/backtests/7': () => custom,
   })
-  renderAt('/backtest/1')
+  renderAt('/models/1/backtest')
   await userEvent.click(await screen.findByRole('button', { name: 'Run backtest' }))
   await userEvent.type(await screen.findByLabelText('Name for this run'), 'Ten k')
   await userEvent.click(screen.getByRole('button', { name: 'Save run' }))
@@ -164,37 +164,23 @@ test('a refused run shows the reason', async () => {
     'POST /api/v1/backtests': () =>
       problem(422, 'No NAVs yet for UTI Nifty 50 Index Fund; sync NAVs first.'),
   })
-  renderAt('/backtest/1')
+  renderAt('/models/1/backtest')
 
   await userEvent.click(await screen.findByRole('button', { name: 'Run backtest' }))
 
   expect(await screen.findByRole('alert')).toHaveTextContent('sync NAVs first')
 })
 
-test('choosing a bucket changes the address', async () => {
+test('the Backtest tab is part of the model page', async () => {
   fakeApi({
-    'GET /api/v1/buckets': () => [
-      bucket(),
-      bucket({
-        id: 2,
-        name: 'Index only',
-        funds: [
-          {
-            fund: { ...bucket().funds[1].fund },
-            weight: '100',
-            coverage: bucket().funds[1].coverage,
-          },
-        ],
-      }),
-    ],
-    'GET /api/v1/buckets/2/backtests': () => [],
+    'GET /api/v1/buckets': () => [bucket()],
+    'GET /api/v1/buckets/1/backtests': () => [],
   })
-  const router = renderAt('/backtest')
+  const router = renderAt('/models/1')
 
-  expect(await screen.findByText('Choose a model')).toBeInTheDocument()
-  await screen.findByRole('option', { name: 'Index only' })
-  await userEvent.selectOptions(screen.getByLabelText('Model'), '2')
+  await userEvent.click(await screen.findByRole('tab', { name: 'Backtest' }))
 
-  expect(router.state.location.pathname).toBe('/backtest/2')
-  expect(await screen.findByText('Ready to backtest Index only')).toBeInTheDocument()
+  expect(router.state.location.pathname).toBe('/models/1/backtest')
+  expect(await screen.findByText('Ready to backtest Core')).toBeInTheDocument()
+  expect(screen.queryByRole('combobox', { name: 'Model' })).not.toBeInTheDocument() // no picker
 })

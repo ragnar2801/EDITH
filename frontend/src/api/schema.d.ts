@@ -281,6 +281,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/instruments/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh
+         * @description Download the lists and update instruments, as ``friday instruments refresh`` does
+         *     (D-065). Each list is its own transaction; a failed one is reported, not raised.
+         */
+        post: operations["refreshInstruments"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/instruments/search": {
         parameters: {
             query?: never;
@@ -1586,6 +1607,41 @@ export interface components {
             /** Type */
             type: string;
         };
+        /** RefreshIn */
+        RefreshIn: {
+            /**
+             * Sources
+             * @description Blank: every list
+             */
+            sources?: ("nse" | "amfi" | "us")[] | null;
+        };
+        /** RefreshResultOut */
+        RefreshResultOut: {
+            /** Added */
+            added: number;
+            /** Deactivated */
+            deactivated: number;
+            /** Message */
+            message: string | null;
+            /** Reactivated */
+            reactivated: number;
+            /** Rows */
+            rows: number;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "nse" | "amfi" | "us";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "failed";
+            /** Updated */
+            updated: number;
+            /** Warnings */
+            warnings: string[];
+        };
         /**
          * RegularParams
          * @description A lump sum, optionally rebalanced to the bucket's weights.
@@ -2525,6 +2581,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HoldingOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    refreshInstruments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RefreshIn"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefreshResultOut"][];
                 };
             };
             /** @description Problem details (RFC 9457) */

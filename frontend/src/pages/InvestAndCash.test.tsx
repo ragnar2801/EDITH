@@ -7,11 +7,11 @@ import type { Schemas } from '@/api/client'
 import { routes } from '@/app/routes'
 import { fakeApi, fundRef, parag, problem } from '@/test/fake-api'
 
-function renderCash() {
+function renderAt(path: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={createMemoryRouter(routes, { initialEntries: ['/cash'] })} />
+      <RouterProvider router={createMemoryRouter(routes, { initialEntries: [path] })} />
     </QueryClientProvider>,
   )
 }
@@ -102,7 +102,7 @@ test('the plan shows the API figures, with a stagger table for large amounts', a
     'GET /api/v1/plan/settings': () => settings,
     'POST /api/v1/plan': () => plan,
   })
-  renderCash()
+  renderAt('/invest')
 
   const form = await screen.findByRole('form', { name: 'Make a plan' })
   const amount = within(form).getByLabelText('Amount (₹)')
@@ -129,7 +129,7 @@ test('a blank amount asks for all investable cash, and errors are shown', async 
     'GET /api/v1/plan/settings': () => settings,
     'POST /api/v1/plan': () => problem(422, 'Friday has no NAV for Parag Parikh; sync NAVs first.'),
   })
-  renderCash()
+  renderAt('/invest')
 
   await userEvent.clear(await screen.findByLabelText('Amount (₹)'))
   await userEvent.click(screen.getByRole('button', { name: 'Make plan' }))
@@ -139,16 +139,36 @@ test('a blank amount asks for all investable cash, and errors are shown', async 
   expect(await request.json()).toEqual({})
 })
 
+test('without a target model, Invest asks for one', async () => {
+  fakeApi({
+    'GET /api/v1/cash': () => cash,
+    'GET /api/v1/plan/settings': () => ({ ...settings, target_bucket: null }),
+  })
+  renderAt('/invest')
+
+  expect(await screen.findByText('Choose a target model')).toBeInTheDocument()
+  expect(screen.getByRole('link', { name: 'Choose' })).toHaveAttribute('href', '/models')
+  expect(screen.queryByRole('button', { name: 'Make plan' })).not.toBeInTheDocument()
+})
+
+test('the Cash tab shows what cash is for', async () => {
+  fakeApi({ 'GET /api/v1/cash': () => cash })
+  renderAt('/cash')
+
+  const accounts = await screen.findByRole('table', { name: 'Cash accounts' })
+  expect(within(accounts).getByText('Investable')).toBeInTheDocument()
+  expect(screen.getByText('Emergency shortfall').nextSibling).toHaveTextContent('₹1,00,000.00')
+})
+
 test('adding an account sends the balance as a string', async () => {
   const calls = fakeApi({
     'GET /api/v1/cash': () => cash,
     'GET /api/v1/plan/settings': () => ({ ...settings, target_bucket: null }),
     'POST /api/v1/cash/accounts': () => Response.json(cash.accounts[0], { status: 201 }),
   })
-  renderCash()
+  renderAt('/cash')
 
-  expect(await screen.findByText('Choose a target model')).toBeInTheDocument()
-  await userEvent.click(screen.getByRole('button', { name: 'Add account' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Add account' }))
   const form = screen.getByRole('form', { name: 'Add account' })
   await userEvent.type(within(form).getByLabelText('Name'), 'Savings')
   await userEvent.type(within(form).getByLabelText('Balance (₹)'), '250000.50')
@@ -170,7 +190,7 @@ test('deleting an account asks first, then confirms with a toast', async () => {
     'GET /api/v1/plan/settings': () => settings,
     'DELETE /api/v1/cash/accounts/1': () => new Response(null, { status: 204 }),
   })
-  renderCash()
+  renderAt('/cash')
 
   await userEvent.click(await screen.findByRole('button', { name: 'Actions for Salary' }))
   await userEvent.click(screen.getByRole('menuitem', { name: 'Delete' }))

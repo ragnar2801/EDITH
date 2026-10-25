@@ -145,6 +145,12 @@ function BuyFields({
   )
 }
 
+/** The fund's latest NAV date, so a blank NAV can be looked up (today has none until the
+ * evening, nor on weekends); today when no NAVs are downloaded yet. */
+function defaultDate(holding: Holding): string {
+  return holding.coverage.last ?? todayIst()
+}
+
 function buyBody(draft: BuyDraft) {
   return {
     buy_date: draft.buy_date,
@@ -158,7 +164,7 @@ function buyBody(draft: BuyDraft) {
 export function LumpSumForm({ holding, onDone }: { holding: Holding; onDone: () => void }) {
   const add = useAddLumpSum(holding)
   const [draft, setDraft] = useState<BuyDraft>({
-    buy_date: todayIst(),
+    buy_date: defaultDate(holding),
     amount: '',
     nav: '',
     units: '',
@@ -343,7 +349,7 @@ export function SipForm({
 export function SellForm({ holding, onDone }: { holding: Holding; onDone: () => void }) {
   const sell = useSell(holding.fund.id)
   const lots = holding.lots.filter(hasUnits)
-  const [saleDate, setSaleDate] = useState(todayIst())
+  const [saleDate, setSaleDate] = useState(defaultDate(holding))
   const [nav, setNav] = useState('')
   const [units, setUnits] = useState<Record<number, string>>({})
   const picked = lots.filter((lot) => (units[lot.id] ?? '').trim())

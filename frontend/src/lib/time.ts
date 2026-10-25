@@ -31,3 +31,23 @@ export function formatMonthYear(date: string): string {
 export function todayIst(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date())
 }
+
+/** The weekday before `date` ("2026-10-26", a Monday → "2026-10-23"): the latest NAV date
+ * to expect, since a day's NAVs are published that night. Holidays aren't known here. */
+export function previousWeekday(date: string): string {
+  const [year, month, day] = date.split('-').map(Number)
+  const d = new Date(Date.UTC(year, month - 1, day))
+  do d.setUTCDate(d.getUTCDate() - 1)
+  while (d.getUTCDay() === 0 || d.getUTCDay() === 6)
+  return d.toISOString().slice(0, 10)
+}
+
+/** "23 Oct" for compact places such as the header. */
+export function formatDayMonth(date: string): string {
+  const [year, month, day] = date.split('-').map(Number)
+  return new Intl.DateTimeFormat('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(year, month - 1, day)))
+}

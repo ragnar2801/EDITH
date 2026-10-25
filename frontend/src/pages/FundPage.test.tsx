@@ -7,6 +7,7 @@ import { routes } from '@/app/routes'
 import {
   detail,
   fakeApi,
+  holding,
   infosys,
   navSummary,
   parag,
@@ -30,56 +31,50 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-test('the instruments page searches and opens the chosen instrument', async () => {
-  fakeApi({
-    'GET /api/v1/instruments/sources': () => [
-      {
-        source: 'nse',
-        active_instruments: 2968,
-        last_run: null,
-        last_success: {
-          status: 'ok',
-          finished_at: '2026-10-24T16:00:00Z',
-          rows: 2968,
-          added: 0,
-          updated: 0,
-          deactivated: 0,
-          message: null,
-        },
-      },
-    ],
-    'GET /api/v1/instruments/search': () => [infosys],
-    'GET /api/v1/instruments/3': () =>
-      detail(infosys, {
-        source: 'nse',
-        series: 'EQ',
-        listed_on: '1995-02-08',
-        aliases: [
-          { kind: 'name', value: 'Infosys Technologies Limited', changed_on: '2011-06-16' },
-        ],
-      }),
+const notHeld = holding({ lots: [], sips: [], units: '0', cost: '0.00' })
+
+test('Funds searches mutual funds only and opens the fund page', async () => {
+  const calls = fakeApi({
+    'GET /api/v1/navs/status': () => ({ last_run: null, funds: [] }),
+    'GET /api/v1/instruments/search': () => [parag],
+    'GET /api/v1/instruments/7': () => detail(parag),
+    'GET /api/v1/holdings/7': () => notHeld,
   })
-  const router = renderAt('/instruments')
+  const router = renderAt('/funds')
 
-  expect(await screen.findByText(/2,968 active · 24 Oct 2026, 9:30 pm/)).toBeInTheDocument()
-  await userEvent.type(screen.getByRole('combobox'), 'infos')
-  await userEvent.click(await screen.findByRole('option', { name: /Infosys/ }))
+  await userEvent.type(screen.getByRole('combobox'), 'parag')
+  await userEvent.click(await screen.findByRole('option', { name: /Parag/ }))
 
-  expect(router.state.location.pathname).toBe('/instruments/3')
-  expect(await screen.findByRole('heading', { name: 'Infosys Limited' })).toBeInTheDocument()
-  expect(screen.getByText('INE009A01021')).toBeInTheDocument()
-  expect(screen.getByText('8 Feb 1995')).toBeInTheDocument() // a market date, no time-zone shift
-  expect(screen.getByText(/Infosys Technologies Limited/)).toBeInTheDocument()
+  expect(router.state.location.pathname).toBe('/funds/7')
+  expect(await screen.findByRole('heading', { name: 'Parag Parikh Flexi Cap Fund' })).toBeVisible()
+  const search = calls.find((call) => call.url.includes('/instruments/search'))!
+  expect(new URL(search.url).searchParams.get('kind')).toBe('mutual_fund')
+  await userEvent.click(screen.getByRole('tab', { name: 'Details' }))
+  expect(router.state.location.pathname).toBe('/funds/7/details')
+  expect(screen.getByText('INF879O01027')).toBeInTheDocument()
+})
+
+test('a fund I hold shows my position on its overview', async () => {
+  fakeApi({
+    'GET /api/v1/instruments/7': () => detail(parag),
+    'GET /api/v1/holdings/7': () => holding(),
+  })
+  renderAt('/funds/7')
+
+  const position = await screen.findByRole('region', { name: 'My position' })
+  expect(within(position).getByText('62.500')).toBeInTheDocument()
+  expect(within(position).getByText('₹5,000.00')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /Sell/ })).toBeInTheDocument()
 })
 
 test('a fund page lists its other plans', async () => {
   fakeApi({ 'GET /api/v1/instruments/7': () => detail(parag) })
-  renderAt('/instruments/7')
+  renderAt('/funds/7/details')
 
   const plans = await screen.findByRole('region', { name: 'Other plans' })
   expect(
     within(plans as HTMLElement).getByRole('link', { name: 'Regular · Growth' }),
-  ).toHaveAttribute('href', '/instruments/8')
+  ).toHaveAttribute('href', '/funds/8')
 })
 
 test('setting my own classification sends exact strings and shows the result', async () => {
@@ -100,7 +95,7 @@ test('setting my own classification sends exact strings and shows the result', a
     'GET /api/v1/instruments/7': () => detail(parag),
     'PUT /api/v1/instruments/7/classification': () => saved,
   })
-  renderAt('/instruments/7')
+  renderAt('/funds/7/details')
 
   await userEvent.click(await screen.findByRole('button', { name: 'Set my own' }))
   const form = screen.getByRole('form', { name: 'My classification' })
@@ -131,7 +126,7 @@ test('a rejected classification shows the reason', async () => {
     'PUT /api/v1/instruments/7/classification': () =>
       problem(422, 'shares must add up to 100, not 90'),
   })
-  renderAt('/instruments/7')
+  renderAt('/funds/7/details')
 
   await userEvent.click(await screen.findByRole('button', { name: 'Set my own' }))
   const equity = screen.getByLabelText('Equity')
@@ -144,7 +139,7 @@ test('a rejected classification shows the reason', async () => {
 
 test('an unknown instrument says so', async () => {
   fakeApi({ 'GET /api/v1/instruments/999': () => problem(404, 'No instrument with id 999.') })
-  renderAt('/instruments/999')
+  renderAt('/funds/999')
 
   expect(await screen.findByRole('heading', { name: 'Fund not found' })).toBeInTheDocument()
   expect(screen.getByText('No instrument with id 999.')).toBeInTheDocument()
@@ -153,12 +148,14 @@ test('an unknown instrument says so', async () => {
 test('a tracked fund shows its NAV figures and chart', async () => {
   fakeApi({
     'GET /api/v1/instruments/7': () => detail(parag),
+    'GET /api/v1/holdings/7': () => notHeld,
     'GET /api/v1/instruments/7/nav-summary': () => navSummary(),
     'GET /api/v1/instruments/7/navs': () => recentNavs,
   })
-  renderAt('/instruments/7')
+  renderAt('/funds/7')
 
   const card = await screen.findByRole('region', { name: 'NAV history' })
+  expect(screen.queryByRole('region', { name: 'My position' })).not.toBeInTheDocument()
   expect(await within(card).findByText('Latest NAV')).toBeInTheDocument()
   expect(within(card).getAllByText('₹88.9695')[0]).toBeInTheDocument()
   expect(within(card).getByText('−0.49%')).toHaveClass('text-destructive')
@@ -172,6 +169,7 @@ test('tracking a fund downloads its history', async () => {
   let tracked = false
   const calls = fakeApi({
     'GET /api/v1/instruments/7': () => detail(parag),
+    'GET /api/v1/holdings/7': () => notHeld,
     'GET /api/v1/instruments/7/nav-summary': () =>
       tracked
         ? navSummary()
@@ -188,7 +186,7 @@ test('tracking a fund downloads its history', async () => {
     'POST /api/v1/navs/sync': () => syncRun(),
     'GET /api/v1/instruments/7/navs': () => recentNavs,
   })
-  renderAt('/instruments/7')
+  renderAt('/funds/7')
 
   await userEvent.click(await screen.findByRole('button', { name: 'Track NAVs' }))
 
@@ -197,10 +195,23 @@ test('tracking a fund downloads its history', async () => {
   expect(await sync?.json()).toEqual({ instrument_ids: [7] })
 })
 
-test('a stock has no NAV card', async () => {
-  fakeApi({ 'GET /api/v1/instruments/3': () => detail(infosys, { source: 'nse' }) })
-  renderAt('/instruments/3')
+test('a stock (from an old link) has details but no NAV card', async () => {
+  fakeApi({
+    'GET /api/v1/instruments/3': () =>
+      detail(infosys, {
+        source: 'nse',
+        series: 'EQ',
+        listed_on: '1995-02-08',
+        aliases: [
+          { kind: 'name', value: 'Infosys Technologies Limited', changed_on: '2011-06-16' },
+        ],
+      }),
+  })
+  renderAt('/funds/3')
 
   expect(await screen.findByRole('heading', { name: 'Infosys Limited' })).toBeInTheDocument()
   expect(screen.queryByText('NAV history')).not.toBeInTheDocument()
+  expect(screen.getByText('INE009A01021')).toBeInTheDocument()
+  expect(screen.getByText('8 Feb 1995')).toBeInTheDocument() // a market date, no time-zone shift
+  expect(screen.getByText(/Infosys Technologies Limited/)).toBeInTheDocument()
 })

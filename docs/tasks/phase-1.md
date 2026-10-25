@@ -6,7 +6,7 @@
 > **Already fixed:** React frontend + Python backend (D-023) · SQLite on the laptop (D-013) · free data only (D-012) · scheduled fetch + catch-up (D-022) · Windows + Task Scheduler (D-027) · Nifty 50 benchmark (D-043).
 > Everything else is decided **inside the task that needs it** (see each task's *Decisions* list). How this board works: [`README.md`](README.md)
 
-**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7) · **Done:** 8 / 13
+**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7) · **Done:** 9 / 13
 
 ---
 
@@ -26,7 +26,7 @@
 | T1-19 | Phase 1 acceptance: my real funds, reconciled | Verify | both | todo | T1-12 to T1-18 |
 | T1-20 | Plan and option for every fund (AMFI leaves 5,623 blank) | Feature | Claude | todo | T1-02 |
 | T1-21 | UI kit and copy clean-up: no prose, info icons, no build talk | Feature | Claude | done | T1-16 |
-| T1-22 | Journeys: new navigation, one fund page, Invest, Models, Settings | Feature | Claude | todo | T1-21 |
+| T1-22 | Journeys: new navigation, one fund page, Invest, Models, Settings | Feature | Claude | done | T1-21 |
 | ~~T1-03 to T1-11~~ | Board v2 tasks for stocks, US, LRS and the watchlist | — | — | dropped | see [Dropped tasks](#dropped-tasks-board-v2) |
 
 ```
@@ -367,7 +367,7 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12. 
 - Every screen: subtitles and explanatory card text gone; hints → info tips or placeholders; deletes confirm in a dialog; saves, deletes and syncs toast; row buttons → `⋯` menus; AMFI codes out of list rows (kept on the fund's identifiers); `SectionPage` deleted; nav lists only built screens
 - Split for T1-22 to move without rewriting: `components/cash/` (summary, accounts, plan, invest rules), `components/holdings/` (transaction forms in dialogs, SIPs and purchases tables), `components/fund/FundDetails`, `components/data/` (NAV sync, tracked funds, fund lists), `components/models/ModelEditor`
 - Small changes on the way: the model editor is a page of its own (`/buckets/new`, `/buckets/:id/edit`), and a new model lands on its backtest; the planner's amount starts at the investable cash and shows "Choose a target model" when none is set; NAV, units and notes sit under "More options"; tracking reasons read "Model Core", "Holding"
-- Tests: 46 frontend (kit tests for the info tip and confirm dialog, a delete-with-confirm test), 211 backend unchanged. `lint`, `test` pass on Linux; screenshots on real AMFI data at desktop and phone width, light and dark
+- Tests: 46 frontend (kit tests for the info tip and confirm dialog, a delete-with-confirm test), 265 backend unchanged. `lint`, `test` pass on Linux; screenshots on real AMFI data at desktop and phone width, light and dark
 
 **Done when**
 - No page has a subtitle paragraph or an explanatory card description; no UI string contains a task ID, a `just` command or a data-source name
@@ -378,7 +378,7 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12. 
 ---
 
 ## T1-22 · Journeys: new navigation, one fund page, Invest, Models, Settings
-`Feature` · Owner: Claude · Status: todo · Depends on: T1-21
+`Feature` · Owner: Claude · Status: done · Depends on: T1-21
 
 **Goal:** the app is organised around what I come to do (see what I own, record a transaction, invest new cash, design and test a split, look up a fund), each on its own screen.
 
@@ -398,6 +398,14 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12. 
 - Decided: `POST /api/v1/instruments/refresh`, a button in Settings · Data and a first-run banner (D-065)
 - Decided: mutual funds only in Phase 1 search (D-066)
 - Decided: T1-21 → T1-22 → T1-17 (D-067)
+
+**Progress (2026-10-25)**
+- Built: top bar (Portfolio · Invest · Models · Funds, NAV freshness that syncs on click and shows *Offline* when the backend is down, **+ Add**, Settings) and a bottom tab bar with a floating Add on phones; route-backed tabs (`RouteTabs`); global Add transaction dialog (`AddTransactionProvider`: fund → Lump sum | SIP | Sell → save, Sell disabled with nothing to sell); Portfolio (Funds | Cash tabs, setup checklist, first-run fund-list banner); Invest; Models list with Target badge and Set as target (`useSetTarget` keeps the other rules); model page (Overview | Backtest, the backtest without a model picker); one fund page (Overview with my position and NAVs | Transactions | Details); Funds search (mutual funds only) with the funds Friday follows; Settings (Invest rules | Data); redirects from every old address
+- Backend: `POST /api/v1/instruments/refresh` (D-065) with the same refresh as `just instruments`; the app holds an `HttpFetcher` for it (closed on shutdown); 2 API tests (one list, every list with one failing)
+- Found while checking the journeys: a lump sum dated today fails on weekends and before the evening NAV (no NAV yet), so the dialogs now start at the fund's latest NAV date; purchases list newest first
+- Journeys J1 to J8 driven in the running app with Playwright on real data (J1 on a fresh database, downloading the real AMFI list from the banner; J2 recorded a lump sum from the Models screen in 3 steps without leaving it; J7 opened the same fund page from a model, from Invest and from Settings; old `/holdings/:id` redirected). Screenshots at desktop and phone width, light and dark
+- Tests: 66 frontend (shell, freshness and redirects; 3-step add; first-run banner and checklist; set as target; fund page tabs; weekday helper), 267 backend. `lint`, `test`, `api-check` pass on Linux
+- Not yet: value, weight and drift columns on Portfolio and the model Overview come with T1-17
 
 **Done when**
 - Journeys J1 to J8 in `ui-redesign.md` work as written, checked in the running app

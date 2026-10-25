@@ -126,6 +126,9 @@ class HttpFetcher:
         self.attempts = attempts
         self.backoff_seconds = backoff_seconds
 
+    def close(self) -> None:
+        self.client.close()
+
     def get(self, file: str) -> str:
         remote = FILES[file]
         headers = dict(remote.headers)

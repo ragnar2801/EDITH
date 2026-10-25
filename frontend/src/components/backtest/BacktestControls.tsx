@@ -4,6 +4,7 @@ import { cloneElement, isValidElement, type ReactElement, type ReactNode } from 
 import type { Schemas } from '@/api/client'
 import { Field as BaseField } from '@/components/Field'
 import { InfoTip } from '@/components/InfoTip'
+import { Segmented } from '@/components/Segmented'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
@@ -19,14 +20,11 @@ import {
   type TradeRow,
 } from '@/lib/backtest'
 import { REBALANCE_LABELS } from '@/lib/buckets'
-import { cn } from '@/lib/utils'
 
 type Bucket = Schemas['BucketOut']
 
 type Props = {
-  buckets: Bucket[]
-  bucket: Bucket | null
-  onBucket: (id: number | null) => void
+  bucket: Bucket
   form: BacktestForm
   onForm: (form: BacktestForm) => void
   onRun: () => void
@@ -66,50 +64,10 @@ function Money({
   )
 }
 
-function Segmented<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string
-  value: T
-  options: Record<T, string>
-  onChange: (value: T) => void
-}) {
-  return (
-    <div role="radiogroup" aria-label={label} className="bg-muted flex rounded-md p-0.5">
-      {(Object.keys(options) as T[]).map((key) => (
-        <button
-          key={key}
-          type="button"
-          role="radio"
-          aria-checked={value === key}
-          onClick={() => onChange(key)}
-          className={cn(
-            'flex-1 rounded px-1.5 py-1 text-sm whitespace-nowrap',
-            value === key ? 'bg-background font-medium shadow-sm' : 'text-muted-foreground',
-          )}
-        >
-          {options[key]}
-        </button>
-      ))}
-    </div>
-  )
-}
-
-/** The left column: which bucket, which strategy, its inputs, and Run (Friday's layout). */
-export function BacktestControls({
-  buckets,
-  bucket,
-  onBucket,
-  form,
-  onForm,
-  onRun,
-  running,
-}: Props) {
+/** The left column: which strategy, its inputs, and Run (Friday's layout). */
+export function BacktestControls({ bucket, form, onForm, onRun, running }: Props) {
   const set = (patch: Partial<BacktestForm>) => onForm({ ...form, ...patch })
-  const funds = bucket?.funds.map((member) => member.fund) ?? []
+  const funds = bucket.funds.map((member) => member.fund)
 
   return (
     <form
@@ -120,20 +78,6 @@ export function BacktestControls({
         onRun()
       }}
     >
-      <Field label="Model">
-        <NativeSelect
-          value={bucket?.id ?? ''}
-          onChange={(event) => onBucket(event.target.value ? Number(event.target.value) : null)}
-        >
-          <option value="">Choose a model…</option>
-          {buckets.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.name}
-            </option>
-          ))}
-        </NativeSelect>
-      </Field>
-
       <Segmented<Strategy>
         label="Strategy"
         value={form.strategy}
@@ -156,7 +100,7 @@ export function BacktestControls({
               }
             >
               <option value="">
-                Model’s own ({bucket ? REBALANCE_LABELS[bucket.rebalance].toLowerCase() : '—'})
+                Model’s own ({REBALANCE_LABELS[bucket.rebalance].toLowerCase()})
               </option>
               {(Object.keys(REBALANCE_LABELS) as (keyof typeof REBALANCE_LABELS)[]).map((key) => (
                 <option key={key} value={key}>
@@ -220,7 +164,7 @@ export function BacktestControls({
         />
       </Field>
 
-      <Button type="submit" disabled={!bucket || running}>
+      <Button type="submit" disabled={running}>
         {running && <Loader2 className="animate-spin" />}
         Run backtest
       </Button>

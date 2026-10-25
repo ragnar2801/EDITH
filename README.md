@@ -30,24 +30,22 @@ just run
 
 Open <http://localhost:8000>. Friday only listens on this laptop, not on your network.
 
-Load the instrument lists once, and again whenever you want new listings and funds (takes under a minute):
+On first run, Portfolio shows **Fund list not downloaded · Download**: press it (or run `just instruments`, which also fetches the NSE and US lists). **Settings · Data · Download lists** refreshes them later. If a site blocks the download, save the files from a browser into a folder and run `just instruments --from-dir C:\path\to\folder` (file names: `EQUITY_L.csv`, `eq_etfseclist.csv`, `symbolchange.csv`, `namechange.csv`, `NAVAll.txt`, `nasdaqlisted.txt`, `otherlisted.txt`).
 
-```powershell
-just instruments
-```
+Then follow the checklist on *Portfolio*. The app has four screens, one job each:
 
-This downloads the NSE, AMFI and Nasdaq Trader lists into `data/sources/` and updates Friday's instruments. If a site blocks the download, save the files from a browser into a folder and run `just instruments --from-dir C:\path\to\folder` (file names: `EQUITY_L.csv`, `eq_etfseclist.csv`, `symbolchange.csv`, `namechange.csv`, `NAVAll.txt`, `nasdaqlisted.txt`, `otherlisted.txt`).
+- **Portfolio**: the funds you own, and a *Cash* tab with your accounts. **+ Add** (top bar, or the round button on a phone) records a lump sum, a SIP or a sale from anywhere.
+- **Invest**: type an amount (it starts at your investable cash) and see what to buy towards your target model.
+- **Models**: your target splits. Open one for its funds and a *Backtest* tab (lump sum, SIP, SWP or your own timeline vs the benchmark); **Set as target** makes it the split Invest works towards.
+- **Funds**: find any mutual fund; every fund has one page with its NAVs, your transactions and its details.
 
-Then, for your funds:
-
-1. **Find a fund** in *Instruments* (name or AMFI scheme code) and press **Track NAVs** to download its whole NAV history.
-2. **Build a bucket** in *Buckets*: your funds with target weights that add up to 100%, a rebalance policy and a benchmark (by default the UTI Nifty 50 Index Fund). Saving it downloads the NAVs of its funds.
-3. **Backtest it** in *Backtest*: a lump sum, a SIP, an SWP or your own timeline of buys and sells, next to the same money in the benchmark. Drag across the chart to measure any window; save runs you want to keep.
-4. **Keep NAVs up to date** with **Sync all NAVs** on the *Data status* page, or:
+The NAV date in the top bar turns amber when NAVs are behind; click it to sync, or run:
 
 ```powershell
 just navs
 ```
+
+*Settings* holds the invest rules (emergency goal, staggering, minimum per fund) and the data status.
 
 You can also track funds from the terminal: `uv run --project backend friday navs track 122639 120716` (AMFI scheme codes).
 

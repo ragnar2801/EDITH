@@ -192,3 +192,38 @@ def test_sources_before_any_refresh(client: TestClient) -> None:
     sources = client.get("/api/v1/instruments/sources").json()
 
     assert all(s["last_run"] is None and s["active_instruments"] == 0 for s in sources)
+
+
+def test_refresh_from_the_api_downloads_the_lists(client: TestClient, lists) -> None:
+    from friday.core.instruments.download import FolderFetcher
+
+    client.app.state.list_fetcher = FolderFetcher(lists)
+
+    response = client.post("/api/v1/instruments/refresh", json={"sources": ["amfi"]})
+
+    assert response.status_code == 200, response.text
+    [amfi] = response.json()
+    assert (amfi["source"], amfi["status"], amfi["message"]) == ("amfi", "ok", None)
+    assert amfi["added"] > 0
+    assert search(client, "parag parikh flexi")[0]["amfi_code"] == "122639"
+    sources = {s["source"]: s for s in client.get("/api/v1/instruments/sources").json()}
+    assert sources["amfi"]["last_success"]["added"] == amfi["added"]
+    assert sources["nse"]["last_run"] is None
+
+    again = client.post("/api/v1/instruments/refresh", json={"sources": ["amfi"]}).json()
+    assert (again[0]["added"], again[0]["updated"]) == (0, 0)
+
+
+def test_refresh_every_list_in_order_and_report_a_failed_one(client: TestClient, lists) -> None:
+    from friday.core.instruments.download import FolderFetcher
+
+    (lists / "nasdaqlisted.txt").unlink()  # the US list didn't download
+    client.app.state.list_fetcher = FolderFetcher(lists)
+
+    response = client.post("/api/v1/instruments/refresh")
+
+    assert response.status_code == 200, response.text
+    results = response.json()
+    assert [r["source"] for r in results] == ["nse", "amfi", "us"]
+    assert [r["status"] for r in results] == ["ok", "ok", "failed"]
+    assert "not found" in results[2]["message"]

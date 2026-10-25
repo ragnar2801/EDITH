@@ -1,43 +1,52 @@
-import type { ReactElement } from 'react'
-import type { RouteObject } from 'react-router'
+import { redirect, type RouteObject } from 'react-router'
 
-import { SECTIONS } from '@/app/navigation'
 import { AppShell } from '@/components/layout/AppShell'
-import { BacktestPage } from '@/pages/BacktestPage'
-import { BucketsPage } from '@/pages/BucketsPage'
-import { CashPage } from '@/pages/CashPage'
-import { DashboardPage } from '@/pages/DashboardPage'
-import { DataStatusPage } from '@/pages/DataStatusPage'
-import { HoldingPage } from '@/pages/HoldingPage'
-import { HoldingsPage } from '@/pages/HoldingsPage'
-import { InstrumentPage } from '@/pages/InstrumentPage'
-import { InstrumentsPage } from '@/pages/InstrumentsPage'
+import { FundPage } from '@/pages/FundPage'
+import { FundsPage } from '@/pages/FundsPage'
+import { InvestPage } from '@/pages/InvestPage'
 import { ModelEditorPage } from '@/pages/ModelEditorPage'
+import { ModelPage } from '@/pages/ModelPage'
+import { ModelsPage } from '@/pages/ModelsPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { PortfolioPage } from '@/pages/PortfolioPage'
+import { SettingsPage } from '@/pages/SettingsPage'
 
-const PAGES: Record<string, ReactElement> = {
-  '/': <DashboardPage />,
-  '/buckets': <BucketsPage />,
-  '/backtest': <BacktestPage />,
-  '/holdings': <HoldingsPage />,
-  '/cash': <CashPage />,
-  '/instruments': <InstrumentsPage />,
-  '/status': <DataStatusPage />,
-}
+/** Addresses from before the T1-22 navigation still work (D-063). */
+const MOVED: [string, (params: Record<string, string | undefined>) => string][] = [
+  ['/holdings', () => '/'],
+  ['/holdings/:id', ({ id }) => `/funds/${id}/transactions`],
+  ['/instruments', () => '/funds'],
+  ['/instruments/:id', ({ id }) => `/funds/${id}`],
+  ['/buckets', () => '/models'],
+  ['/buckets/new', () => '/models/new'],
+  ['/buckets/:id/edit', ({ id }) => `/models/${id}/edit`],
+  ['/backtest', () => '/models'],
+  ['/backtest/:id', ({ id }) => `/models/${id}/backtest`],
+  ['/status', () => '/settings/data'],
+]
 
 export const routes: RouteObject[] = [
   {
     element: <AppShell />,
     children: [
-      ...SECTIONS.map((section) => ({
-        path: section.path,
-        element: PAGES[section.path],
-      })),
-      { path: '/instruments/:id', element: <InstrumentPage /> },
-      { path: '/buckets/new', element: <ModelEditorPage /> },
-      { path: '/buckets/:id/edit', element: <ModelEditorPage /> },
-      { path: '/backtest/:bucketId', element: <BacktestPage /> },
-      { path: '/holdings/:id', element: <HoldingPage /> },
+      { path: '/', element: <PortfolioPage /> },
+      { path: '/cash', element: <PortfolioPage /> },
+      { path: '/invest', element: <InvestPage /> },
+      { path: '/models', element: <ModelsPage /> },
+      { path: '/models/new', element: <ModelEditorPage /> },
+      { path: '/models/:id', element: <ModelPage /> },
+      { path: '/models/:id/backtest', element: <ModelPage /> },
+      { path: '/models/:id/edit', element: <ModelEditorPage /> },
+      { path: '/funds', element: <FundsPage /> },
+      { path: '/funds/:id', element: <FundPage /> },
+      { path: '/funds/:id/transactions', element: <FundPage /> },
+      { path: '/funds/:id/details', element: <FundPage /> },
+      { path: '/settings', element: <SettingsPage /> },
+      { path: '/settings/data', element: <SettingsPage /> },
+      ...MOVED.map(
+        ([path, to]) =>
+          ({ path, loader: ({ params }) => redirect(to(params)) }) satisfies RouteObject,
+      ),
       { path: '*', element: <NotFoundPage /> },
     ],
   },

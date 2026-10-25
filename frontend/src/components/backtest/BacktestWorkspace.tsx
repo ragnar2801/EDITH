@@ -1,10 +1,8 @@
-import { FlaskConical, PieChart, Trash2 } from 'lucide-react'
+import { FlaskConical, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
 
 import {
-  useBuckets,
   useDeleteBacktest,
   useLoadBacktest,
   useRunBacktest,
@@ -12,102 +10,67 @@ import {
   useSavedBacktests,
   type BacktestRun,
 } from '@/api/queries'
-import { BacktestControls } from '@/components/backtest/BacktestControls'
-import { BacktestResults } from '@/components/backtest/BacktestResults'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorText } from '@/components/Field'
-import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { useConfirm } from '@/hooks/use-confirm'
 import { DEFAULT_FORM, STRATEGY_LABELS, fromParams, toParams } from '@/lib/backtest'
-import { MODELS_PATH } from '@/lib/models'
+import type { Bucket } from '@/lib/buckets'
 import { formatDateTime } from '@/lib/time'
 
-/** Backtests of a bucket (T1-14), ported from Friday: controls on the left, results right. */
-export function BacktestPage() {
-  const params = useParams()
-  const navigate = useNavigate()
-  const bucketId = params.bucketId ? Number(params.bucketId) : null
-  const buckets = useBuckets()
-  const bucket = buckets.data?.find((b) => b.id === bucketId) ?? null
+import { BacktestControls } from './BacktestControls'
+import { BacktestResults } from './BacktestResults'
 
+/** Backtests of one model (T1-14), ported from Friday: controls on the left, results right. */
+export function BacktestWorkspace({ bucket }: { bucket: Bucket }) {
   const [form, setForm] = useState(DEFAULT_FORM)
   const [shown, setShown] = useState<BacktestRun | null>(null)
   const run = useRunBacktest()
   const load = useLoadBacktest()
-  const current = shown && shown.bucket_id === bucketId ? shown : null
+  const current = shown && shown.bucket_id === bucket.id ? shown : null
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6">
-      <PageHeader title="Backtest" />
-      <div className="grid items-start gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
-        <Card className="lg:sticky lg:top-6">
-          <CardContent className="flex flex-col gap-5">
-            <BacktestControls
-              buckets={buckets.data ?? []}
-              bucket={bucket}
-              onBucket={(id) => {
-                setShown(null)
-                setForm((f) => ({
-                  ...f,
-                  positions: DEFAULT_FORM.positions,
-                  trades: DEFAULT_FORM.trades,
-                }))
-                navigate(id ? `/backtest/${id}` : '/backtest')
-              }}
-              form={form}
-              onForm={setForm}
-              running={run.isPending}
-              onRun={() =>
-                bucket &&
-                run.mutate(
-                  { bucket_id: bucket.id, params: toParams(form), save: false },
-                  { onSuccess: setShown },
-                )
-              }
-            />
-            <ErrorText error={run.error} />
-            {bucket && (
-              <SavedRuns
-                bucketId={bucket.id}
-                current={current}
-                loading={load.isPending}
-                onLoad={(id) =>
-                  load.mutate(id, {
-                    onSuccess: (loaded) => {
-                      setShown(loaded)
-                      setForm(fromParams(loaded.params))
-                    },
-                  })
-                }
-                onDeleted={(id) => current?.id === id && setShown(null)}
-              />
-            )}
-          </CardContent>
-        </Card>
-
-        {current ? (
-          <BacktestResults key={current.id} run={current} />
-        ) : buckets.isSuccess && buckets.data.length === 0 ? (
-          <EmptyState
-            icon={PieChart}
-            title="No models yet"
-            action={
-              <Button asChild>
-                <Link to={`${MODELS_PATH}/new`}>New model</Link>
-              </Button>
+    <div className="grid items-start gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
+      <Card className="lg:sticky lg:top-20">
+        <CardContent className="flex flex-col gap-5">
+          <BacktestControls
+            bucket={bucket}
+            form={form}
+            onForm={setForm}
+            running={run.isPending}
+            onRun={() =>
+              run.mutate(
+                { bucket_id: bucket.id, params: toParams(form), save: false },
+                { onSuccess: setShown },
+              )
             }
           />
-        ) : (
-          <EmptyState
-            icon={FlaskConical}
-            title={bucket ? `Ready to backtest ${bucket.name}` : 'Choose a model'}
+          <ErrorText error={run.error} />
+          <SavedRuns
+            bucketId={bucket.id}
+            current={current}
+            loading={load.isPending}
+            onLoad={(id) =>
+              load.mutate(id, {
+                onSuccess: (loaded) => {
+                  setShown(loaded)
+                  setForm(fromParams(loaded.params))
+                },
+              })
+            }
+            onDeleted={(id) => current?.id === id && setShown(null)}
           />
-        )}
-      </div>
+        </CardContent>
+      </Card>
+
+      {current ? (
+        <BacktestResults key={current.id} run={current} />
+      ) : (
+        <EmptyState icon={FlaskConical} title={`Ready to backtest ${bucket.name}`} />
+      )}
     </div>
   )
 }

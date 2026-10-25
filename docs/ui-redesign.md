@@ -1,6 +1,6 @@
 # UI rework: user journeys and screens
 
-> Tasks T1-21 and T1-22 (board: [`tasks/phase-1.md`](tasks/phase-1.md)). Approved 2026-10-25 as D-060 to D-067 in `agents.md`, all with the recommendations in section 9.
+> Tasks T1-21 and T1-22 (board: [`tasks/phase-1.md`](tasks/phase-1.md)). Approved 2026-10-25 as D-060 to D-067 in `agents.md`, all with the recommendations in section 9. **Built 2026-10-25**; section 1 describes the app before, section 10 lists where the build differs from this plan.
 > Scope: what Phase 1 has built today. Later phases get their screens when they are built, not before.
 
 ---
@@ -265,3 +265,18 @@ No backend logic changes, apart from the optional fund-list download endpoint.
 | 8 | Fund list download from the UI | new `POST /instruments/refresh` + button in Settings · Data · keep CLI only | Add it: first run shouldn't need a terminal |
 | 9 | Stocks and US listings in fund search | hide in Phase 1 (search `kind=mutual_fund` everywhere) · keep | Hide |
 | 10 | Order | T1-21 → T1-22 → T1-17 · fold into T1-17 | T1-21 → T1-22 → T1-17 |
+
+---
+
+## 10. As built
+
+Where T1-21 and T1-22 differ from the plan above:
+
+- **Portfolio has no summary tiles yet.** Value, gain and XIRR need T1-17; adding up amounts in the browser is not allowed (D-032). Until then the Funds tab shows units, invested and active SIPs.
+- **Models is a table**, not cards: name with the Target badge, funds, rebalance, benchmark, and a `⋯` menu (Set as target, Backtest, Edit, Delete).
+- **"Track NAVs" stays in the fund's NAV history section** (as an empty state) instead of the header `⋯`; the header has Add lump sum, Sell (when there are units) and `⋯` → Start a SIP.
+- **Dates in the transaction dialogs start at the fund's latest NAV date**, not today: today has no NAV until the evening, nor on weekends, so a blank NAV couldn't be looked up.
+- **Purchases are listed newest first.**
+- **Funds** lists the funds Friday follows under the search (held, in a model, a benchmark, or tracked by hand).
+- **The editor for a new model saves to its Backtest tab**; editing an existing one returns to the model.
+

@@ -138,7 +138,8 @@ function Purchases({ holding, onEdit }: { holding: Holding; onEdit: (lot: Lot) =
             <Th />
           </THead>
           <TBody>
-            {holding.lots.map((lot) => (
+            {/* Newest first; the API sends them oldest first. */}
+            {[...holding.lots].reverse().map((lot) => (
               <Fragment key={lot.id}>
                 <Tr className={lot.skipped ? 'text-muted-foreground' : undefined}>
                   <Td className="whitespace-nowrap">{formatDate(lot.buy_date)}</Td>

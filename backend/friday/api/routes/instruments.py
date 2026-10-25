@@ -4,13 +4,14 @@ from datetime import date
 from decimal import Decimal
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from friday.api.deps import SessionDep
 from friday.core.instruments.classify import Classification
 from friday.core.instruments.models import Instrument, InstrumentImport
+from friday.core.instruments.refresh import SOURCES, refresh_instruments
 from friday.core.instruments.search import MAX_LIMIT, scheme_variants, search_instruments
 from friday.core.instruments.service import (
     InvalidClassification,
@@ -114,11 +115,30 @@ class ImportRun(BaseModel):
     message: str | None
 
 
+Source = Literal["nse", "amfi", "us"]
+
+
 class SourceOut(BaseModel):
-    source: Literal["nse", "amfi", "us"]
+    source: Source
     active_instruments: int
     last_run: ImportRun | None
     last_success: ImportRun | None
+
+
+class RefreshIn(BaseModel):
+    sources: list[Source] | None = Field(default=None, description="Blank: every list")
+
+
+class RefreshResultOut(BaseModel):
+    source: Source
+    status: Literal["ok", "failed"]
+    rows: int
+    added: int
+    updated: int
+    deactivated: int
+    reactivated: int
+    message: str | None
+    warnings: list[str]
 
 
 def _classification(classification: Classification) -> ClassificationOut:
@@ -198,6 +218,22 @@ def search(
         session, q, limit=limit, market=market, kind=kind, include_inactive=include_inactive
     )
     return [InstrumentSummary(**_summary_fields(hit.instrument, hit.variants)) for hit in hits]
+
+
+@router.post("/refresh", operation_id="refreshInstruments")
+def refresh(request: Request, payload: RefreshIn | None = None) -> list[RefreshResultOut]:
+    """Download the lists and update instruments, as ``friday instruments refresh`` does
+    (D-065). Each list is its own transaction; a failed one is reported, not raised."""
+    wanted = set(payload.sources) if payload and payload.sources else set(SOURCES)
+    results = refresh_instruments(
+        request.app.state.session_factory,
+        request.app.state.list_fetcher,
+        [source for source in SOURCES if source in wanted],  # NSE before AMFI (refresh order)
+    )
+    return [
+        RefreshResultOut(**{name: getattr(result, name) for name in RefreshResultOut.model_fields})
+        for result in results
+    ]
 
 
 @router.get("/sources", operation_id="getInstrumentSources")

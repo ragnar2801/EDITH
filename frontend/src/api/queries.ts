@@ -66,6 +66,25 @@ export function useInstrumentSources() {
   })
 }
 
+/** Download the instrument lists (D-065); blank = every list. */
+export function useRefreshInstruments() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (sources?: Schemas['RefreshIn']['sources']) => {
+      const { data, error } = await api.POST('/api/v1/instruments/refresh', {
+        body: sources ? { sources } : {},
+      })
+      if (error) throw failure(error)
+      return data
+    },
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['instrument-sources'] }),
+        queryClient.invalidateQueries({ queryKey: ['instrument-search'] }),
+      ]),
+  })
+}
+
 export function useSetClassification(id: number) {
   const queryClient = useQueryClient()
   return useMutation({
@@ -549,6 +568,32 @@ export function usePlanSettings() {
       if (error) throw failure(error)
       return data
     },
+  })
+}
+
+/** Make a model the target (or none), keeping the other invest rules as they are. */
+export function useSetTarget() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (bucketId: number | null) => {
+      const current = await api.GET('/api/v1/plan/settings')
+      if (current.error) throw failure(current.error)
+      const rules = current.data
+      const { data, error } = await api.PUT('/api/v1/plan/settings', {
+        body: {
+          target_bucket_id: bucketId,
+          emergency_goal: rules.emergency_goal,
+          emergency_fund_id: rules.emergency_fund?.id ?? null,
+          stagger_fund_id: rules.stagger_fund?.id ?? null,
+          stagger_threshold: rules.stagger_threshold,
+          stagger_months: rules.stagger_months,
+          min_per_fund: rules.min_per_fund,
+        },
+      })
+      if (error) throw failure(error)
+      return data
+    },
+    onSuccess: () => invalidateCash(queryClient),
   })
 }
 

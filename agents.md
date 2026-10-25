@@ -563,6 +563,7 @@ React app (Vite + TypeScript) ──HTTP/JSON──► FastAPI (api/) ──► 
 | v1.2 (T1-12 to T1-14 built) | 2026-10-25 | Friday's features rebuilt here: fund NAV history with daily catch-up and the Data status page (T1-12), buckets as target splits (T1-13), backtests (lump sum, SIP, SWP, custom) against the Nifty 50 index fund with stored runs and window figures (T1-14). D-048 wording refined (time-weighted ratios, netting of switches, wider despike window). Data model 3.9 and layout 3.13 updated. New task T1-20 (plan and option for funds AMFI leaves blank) |
 | v1.2 (T1-15, T1-16 built) | 2026-10-25 | D-051 to D-055: fund holdings as lots, SIP instalments, selling from picked lots (T1-15). D-056 to D-059: cash accounts with earmarks, plan settings, the no-sell cash plan (emergency first, water-filling to the target split, whole rupees, minimum per fund) and staggering (T1-16) |
 | v1.2 (UI review) | 2026-10-25 | UI rework in `docs/ui-redesign.md`: screens organised around my jobs, not build tasks; no explanatory prose; info icons. New tasks T1-21 and T1-22 before T1-17. Approved as D-060 to D-067 |
+| v1.2 (T1-21, T1-22 built) | 2026-10-25 | UI kit and copy clean-up (T1-21); new navigation Portfolio · Invest · Models · Funds with NAV freshness, global Add and Settings, one fund page, model page with its backtest, fund lists downloadable from the UI (T1-22) |
 
 ---
 

@@ -5,7 +5,7 @@ import { ErrorText } from '@/components/Field'
 import { Loading } from '@/components/Loading'
 import { ModelEditor } from '@/components/models/ModelEditor'
 import { PageHeader } from '@/components/PageHeader'
-import { MODELS_PATH, backtestPath, draftOf, newDraft } from '@/lib/models'
+import { MODELS_PATH, backtestPath, draftOf, modelPath, newDraft } from '@/lib/models'
 
 /** New model, or edit one: a page of its own (D-060). */
 export function ModelEditorPage() {
@@ -16,7 +16,9 @@ export function ModelEditorPage() {
   const benchmark = useDefaultBenchmark()
   const bucket = id === null ? null : buckets.data?.find((b) => b.id === id)
 
-  const back = { to: MODELS_PATH, label: 'Models' }
+  const back = bucket
+    ? { to: modelPath(bucket.id), label: bucket.name }
+    : { to: MODELS_PATH, label: 'Models' }
   if (buckets.isError) return <ErrorText error={buckets.error} />
   if ((id === null && benchmark.isPending) || (id !== null && buckets.isPending)) {
     return <Loading />
@@ -26,12 +28,12 @@ export function ModelEditorPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6">
+    <div className="flex max-w-3xl flex-col gap-6">
       <PageHeader back={back} title={bucket ? `Edit ${bucket.name}` : 'New model'} />
       <ModelEditor
         initial={bucket ? draftOf(bucket) : newDraft(benchmark.data ?? null)}
-        onSaved={(saved) => navigate(bucket ? MODELS_PATH : backtestPath(saved.id))}
-        onCancel={() => navigate(MODELS_PATH)}
+        onSaved={(saved) => navigate(bucket ? modelPath(saved.id) : backtestPath(saved.id))}
+        onCancel={() => navigate(back.to)}
       />
     </div>
   )

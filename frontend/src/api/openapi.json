@@ -3009,6 +3009,104 @@
         "title": "ProblemDetails",
         "type": "object"
       },
+      "RefreshIn": {
+        "properties": {
+          "sources": {
+            "anyOf": [
+              {
+                "items": {
+                  "enum": [
+                    "nse",
+                    "amfi",
+                    "us"
+                  ],
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Blank: every list",
+            "title": "Sources"
+          }
+        },
+        "title": "RefreshIn",
+        "type": "object"
+      },
+      "RefreshResultOut": {
+        "properties": {
+          "added": {
+            "title": "Added",
+            "type": "integer"
+          },
+          "deactivated": {
+            "title": "Deactivated",
+            "type": "integer"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "reactivated": {
+            "title": "Reactivated",
+            "type": "integer"
+          },
+          "rows": {
+            "title": "Rows",
+            "type": "integer"
+          },
+          "source": {
+            "enum": [
+              "nse",
+              "amfi",
+              "us"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated": {
+            "title": "Updated",
+            "type": "integer"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "source",
+          "status",
+          "rows",
+          "added",
+          "updated",
+          "deactivated",
+          "reactivated",
+          "message",
+          "warnings"
+        ],
+        "title": "RefreshResultOut",
+        "type": "object"
+      },
       "RegularParams": {
         "description": "A lump sum, optionally rebalanced to the bucket's weights.",
         "properties": {
@@ -4788,6 +4886,59 @@
         "summary": "Get",
         "tags": [
           "holdings"
+        ]
+      }
+    },
+    "/api/v1/instruments/refresh": {
+      "post": {
+        "description": "Download the lists and update instruments, as ``friday instruments refresh`` does\n(D-065). Each list is its own transaction; a failed one is reported, not raised.",
+        "operationId": "refreshInstruments",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RefreshIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RefreshResultOut"
+                  },
+                  "title": "Response Refreshinstruments",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Refresh",
+        "tags": [
+          "instruments"
         ]
       }
     },

@@ -43,7 +43,7 @@ test('create a model: exact weights, default benchmark, NAVs downloaded, then ba
     'POST /api/v1/navs/sync': () => syncRun(),
     'GET /api/v1/navs/status': () => ({ last_run: null, funds: [] }),
   })
-  renderAt('/buckets')
+  renderAt('/models')
 
   await userEvent.click((await screen.findAllByRole('link', { name: /New model/ }))[0])
   const form = await screen.findByRole('form', { name: 'Model' })
@@ -60,7 +60,9 @@ test('create a model: exact weights, default benchmark, NAVs downloaded, then ba
   expect(within(form).getByText('Total 100%')).toHaveClass('text-positive')
   await userEvent.click(within(form).getByRole('button', { name: 'Save model' }))
 
-  expect(await screen.findByRole('heading', { name: 'Backtest' })).toBeInTheDocument()
+  // A new model lands on its backtest.
+  expect(await screen.findByRole('heading', { name: 'Core' })).toBeInTheDocument()
+  expect(screen.getByRole('tab', { name: 'Backtest' })).toHaveAttribute('aria-selected', 'true')
   const post = calls.find((call) => call.method === 'POST' && call.url.endsWith('/buckets'))
   expect(await post?.json()).toEqual({
     name: 'Core',
@@ -82,7 +84,7 @@ test('equal weights split 100 exactly', async () => {
     'GET /api/v1/buckets/default-benchmark': () => null,
     'GET /api/v1/instruments/search': () => [parag, nifty, { ...nifty, id: 10, name: 'Third' }],
   })
-  renderAt('/buckets')
+  renderAt('/models')
 
   await userEvent.click((await screen.findAllByRole('link', { name: /New model/ }))[0])
   await screen.findByRole('form', { name: 'Model' })
@@ -102,7 +104,7 @@ test('a refused model shows the reason', async () => {
     'GET /api/v1/buckets/default-benchmark': () => fundRef(nifty),
     'PUT /api/v1/buckets/1': () => problem(422, 'Weights must add up to 100, not 99.99.'),
   })
-  renderAt('/buckets')
+  renderAt('/models')
 
   await userEvent.click(await screen.findByRole('button', { name: 'Actions for Core' }))
   await userEvent.click(screen.getByRole('menuitem', { name: 'Edit' }))
@@ -111,14 +113,51 @@ test('a refused model shows the reason', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent('not 99.99')
 })
 
-test('the dashboard lists models', async () => {
-  fakeApi({
-    'GET /api/v1/buckets': () => [bucket()],
-    'GET /api/v1/navs/status': () => ({ last_run: syncRun(), funds: [] }),
+test('the target model wears a badge; another can be made the target', async () => {
+  const settings = {
+    target_bucket: { id: 1, name: 'Core' },
+    emergency_goal: '150000.00',
+    emergency_fund: { ...fundRef(nifty) },
+    stagger_fund: null,
+    stagger_threshold: '500000.00',
+    stagger_months: 6,
+    min_per_fund: '500.00',
+    updated_at: '2026-10-25T05:00:00Z',
+  }
+  const calls = fakeApi({
+    'GET /api/v1/buckets': () => [bucket(), bucket({ id: 2, name: 'Index only' })],
+    'GET /api/v1/plan/settings': () => settings,
+    'PUT /api/v1/plan/settings': () => ({
+      ...settings,
+      target_bucket: { id: 2, name: 'Index only' },
+    }),
   })
-  renderAt('/')
+  renderAt('/models')
 
-  expect(await screen.findByText('Core')).toBeInTheDocument()
-  expect(screen.getByText(/2 funds · Rebalance yearly · vs UTI Nifty 50 Index Fund/)).toBeVisible()
-  expect(screen.getByText('26 NAVs added')).toBeInTheDocument()
+  const core = (await screen.findByRole('link', { name: 'Core' })).closest('tr')!
+  expect(await within(core).findByText('Target')).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Actions for Index only' }))
+  await userEvent.click(screen.getByRole('menuitem', { name: 'Set as target' }))
+
+  expect(await screen.findByText('Index only is your target')).toBeInTheDocument()
+  const put = calls.find((call) => call.method === 'PUT')
+  expect(await put?.json()).toEqual({
+    target_bucket_id: 2,
+    emergency_goal: '150000.00',
+    emergency_fund_id: nifty.id,
+    stagger_fund_id: null,
+    stagger_threshold: '500000.00',
+    stagger_months: 6,
+    min_per_fund: '500.00',
+  })
+})
+
+test('a model page shows its funds and links each to its fund page', async () => {
+  fakeApi({ 'GET /api/v1/buckets': () => [bucket()] })
+  renderAt('/models/1')
+
+  const funds = await screen.findByRole('table', { name: 'Funds' })
+  const row = within(funds).getByText('Parag Parikh Flexi Cap Fund').closest('tr')!
+  expect(within(row).getByText('60%')).toBeInTheDocument()
+  expect(screen.getByText('vs UTI Nifty 50 Index Fund')).toBeInTheDocument()
 })
