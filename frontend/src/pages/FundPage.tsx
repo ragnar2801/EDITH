@@ -2,7 +2,13 @@ import { Plus, Repeat, Wallet } from 'lucide-react'
 import { useState } from 'react'
 import { useParams } from 'react-router'
 
-import { useHolding, useInstrument, type Holding } from '@/api/queries'
+import {
+  useHolding,
+  useInstrument,
+  usePortfolio,
+  type FundPosition,
+  type Holding,
+} from '@/api/queries'
 import { ErrorText } from '@/components/Field'
 import { FundDetails } from '@/components/fund/FundDetails'
 import { TransactionDialog, type TransactionMode } from '@/components/holdings/TransactionDialog'
@@ -26,7 +32,10 @@ import {
   planLabel,
   type InstrumentDetail,
 } from '@/lib/instruments'
-import { formatUnits, inr } from '@/lib/money'
+import { formatNav, formatUnits, inr } from '@/lib/money'
+import { formatPercent, toneOf } from '@/lib/percent'
+import { ROLE_LABELS } from '@/lib/portfolio'
+import { formatDate } from '@/lib/time'
 
 /** One page per fund, wherever it's clicked from (D-063, J7). */
 export function FundPage() {
@@ -140,15 +149,89 @@ function FundMeta({ fund }: { fund: InstrumentDetail }) {
   )
 }
 
+/** Units and cost from the holding; value and returns from the portfolio view (D-070). */
 function Position({ holding }: { holding: Holding }) {
+  const portfolio = usePortfolio()
+  const position = portfolio.data?.funds.find((fund) => fund.fund.id === holding.fund.id)
+  const result = position?.returns
   return (
-    <Section title="My position">
+    <Section
+      title="My position"
+      info={
+        position && (
+          <InfoTip label="My position">
+            {ROLE_LABELS[position.role]}
+            {result ? `, valued at the NAV of ${formatDate(result.on)}.` : '.'}
+          </InfoTip>
+        )
+      }
+    >
       <StatGrid>
         <Stat label="Units held" value={formatUnits(holding.units)} />
         <Stat label="Invested" value={inr(holding.cost)} />
+        <Stat
+          label="Value"
+          value={result ? inr(result.value) : '—'}
+          hint={position?.nav ? formatNav(position.nav) : 'No NAV yet'}
+        />
+        <Stat
+          label="Gain"
+          value={result ? inr(result.gain) : '—'}
+          tone={toneOf(result?.gain)}
+          hint={result && formatPercent(result.return_pct)}
+        />
+        {position && (
+          <Returns position={position} benchmarkName={portfolio.data?.benchmark_fund?.name} />
+        )}
         <Stat label="Active SIPs" value={holding.sips.filter((sip) => sip.active).length} />
       </StatGrid>
     </Section>
+  )
+}
+
+function Returns({
+  position,
+  benchmarkName = 'the benchmark',
+}: {
+  position: FundPosition
+  benchmarkName?: string
+}) {
+  const result = position.returns
+  const benchmark = position.benchmark
+  return (
+    <>
+      <Stat
+        label="Unrealised"
+        value={position.unrealised === null ? '—' : inr(position.unrealised)}
+        tone={toneOf(position.unrealised)}
+      />
+      <Stat
+        label="Realised"
+        value={inr(position.realised)}
+        tone={toneOf(position.realised)}
+        hint={result && `${inr(result.redeemed)} taken out`}
+      />
+      <Stat
+        label="XIRR"
+        value={formatPercent(result?.xirr_pct)}
+        tone={toneOf(result?.xirr_pct)}
+        info={
+          <InfoTip label="XIRR">
+            Yearly return on your dated purchases and sales, shown once you have held a year.
+          </InfoTip>
+        }
+      />
+      <Stat
+        label="In the benchmark"
+        value={benchmark ? inr(benchmark.value) : '—'}
+        hint={benchmark?.xirr_pct ? `XIRR ${formatPercent(benchmark.xirr_pct)}` : undefined}
+        info={
+          <InfoTip label="In the benchmark">
+            Your purchases and sales of this fund, on the same dates, in {benchmarkName}.
+          </InfoTip>
+        }
+      />
+    </>
   )
 }
 

@@ -405,6 +405,12 @@ def remaining_cost(lot: Lot) -> Decimal:
     return lot.amount * lot.units_remaining / lot.units if lot.units else ZERO
 
 
+def sold_cost(sale: LotSale) -> Decimal:
+    """What the units of one sale cost when bought (exact)."""
+    lot = sale.lot
+    return lot.amount * sale.units / lot.units if lot.units else ZERO
+
+
 def _holding(instrument: Instrument, lots: list[Lot], sips: list[Sip]) -> Holding:
     bought = [lot for lot in lots if not lot.skipped]
     return Holding(

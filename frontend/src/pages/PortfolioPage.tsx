@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 
-import { useBuckets, useCash, useHoldings, usePlanSettings } from '@/api/queries'
+import { useBuckets, useCash, useHoldings, usePlanSettings, usePortfolio } from '@/api/queries'
 import { CashAccounts } from '@/components/cash/CashAccounts'
 import { CashSummary } from '@/components/cash/CashSummary'
 import { ErrorText } from '@/components/Field'
@@ -8,6 +8,7 @@ import { Loading } from '@/components/Loading'
 import { PageHeader } from '@/components/PageHeader'
 import { FundListBanner } from '@/components/portfolio/FundListBanner'
 import { HoldingsTable } from '@/components/portfolio/HoldingsTable'
+import { Allocation, PortfolioSummary } from '@/components/portfolio/PortfolioSummary'
 import { SetupChecklist } from '@/components/portfolio/SetupChecklist'
 import { RouteTabs } from '@/components/RouteTabs'
 import { Button } from '@/components/ui/button'
@@ -24,7 +25,7 @@ export function PortfolioPage() {
       <RouteTabs
         label="Portfolio"
         tabs={[
-          { path: '/', label: 'Funds', content: <HoldingsTable /> },
+          { path: '/', label: 'Funds', content: <FundsTab /> },
           { path: '/cash', label: 'Cash', content: <CashTab /> },
         ]}
       />
@@ -76,6 +77,20 @@ function Setup() {
         },
       ]}
     />
+  )
+}
+
+/** Totals and allocation appear once a fund is held; the table shows its own empty state. */
+function FundsTab() {
+  const portfolio = usePortfolio()
+  const held = portfolio.data?.funds.length ? portfolio.data : undefined
+  return (
+    <>
+      <ErrorText error={portfolio.error} />
+      {held && <PortfolioSummary data={held} />}
+      <HoldingsTable portfolio={portfolio.data} />
+      {held && <Allocation data={held} />}
+    </>
   )
 }
 

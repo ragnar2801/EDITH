@@ -1,7 +1,7 @@
 import { Pencil, Target, Trash2 } from 'lucide-react'
 import { Link, useParams } from 'react-router'
 
-import { useBuckets, usePlanSettings } from '@/api/queries'
+import { useBuckets, usePlanSettings, usePortfolio } from '@/api/queries'
 import { BacktestWorkspace } from '@/components/backtest/BacktestWorkspace'
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/DataTable'
 import { ErrorText } from '@/components/Field'
@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button'
 import { REBALANCE_LABELS, type Bucket } from '@/lib/buckets'
 import { fundPath } from '@/lib/instruments'
 import { MODELS_PATH, modelPath } from '@/lib/models'
+import { formatPercent } from '@/lib/percent'
 
 /** One model: what's in it, and how it would have done (J6). */
 export function ModelPage() {
@@ -80,7 +81,11 @@ export function ModelPage() {
       <RouteTabs
         label="Model"
         tabs={[
-          { path: modelPath(bucket.id), label: 'Overview', content: <Overview bucket={bucket} /> },
+          {
+            path: modelPath(bucket.id),
+            label: 'Overview',
+            content: <Overview bucket={bucket} isTarget={isTarget} />,
+          },
           {
             path: modelPath(bucket.id, 'backtest'),
             label: 'Backtest',
@@ -92,7 +97,10 @@ export function ModelPage() {
   )
 }
 
-function Overview({ bucket }: { bucket: Bucket }) {
+function Overview({ bucket, isTarget }: { bucket: Bucket; isTarget: boolean }) {
+  const portfolio = usePortfolio({ enabled: isTarget })
+  // Drift is worked out for the target model only (D-071).
+  const drift = isTarget ? new Map(portfolio.data?.drift.map((row) => [row.fund.id, row])) : null
   return (
     <>
       {bucket.description && <p className="text-sm">{bucket.description}</p>}
@@ -101,6 +109,20 @@ function Overview({ bucket }: { bucket: Bucket }) {
           <THead>
             <Th>Fund</Th>
             <Th numeric>Weight</Th>
+            {drift && (
+              <>
+                <Th numeric>Now</Th>
+                <Th numeric>
+                  <span className="inline-flex items-center gap-1">
+                    Drift
+                    <InfoTip label="Drift">
+                      Now minus weight, in percentage points; new cash in Invest closes it without
+                      selling.
+                    </InfoTip>
+                  </span>
+                </Th>
+              </>
+            )}
           </THead>
           <TBody>
             {bucket.funds.map((member) => (
@@ -109,6 +131,14 @@ function Overview({ bucket }: { bucket: Bucket }) {
                   <FundName fund={member.fund} />
                 </Td>
                 <Td numeric>{member.weight}%</Td>
+                {drift && (
+                  <>
+                    <Td numeric>
+                      {formatPercent(drift.get(member.fund.id)?.share, { sign: false })}
+                    </Td>
+                    <Td numeric>{formatPoints(drift.get(member.fund.id)?.drift)}</Td>
+                  </>
+                )}
               </Tr>
             ))}
           </TBody>
@@ -130,4 +160,10 @@ function Overview({ bucket }: { bucket: Bucket }) {
       )}
     </>
   )
+}
+
+/** "-2.50" → "−2.50 pts": the figure is the API's, this only adds the sign and unit. */
+function formatPoints(value: string | null | undefined) {
+  if (value === null || value === undefined) return '—'
+  return formatPercent(value).replace('%', ' pts')
 }

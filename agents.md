@@ -107,6 +107,8 @@ Friday **advises**. I **execute** trades myself at my broker.
 | D-067 | 2026-10-25 | **Order:** T1-21 → T1-22 → T1-17, so the portfolio view is built once, in its final place | Avoid building T1-17 into screens that are about to move | Active |
 | D-068 | 2026-10-25 | **No scheduled NAV update in Phase 1.** T1-18 is dropped: I update NAVs by hand with the NAV freshness indicator in the top bar (it syncs on click), Settings · Data, or `just navs`. Sync already catches up every missed day (D-046). Phase 1's exit check becomes *a sync brings every fund up to date*, not *NAVs update daily by themselves*. Automatic runs come with `friday tick` in Phase 4a (D-018), which needs the Task Scheduler setup of D-027 anyway (T1-18) | One click a day is enough for a tracker I open myself; a scheduler entry now would be replaced in Phase 4a | Active. Narrows D-022 and D-027 for Phase 1 |
 | D-069 | 2026-10-25 | **Plan and option from AMFI's scheme master:** `portal.amfiindia.com/DownloadSchemeData_Po.aspx?mf=0` (saved as `SchemeData.csv`) is downloaded with `NAVAll.txt` on every AMFI refresh and **only fills plan and option that `NAVAll.txt` leaves blank**; `NAVAll.txt` wins when both say something. Read from the NAV name after the scheme name: *direct*, else **regular**; growth / cumulative → Growth, IDCW / dividend → IDCW, bonus, unclaimed; one variant per plan with no option named → growth-only. ETFs stay without. A failed master download warns and keeps what was stored (T1-20) | About 5,600 `NAVAll.txt` rows (588 of them active funds) had blank Plan and Option, so search could put an IDCW variant first, unlabelled. The master names every variant; its names are looser than `NAVAll.txt`'s columns, so it never overrides them | Active |
+| D-070 | 2026-10-25 | **Returns of my holdings:** value = units × latest stored NAV. **Realised** = sale proceeds (units × NAV, to the paisa) − what those units cost; **unrealised** = gain − realised; **gain** = value + money out − money in. **XIRR** from the real flows (lots in, sales out, value at the latest NAV date), per fund and overall, **shown after a year** (absolute return before). **Benchmark:** the same flows on the same dates in the target bucket's benchmark (default UTI Nifty 50 Index Fund), sales capped at what it holds. Funds without a stored NAV are listed and left out of totals (T1-17) | Matches how a CAS reports cost and gain, adds up exactly, and compares my real timing with the index fund (D-048's same-flows rule). XIRR over a few months swings too much to mean anything | Active |
+| D-071 | 2026-10-25 | **Allocation and drift** (Portfolio, and the target model's Overview): no chart library (plain bars sized from the API's share; D-050's SVG chart stays for lines). Allocation = fund values split by classification (D-040, overrides included), funds only, cash shown beside it. Drift = a target fund's share of what I hold of the target split's funds − its weight, in percentage points (emergency fund and other funds left out, as in the cash plan, D-058). **No drift bands** until the Drift Monitor (Phase 4a) (T1-17) | Bars need no library. One definition of "share" for Portfolio, the model page and the cash plan, so the plan visibly fixes the drift shown | Active |
 
 ---
 
@@ -450,6 +452,9 @@ friday/                       # repo root
 │   │   │   ├── navs/         #   T1-12: NAV tables, mfapi/AMFI parsers, download, sync, statistics
 │   │   │   ├── buckets/      #   T1-13: target splits and their validation
 │   │   │   ├── backtest/     #   T1-14: engine (pure), request/result models, service, stored runs
+│   │   │   ├── holdings/     #   T1-15: lots, SIPs and their instalments, selling from lots
+│   │   │   ├── cash/         #   T1-16: cash accounts, plan settings, the cash plan (plan.py is pure)
+│   │   │   ├── portfolio/    #   T1-17: returns (pure: gain, XIRR, benchmark replay), the view
 │   │   │                     #   later: calc (xirr, drift, lrs, tax), fetchers, watchers, risk_rules
 │   │   ├── api/              # FastAPI app, routes (thin), problem-details errors, UI serving
 │   │   ├── jobs/             # later: scheduled entry points, then `friday tick`
@@ -567,6 +572,7 @@ React app (Vite + TypeScript) ──HTTP/JSON──► FastAPI (api/) ──► 
 | v1.2 (UI review) | 2026-10-25 | UI rework in `docs/ui-redesign.md`: screens organised around my jobs, not build tasks; no explanatory prose; info icons. New tasks T1-21 and T1-22 before T1-17. Approved as D-060 to D-067 |
 | v1.2 (T1-21, T1-22 built) | 2026-10-25 | UI kit and copy clean-up (T1-21); new navigation Portfolio · Invest · Models · Funds with NAV freshness, global Add and Settings, one fund page, model page with its backtest, fund lists downloadable from the UI (T1-22) |
 | v1.2 (T1-18 dropped) | 2026-10-25 | D-068: no scheduled NAV update in Phase 1; NAVs are synced by hand until `friday tick` (Phase 4a) |
+| v1.2 (T1-17, T1-20 built) | 2026-10-25 | D-069: plan and option from AMFI's scheme master (T1-20). D-070, D-071: returns of my holdings (realised, unrealised, XIRR after a year, the same flows in the Nifty 50 index fund), allocation and drift without a chart library (T1-17). Layout 3.13 updated. T1-19 checklist written |
 
 ---
 

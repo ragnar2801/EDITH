@@ -272,7 +272,7 @@ No backend logic changes, apart from the optional fund-list download endpoint.
 
 Where T1-21 and T1-22 differ from the plan above:
 
-- **Portfolio has no summary tiles yet.** Value, gain and XIRR need T1-17; adding up amounts in the browser is not allowed (D-032). Until then the Funds tab shows units, invested and active SIPs.
+- **Portfolio's tiles and value columns came with T1-17** (D-070, D-071): Value, Invested, Gain and XIRR, with the benchmark's figures as the second line; the table adds Value, Gain, Weight and Target, and active SIPs moved into the fund's second line. Allocation bars sit under the table; drift is on the target model's Overview.
 - **Models is a table**, not cards: name with the Target badge, funds, rebalance, benchmark, and a `⋯` menu (Set as target, Backtest, Edit, Delete).
 - **"Track NAVs" stays in the fund's NAV history section** (as an empty state) instead of the header `⋯`; the header has Add lump sum, Sell (when there are units) and `⋯` → Start a SIP.
 - **Dates in the transaction dialogs start at the fund's latest NAV date**, not today: today has no NAV until the evening, nor on weekends, so a blank NAV couldn't be looked up.

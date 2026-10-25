@@ -6,7 +6,7 @@
 > **Already fixed:** React frontend + Python backend (D-023) · SQLite on the laptop (D-013) · free data only (D-012) · scheduled fetch + catch-up (D-022) · Windows + Task Scheduler (D-027) · Nifty 50 benchmark (D-043).
 > Everything else is decided **inside the task that needs it** (see each task's *Decisions* list). How this board works: [`README.md`](README.md)
 
-**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7; T1-18 dropped, D-068) · **Done:** 10 / 12
+**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7; T1-18 dropped, D-068) · **Done:** 11 / 12
 
 ---
 
@@ -21,7 +21,7 @@
 | T1-14 | Backtests: lump sum, SIP, SWP and custom, vs Nifty 50 | Feature | Claude | done | T1-12, T1-13 |
 | T1-15 | Fund holdings: lump sums, SIPs and sells | Feature | Claude | done | T1-12 |
 | T1-16 | Cash, and "I have ₹X, where does it go?" | Feature | Claude | done | T1-13, T1-15 |
-| T1-17 | Portfolio view vs target: value, P&L, XIRR, drift | Feature | Claude | todo | T1-13, T1-15, T1-16, T1-22 |
+| T1-17 | Portfolio view vs target: value, P&L, XIRR, drift | Feature | Claude | done | T1-13, T1-15, T1-16, T1-22 |
 | T1-18 | Daily NAV update on Windows | Infra | both | dropped | — (D-068: I sync NAVs by hand in Phase 1) |
 | T1-19 | Phase 1 acceptance: my real funds, reconciled | Verify | both | todo | T1-12 to T1-17, T1-20 |
 | T1-20 | Plan and option for every fund (AMFI leaves 5,623 blank) | Feature | Claude | done | T1-02 |
@@ -270,22 +270,27 @@ T1-14 and T1-15 can be built in parallel. T1-18 was dropped (D-068): in Phase 1 
 ---
 
 ## T1-17 · Portfolio view vs target: value, P&L, XIRR, drift
-`Feature` · Owner: Claude · Status: todo · Depends on: T1-13, T1-15, T1-16, T1-22
+`Feature` · Owner: Claude · Status: done · Depends on: T1-13, T1-15, T1-16, T1-22
 
-**Goal:** the dashboard shows what my funds are worth, how they've done against the Nifty 50 index fund, and how far each is from my target split.
+**Goal:** Portfolio shows what my funds are worth, how they've done against the Nifty 50 index fund, and how far each is from my target split.
 
 **Scope**
 - Calculations (backend only): value per fund (latest NAV), realised and unrealised P&L, XIRR per fund and overall, the same cash flows into the Nifty 50 index fund for comparison, allocation by fund and by equity / debt / gold (D-040 classification), drift vs the target bucket
-- Dashboard: totals, allocation, drift, holdings table, NAVs last updated; fund detail page: lots, transactions, NAV chart, P&L and XIRR
+- Portfolio: totals, allocation, holdings table with value, weight and target; drift on the target model's page; fund page: P&L and XIRR next to the benchmark, realised P&L per sale
 
-**Decisions**
-- Returns definitions (what counts in P&L and XIRR)
-- Charts library for allocation (candidates: keep the SVG chart from D-050 and add a bar · ECharts · Recharts)
-- Drift bands shown now, or only in Phase 3
+**Decisions** (2026-10-25, decided while building; review welcome)
+- Decided: **value** = units held × the fund's latest stored NAV. **Realised P&L** = each sale's proceeds (units × NAV, to the paisa) minus what those units cost; **unrealised** = gain minus realised, so the two always add up to the **gain** = value + money taken out − money put in. **XIRR** from the real dated cash flows (each lot's amount in, each sale's proceeds out, the value on the latest NAV date), per fund and overall, shown only once the first money has been in **a year** (before that only the absolute return). The **benchmark** gets the same flows on the same dates in the target bucket's benchmark (default: UTI Nifty 50 Index Fund), each at its NAV on or before the date, a sale capped at what it holds. A fund with no stored NAV is listed and left out of the totals (D-070)
+- Decided: **no chart library**: allocation is plain bars whose width comes from the API's share; the SVG line chart (D-050) stays for NAVs. **Allocation** splits fund values by each fund's classification (D-040, overrides included), funds only; cash is shown beside it. **Drift** = a target fund's share of what I hold of the target split's funds minus its weight, in percentage points, as the cash plan sees them (the emergency fund and other funds are left out). **No drift bands** until the Drift Monitor (Phase 4a); the fix for drift is the cash plan (D-071)
+
+**Progress (2026-10-25)**
+- Built: `friday.core.portfolio.returns` (pure: returns of dated flows, XIRR from the backtest engine, replay in the benchmark) and `friday.core.portfolio.service` (per-fund positions with role target / emergency / outside, totals, allocation, drift, cash, net worth, NAV freshness); `GET /api/v1/portfolio`; each sale in `GET /holdings/{id}` now carries its realised P&L. No new tables
+- UI (first built on the old Dashboard, then moved into T1-22's screens when rebasing onto them, D-067): **Portfolio · Funds** has four tiles (value with the same money in the benchmark, invested, gain with return and realised, XIRR next to the benchmark's), a line naming funds with no NAVs yet, the holdings table with value, gain, weight and target weight, and allocation bars. The **target model's Overview** adds *Now* and *Drift* (points) per fund. A **fund's Overview** adds value, gain, unrealised, realised, XIRR and the same money in the benchmark to *My position*; each sale in *Transactions* shows its realised P&L. Syncing NAVs stays with the top bar's freshness indicator (D-063, D-068), so the portfolio has no sync button of its own
+- Checked on a copy of the live database with sample holdings (₹1,00,000 of Parag Parikh in Apr 2023 with 300 units sold in Sep 2025, a ₹10,000 SIP in Edelweiss Mid Cap since Jan 2024, ₹50,000 of Nippon India Large Cap in Jun 2025): realised ₹11,435.16 (₹27,456.21 for units that cost ₹16,021.05) and the cost left (₹83,978.95) match a hand calculation; realised + unrealised = gain to the paisa; no sideways scroll at phone width
+- Tests: 7 hand-worked returns cases (a lump sum at exactly 10% a year, under a year, SIPs with a partial sell checked by NPV, everything sold, the benchmark replay, a capped replay sale, no benchmark NAV) and 7 API tests (nothing held; a partly sold fund's value, cost, realised, unrealised, return and benchmark; totals with cash and net worth; allocation; drift; a fund without NAV history; realised per sale); frontend: Portfolio figures exactly as sent, nothing held, the fund page's returns, the target model's drift
 
 **Done when**
-- Hand-worked examples (one lump sum, SIPs with a partial sell) pass as unit tests
-- Dashboard numbers match the API exactly
+- Hand-worked examples (one lump sum, SIPs with a partial sell) pass as unit tests ✔
+- Portfolio numbers match the API exactly ✔ (the pages only format the API's strings)
 
 ---
 
@@ -316,15 +321,26 @@ T1-14 and T1-15 can be built in parallel. T1-18 was dropped (D-068): in Phase 1 
 
 **Goal:** prove Phase 1 does what it promised, on my real funds.
 
-**Scope**
+**Scope** (amended 2026-10-25 for D-068: NAVs are synced by hand)
 - Enter all my real fund transactions, cash and my target bucket (me)
 - Reconcile units, cost and value against my AMC / CAS statements
-- Let it run unattended for a week, including nights asleep
+- Sync NAVs by hand for a week, including after a day or two without syncing
 - Anything wrong becomes a new task on this board
+
+**Checklist** (ready 2026-10-25; the steps marked *me* need my statements)
+1. `just setup`, then `just instruments --source amfi` (labels plan and option, T1-20) and `just run`; open http://localhost:8000
+2. *Me:* for each fund in my CAS, open **Funds**, search it by AMFI scheme code (or name) and check the result's plan and option match my statement, e.g. **Direct · Growth**
+3. *Me:* enter lump sums with the statement's date, amount and **units** (typed units win, D-052: Friday's own amount ÷ NAV leaves out the 0.005% stamp duty, D-051, so its units come out a little high). Enter SIPs with amount, day and start date, then correct any instalment whose units differ, or skip a missed month
+4. *Me:* enter each redemption by picking lots (D-054); the CAS lists redemptions by date. Take units from the oldest lots unless I know otherwise
+5. *Me:* add cash accounts on **Portfolio · Cash**, mark the target model with **Set as target** in **Models**, and set the emergency goal and fund in **Settings · Invest rules**
+6. Reconcile on **Portfolio** and each fund's page against the CAS, fund by fund: **units** (3 places, should match exactly), **cost** (the CAS *cost value*; a rupee or two per lot of stamp duty is expected), **value** (Friday's is at its latest NAV, the CAS's at its own date: compare units × the CAS NAV when the dates differ). Note every difference and its reason here
+7. Check the cash plan for one amount by hand (D-058 water-filling), as in T1-16
+8. For a week, click the NAV date in the top bar most days to sync, skipping at least one day. Afterwards **Settings · Data** shows every fund's last NAV on the latest AMFI date, and a fund's recent NAVs list each date once
+9. Anything wrong → a new task at the end of this board
 
 **Done when**
 - Units, cost and value match my statements within rounding, or every difference is explained
-- A week of daily updates shows every NAV date filled once, no duplicates
+- After a week of syncing by hand (with a skipped day), every NAV date is filled once and no fund is behind
 
 ---
 

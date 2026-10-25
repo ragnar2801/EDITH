@@ -196,7 +196,8 @@ function Purchases({ holding, onEdit }: { holding: Holding; onEdit: (lot: Lot) =
                   <tr key={`sale-${sale.id}`} className="bg-muted/30 text-muted-foreground text-xs">
                     <Td className="py-1.5 pl-6 whitespace-nowrap">{formatDate(sale.sale_date)}</Td>
                     <Td className="py-1.5" colSpan={2}>
-                      Sold {formatUnits(sale.units)} units for {inr(sale.amount)}
+                      Sold {formatUnits(sale.units)} units for {inr(sale.amount)} · realised{' '}
+                      {inr(sale.realised)}
                     </Td>
                     <Td numeric className="py-1.5">
                       {formatNav(sale.nav)}

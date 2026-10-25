@@ -34,7 +34,7 @@ On first run, Portfolio shows **Fund list not downloaded · Download**: press it
 
 Then follow the checklist on *Portfolio*. The app has four screens, one job each:
 
-- **Portfolio**: the funds you own, and a *Cash* tab with your accounts. **+ Add** (top bar, or the round button on a phone) records a lump sum, a SIP or a sale from anywhere.
+- **Portfolio**: the funds you own, with their value, realised and unrealised gain and XIRR next to the same money in the Nifty 50 index fund, your allocation, and a *Cash* tab with your accounts. **+ Add** (top bar, or the round button on a phone) records a lump sum, a SIP or a sale from anywhere.
 - **Invest**: type an amount (it starts at your investable cash) and see what to buy towards your target model.
 - **Models**: your target splits. Open one for its funds and a *Backtest* tab (lump sum, SIP, SWP or your own timeline vs the benchmark); **Set as target** makes it the split Invest works towards.
 - **Funds**: find any mutual fund; every fund has one page with its NAVs, your transactions and its details.

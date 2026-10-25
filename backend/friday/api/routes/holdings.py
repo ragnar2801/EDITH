@@ -29,6 +29,7 @@ from friday.core.holdings.service import (
     list_holdings,
     remaining_cost,
     sell,
+    sold_cost,
     today,
     update_lot,
     update_sip,
@@ -51,6 +52,8 @@ class SaleOut(BaseModel):
     nav: Nav
     amount: Amount
     """Units × NAV, rounded to the paisa."""
+    realised: Amount
+    """Amount minus what the units sold cost (D-070)."""
 
 
 class LotOut(BaseModel):
@@ -150,12 +153,14 @@ def _ref(instrument: Instrument) -> FundRef:
 
 
 def _sale(sale: LotSale) -> SaleOut:
+    amount = _money(sale.units * sale.nav)
     return SaleOut(
         id=sale.id,
         sale_date=sale.sale_date,
         units=sale.units,
         nav=sale.nav,
-        amount=_money(sale.units * sale.nav),
+        amount=amount,
+        realised=_money(amount - sold_cost(sale)),
     )
 
 

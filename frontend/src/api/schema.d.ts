@@ -575,6 +575,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/portfolio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Portfolio */
+        get: operations["getPortfolio"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sales": {
         parameters: {
             query?: never;
@@ -708,6 +725,18 @@ export interface components {
              * @enum {string}
              */
             kind: "symbol" | "name";
+            /** Value */
+            value: string;
+        };
+        /** AssetOut */
+        AssetOut: {
+            /**
+             * Asset
+             * @enum {string}
+             */
+            asset: "equity" | "debt" | "gold" | "silver" | "other" | "unclassified";
+            /** Share */
+            share: string | null;
             /** Value */
             value: string;
         };
@@ -879,6 +908,17 @@ export interface components {
             /** Reserved */
             reserved: string;
         };
+        /** CashTotalsOut */
+        CashTotalsOut: {
+            /** Deployable */
+            deployable: string;
+            /** Emergency */
+            emergency: string;
+            /** Reserved */
+            reserved: string;
+            /** Total */
+            total: string;
+        };
         /** ClassificationOut */
         ClassificationOut: {
             /** Allocation */
@@ -970,6 +1010,18 @@ export interface components {
             /** Units */
             units?: string | null;
         };
+        /** DriftOut */
+        DriftOut: {
+            /** Drift */
+            drift: string | null;
+            fund: components["schemas"]["FundRef"];
+            /** Share */
+            share: string | null;
+            /** Value */
+            value: string;
+            /** Weight */
+            weight: string;
+        };
         /** Echo */
         Echo: {
             /**
@@ -1020,6 +1072,31 @@ export interface components {
             units: string;
             /** Weight */
             weight: string | null;
+        };
+        /** FundPositionOut */
+        FundPositionOut: {
+            benchmark: components["schemas"]["ReturnsOut"] | null;
+            /** Cost */
+            cost: string;
+            fund: components["schemas"]["FundRef"];
+            /** Nav */
+            nav: string | null;
+            /** Nav Date */
+            nav_date: string | null;
+            /** Realised */
+            realised: string;
+            returns: components["schemas"]["ReturnsOut"] | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "target" | "emergency" | "outside";
+            /** Share */
+            share: string | null;
+            /** Units */
+            units: string;
+            /** Unrealised */
+            unrealised: string | null;
         };
         /** FundRef */
         FundRef: {
@@ -1574,6 +1651,36 @@ export interface components {
             /** Value Now */
             value_now: string;
         };
+        /** PortfolioOut */
+        PortfolioOut: {
+            /** Allocation */
+            allocation: components["schemas"]["AssetOut"][];
+            benchmark: components["schemas"]["ReturnsOut"] | null;
+            benchmark_fund: components["schemas"]["FundRef"] | null;
+            cash: components["schemas"]["CashTotalsOut"];
+            /** Cost */
+            cost: string;
+            /** Drift */
+            drift: components["schemas"]["DriftOut"][];
+            /** Funds */
+            funds: components["schemas"]["FundPositionOut"][];
+            /** Last Sync */
+            last_sync: string | null;
+            /** Missing Nav */
+            missing_nav: components["schemas"]["FundRef"][];
+            /** Nav Newest */
+            nav_newest: string | null;
+            /** Nav Oldest */
+            nav_oldest: string | null;
+            /** Net Worth */
+            net_worth: string;
+            /** Realised */
+            realised: string;
+            returns: components["schemas"]["ReturnsOut"] | null;
+            target: components["schemas"]["TargetOut"] | null;
+            /** Unrealised */
+            unrealised: string | null;
+        };
         /**
          * Position
          * @description Hold a fund from ``entry`` to ``exit`` (or to the end), buying for ``amount``.
@@ -1666,6 +1773,28 @@ export interface components {
              */
             strategy: "regular";
         };
+        /** ReturnsOut */
+        ReturnsOut: {
+            /** Gain */
+            gain: string;
+            /** Invested */
+            invested: string;
+            /**
+             * On
+             * Format: date
+             */
+            on: string;
+            /** Redeemed */
+            redeemed: string;
+            /** Return Pct */
+            return_pct: string | null;
+            /** Since */
+            since: string | null;
+            /** Value */
+            value: string;
+            /** Xirr Pct */
+            xirr_pct: string | null;
+        };
         /** RunUpdate */
         RunUpdate: {
             /** Name */
@@ -1700,6 +1829,8 @@ export interface components {
             id: number;
             /** Nav */
             nav: string;
+            /** Realised */
+            realised: string;
             /**
              * Sale Date
              * Format: date
@@ -1908,6 +2039,13 @@ export interface components {
              * @enum {string}
              */
             status: "ok" | "partial" | "failed";
+        };
+        /** TargetOut */
+        TargetOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
         };
         /** TrackedFundOut */
         TrackedFundOut: {
@@ -3157,6 +3295,35 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SettingsOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getPortfolio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortfolioOut"];
                 };
             };
             /** @description Problem details (RFC 9457) */

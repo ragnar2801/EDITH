@@ -165,7 +165,7 @@ export function useNavs(id: number, start: string | undefined, enabled = true) {
 /** NAVs changed: every NAV view and anything computed from NAVs is stale. */
 function invalidateNavs(queryClient: ReturnType<typeof useQueryClient>) {
   return Promise.all(
-    ['nav-status', 'nav-summary', 'navs'].map((key) =>
+    ['nav-status', 'nav-summary', 'navs', 'portfolio'].map((key) =>
       queryClient.invalidateQueries({ queryKey: [key] }),
     ),
   )
@@ -284,6 +284,7 @@ export function useDeleteBucket() {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: ['buckets'] }),
         queryClient.invalidateQueries({ queryKey: ['nav-status'] }),
+        queryClient.invalidateQueries({ queryKey: ['portfolio'] }),
       ]),
   })
 }
@@ -526,6 +527,7 @@ function invalidateCash(queryClient: ReturnType<typeof useQueryClient>) {
     queryClient.invalidateQueries({ queryKey: ['cash'] }),
     queryClient.invalidateQueries({ queryKey: ['plan-settings'] }),
     queryClient.invalidateQueries({ queryKey: ['plan'] }),
+    queryClient.invalidateQueries({ queryKey: ['portfolio'] }),
   ])
 }
 
@@ -622,5 +624,21 @@ export function useCashPlan(amount: string | null) {
     },
     enabled: amount !== null,
     retry: false,
+  })
+}
+
+export type Portfolio = Schemas['PortfolioOut']
+export type FundPosition = Schemas['FundPositionOut']
+
+/** Value, P&L, XIRR, allocation and drift (T1-17), all worked out by the backend. */
+export function usePortfolio({ enabled = true } = {}) {
+  return useQuery({
+    queryKey: ['portfolio'],
+    enabled,
+    queryFn: async () => {
+      const { data, error } = await api.GET('/api/v1/portfolio')
+      if (error) throw failure(error)
+      return data
+    },
   })
 }

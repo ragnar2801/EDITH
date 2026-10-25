@@ -151,7 +151,16 @@ test('start a SIP; lots show what was sold from them, with an undo', async () =>
   const sold = lot({
     units_remaining: '30.000',
     cost_remaining: '2400.00',
-    sales: [{ id: 21, sale_date: '2026-04-10', units: '32.500', nav: '91', amount: '2957.50' }],
+    sales: [
+      {
+        id: 21,
+        sale_date: '2026-04-10',
+        units: '32.500',
+        nav: '91',
+        amount: '2957.50',
+        realised: '357.50',
+      },
+    ],
   })
   const calls = fakeApi({
     ...FUND,

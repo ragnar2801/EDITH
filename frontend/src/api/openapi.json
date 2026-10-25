@@ -131,6 +131,46 @@
         "title": "Alias",
         "type": "object"
       },
+      "AssetOut": {
+        "properties": {
+          "asset": {
+            "enum": [
+              "equity",
+              "debt",
+              "gold",
+              "silver",
+              "other",
+              "unclassified"
+            ],
+            "title": "Asset",
+            "type": "string"
+          },
+          "share": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share"
+          },
+          "value": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset",
+          "value",
+          "share"
+        ],
+        "title": "AssetOut",
+        "type": "object"
+      },
       "BacktestIn": {
         "properties": {
           "bucket_id": {
@@ -685,6 +725,38 @@
         "title": "CashOut",
         "type": "object"
       },
+      "CashTotalsOut": {
+        "properties": {
+          "deployable": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Deployable",
+            "type": "string"
+          },
+          "emergency": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Emergency",
+            "type": "string"
+          },
+          "reserved": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Reserved",
+            "type": "string"
+          },
+          "total": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Total",
+            "type": "string"
+          }
+        },
+        "required": [
+          "deployable",
+          "emergency",
+          "reserved",
+          "total"
+        ],
+        "title": "CashTotalsOut",
+        "type": "object"
+      },
       "ClassificationOut": {
         "properties": {
           "allocation": {
@@ -919,6 +991,56 @@
         "title": "CustomTradeIn",
         "type": "object"
       },
+      "DriftOut": {
+        "properties": {
+          "drift": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drift"
+          },
+          "fund": {
+            "$ref": "#/components/schemas/FundRef"
+          },
+          "share": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share"
+          },
+          "value": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Value",
+            "type": "string"
+          },
+          "weight": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Weight",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fund",
+          "weight",
+          "value",
+          "share",
+          "drift"
+        ],
+        "title": "DriftOut",
+        "type": "object"
+      },
       "Echo": {
         "properties": {
           "at": {
@@ -1106,6 +1228,120 @@
           "pnl_pct"
         ],
         "title": "FundOutcomeOut",
+        "type": "object"
+      },
+      "FundPositionOut": {
+        "properties": {
+          "benchmark": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReturnsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cost": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Cost",
+            "type": "string"
+          },
+          "fund": {
+            "$ref": "#/components/schemas/FundRef"
+          },
+          "nav": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nav"
+          },
+          "nav_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nav Date"
+          },
+          "realised": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Realised",
+            "type": "string"
+          },
+          "returns": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReturnsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "role": {
+            "enum": [
+              "target",
+              "emergency",
+              "outside"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "share": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share"
+          },
+          "units": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Units",
+            "type": "string"
+          },
+          "unrealised": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unrealised"
+          }
+        },
+        "required": [
+          "fund",
+          "role",
+          "units",
+          "cost",
+          "realised",
+          "unrealised",
+          "nav",
+          "nav_date",
+          "share",
+          "returns",
+          "benchmark"
+        ],
+        "title": "FundPositionOut",
         "type": "object"
       },
       "FundRef": {
@@ -2922,6 +3158,164 @@
         "title": "PlanOut",
         "type": "object"
       },
+      "PortfolioOut": {
+        "properties": {
+          "allocation": {
+            "items": {
+              "$ref": "#/components/schemas/AssetOut"
+            },
+            "title": "Allocation",
+            "type": "array"
+          },
+          "benchmark": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReturnsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "benchmark_fund": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FundRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cash": {
+            "$ref": "#/components/schemas/CashTotalsOut"
+          },
+          "cost": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Cost",
+            "type": "string"
+          },
+          "drift": {
+            "items": {
+              "$ref": "#/components/schemas/DriftOut"
+            },
+            "title": "Drift",
+            "type": "array"
+          },
+          "funds": {
+            "items": {
+              "$ref": "#/components/schemas/FundPositionOut"
+            },
+            "title": "Funds",
+            "type": "array"
+          },
+          "last_sync": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sync"
+          },
+          "missing_nav": {
+            "items": {
+              "$ref": "#/components/schemas/FundRef"
+            },
+            "title": "Missing Nav",
+            "type": "array"
+          },
+          "nav_newest": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nav Newest"
+          },
+          "nav_oldest": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nav Oldest"
+          },
+          "net_worth": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Net Worth",
+            "type": "string"
+          },
+          "realised": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Realised",
+            "type": "string"
+          },
+          "returns": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReturnsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "target": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TargetOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unrealised": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unrealised"
+          }
+        },
+        "required": [
+          "returns",
+          "cost",
+          "realised",
+          "unrealised",
+          "benchmark_fund",
+          "benchmark",
+          "funds",
+          "allocation",
+          "target",
+          "drift",
+          "cash",
+          "net_worth",
+          "missing_nav",
+          "nav_oldest",
+          "nav_newest",
+          "last_sync"
+        ],
+        "title": "PortfolioOut",
+        "type": "object"
+      },
       "Position": {
         "description": "Hold a fund from ``entry`` to ``exit`` (or to the end), buying for ``amount``.",
         "properties": {
@@ -3175,6 +3569,83 @@
         "title": "RegularParams",
         "type": "object"
       },
+      "ReturnsOut": {
+        "properties": {
+          "gain": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Gain",
+            "type": "string"
+          },
+          "invested": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Invested",
+            "type": "string"
+          },
+          "on": {
+            "format": "date",
+            "title": "On",
+            "type": "string"
+          },
+          "redeemed": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Redeemed",
+            "type": "string"
+          },
+          "return_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Pct"
+          },
+          "since": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Since"
+          },
+          "value": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Value",
+            "type": "string"
+          },
+          "xirr_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Xirr Pct"
+          }
+        },
+        "required": [
+          "invested",
+          "redeemed",
+          "value",
+          "gain",
+          "return_pct",
+          "xirr_pct",
+          "since",
+          "on"
+        ],
+        "title": "ReturnsOut",
+        "type": "object"
+      },
       "RunUpdate": {
         "properties": {
           "name": {
@@ -3270,6 +3741,11 @@
             "title": "Nav",
             "type": "string"
           },
+          "realised": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Realised",
+            "type": "string"
+          },
           "sale_date": {
             "format": "date",
             "title": "Sale Date",
@@ -3286,7 +3762,8 @@
           "sale_date",
           "units",
           "nav",
-          "amount"
+          "amount",
+          "realised"
         ],
         "title": "SaleOut",
         "type": "object"
@@ -3890,6 +4367,24 @@
           "results"
         ],
         "title": "SyncRunOut",
+        "type": "object"
+      },
+      "TargetOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "TargetOut",
         "type": "object"
       },
       "TrackedFundOut": {
@@ -5756,6 +6251,37 @@
         "summary": "Change Settings",
         "tags": [
           "cash"
+        ]
+      }
+    },
+    "/api/v1/portfolio": {
+      "get": {
+        "operationId": "getPortfolio",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Get Portfolio",
+        "tags": [
+          "portfolio"
         ]
       }
     },
