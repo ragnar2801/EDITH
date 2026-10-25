@@ -37,6 +37,16 @@ def test_parag_parikh_flexi_finds_the_direct_growth_plan(loaded: TestClient) -> 
     assert [v["amfi_code"] for v in fund["variants"]] == ["153964", "122640", "153965"]
 
 
+def test_motilal_oswal_midcap_shows_direct_growth_first(loaded: TestClient) -> None:
+    # T1-20: NAVAll.txt leaves Plan and Option blank for this fund; the scheme master names them.
+    [fund] = search(loaded, "motilal oswal midcap")
+
+    assert fund["amfi_code"] == "127042"
+    assert (fund["plan"], fund["option"]) == ("direct", "Growth")
+    [idcw] = fund["variants"]
+    assert (idcw["amfi_code"], idcw["plan"], idcw["option"]) == ("127044", "direct", "IDCW")
+
+
 def test_qqq_finds_the_nasdaq_etf(loaded: TestClient) -> None:
     first = search(loaded, "QQQ")[0]
 

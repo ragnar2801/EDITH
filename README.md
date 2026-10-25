@@ -30,7 +30,7 @@ just run
 
 Open <http://localhost:8000>. Friday only listens on this laptop, not on your network.
 
-On first run, Portfolio shows **Fund list not downloaded · Download**: press it (or run `just instruments`, which also fetches the NSE and US lists). **Settings · Data · Download lists** refreshes them later. If a site blocks the download, save the files from a browser into a folder and run `just instruments --from-dir C:\path\to\folder` (file names: `EQUITY_L.csv`, `eq_etfseclist.csv`, `symbolchange.csv`, `namechange.csv`, `NAVAll.txt`, `nasdaqlisted.txt`, `otherlisted.txt`).
+On first run, Portfolio shows **Fund list not downloaded · Download**: press it (or run `just instruments`, which also fetches the NSE and US lists). **Settings · Data · Download lists** refreshes them later. If a site blocks the download, save the files from a browser into a folder and run `just instruments --from-dir C:\path\to\folder` (file names: `EQUITY_L.csv`, `eq_etfseclist.csv`, `symbolchange.csv`, `namechange.csv`, `NAVAll.txt`, `SchemeData.csv` (AMFI's scheme master, which names the plan and option of funds `NAVAll.txt` leaves blank), `nasdaqlisted.txt`, `otherlisted.txt`).
 
 Then follow the checklist on *Portfolio*. The app has four screens, one job each:
 

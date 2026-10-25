@@ -116,6 +116,56 @@ def test_amfi_older_layout_without_plan_and_option_columns() -> None:
     assert (record.plan, record.option_kind) == ("direct", "growth")
 
 
+def test_amfi_scheme_master_names_plan_and_option() -> None:
+    labels = {
+        label.amfi_code: label for label in amfi.parse_scheme_master(read(amfi.SCHEME_MASTER))
+    }
+
+    def label(code: str) -> tuple:
+        return labels[code].plan, labels[code].option_kind, labels[code].option
+
+    assert label("127042") == ("direct", "growth", "Growth")  # "-Direct Plan-Growth Option"
+    assert label("127044") == ("direct", "idcw", "IDCW")  # "-Direct - IDCW Payout/Reinvestment"
+    assert label("145551") == ("regular", "growth", "Growth")
+    assert label("100868") == ("regular", "growth", "Growth")  # "- Growth Plan": not direct
+    assert label("149313") == ("regular", "other", "Unclaimed")
+    # One variant per plan and no option in the name: a growth-only index fund.
+    assert label("154348") == ("direct", "growth", "Growth")
+    assert label("154349") == ("regular", "growth", "Growth")
+
+
+def test_amfi_scheme_master_reads_only_what_follows_the_scheme_name() -> None:
+    text = (
+        "AMC,Code,Scheme Name,Scheme Type,Scheme Category,Scheme NAV Name\n"
+        "X AMC,1,X Growth Fund,Open Ended,Equity,X Growth Fund - Direct Plan - IDCW\n"
+        "X AMC,2,X Growth Fund,Open Ended,Equity,X Growth Fund - Direct Plan - Growth\n"
+        "Y AMC,3,Y ELSS,Close Ended,ELSS,Y ELSS - Cumulative Option\n"
+        "Y AMC,4,Y ELSS,Close Ended,ELSS,Y ELSS - Direct Plan Cumulative Option\n"
+    )
+    labels = {label.amfi_code: label for label in amfi.parse_scheme_master(text)}
+
+    assert labels["1"].option_kind == "idcw"  # "Growth Fund" is the name, not the option
+    assert labels["2"].option_kind == "growth"
+    assert (labels["3"].plan, labels["3"].option_kind) == ("regular", "growth")
+    assert (labels["4"].plan, labels["4"].option_kind) == ("direct", "growth")
+
+
+def test_amfi_scheme_master_fills_only_what_navall_left_blank() -> None:
+    records = {record.amfi_code: record for record in amfi.parse_nav_all(read(amfi.NAV_ALL))}
+    assert (records["127042"].plan, records["127042"].option_kind) == (None, None)
+    labels = amfi.parse_scheme_master(read(amfi.SCHEME_MASTER))
+    conflicting = amfi.SchemeLabel("122639", "regular", "idcw", "IDCW")
+
+    filled = amfi.fill_plan_and_option(list(records.values()), [*labels, conflicting])
+
+    assert (records["127042"].plan, records["127042"].option) == ("direct", "Growth")
+    assert (records["154348"].plan, records["154348"].option) == ("direct", "Growth")
+    assert (records["145552"].plan, records["145552"].option) == ("direct", "Growth")
+    assert (records["122639"].plan, records["122639"].option) == ("direct", "Growth")  # NAVAll wins
+    assert records["140084"].plan == "direct" and records["140084"].option is None  # an ETF
+    assert filled == 8  # Midcap x2, Capital Markets x2, Nasdaq FoF x2, Fixed Horizon x2
+
+
 def test_nasdaq_lists_keep_stocks_and_etfs_only() -> None:
     nasdaq_listed = by_symbol(nasdaq.parse_nasdaq_listed(read(nasdaq.NASDAQ_LISTED)))
     other_listed = by_symbol(nasdaq.parse_other_listed(read(nasdaq.OTHER_LISTED)))
@@ -150,6 +200,7 @@ def test_sec_tickers_map_to_padded_ciks() -> None:
         (nse.parse_equity_list, nse.EQUITY_LIST),
         (nasdaq.parse_nasdaq_listed, nasdaq.NASDAQ_LISTED),
         (amfi.parse_nav_all, amfi.NAV_ALL),
+        (amfi.parse_scheme_master, amfi.SCHEME_MASTER),
     ],
 )
 def test_a_bot_check_page_is_a_format_error(parse, file) -> None:

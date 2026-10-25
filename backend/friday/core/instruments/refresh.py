@@ -341,6 +341,10 @@ class _Refresh:
         records = amfi.parse_nav_all(fetcher.get(amfi.NAV_ALL))
         self.result.rows = len(records)
         self._check_size("amfi", records)
+        labels = self._optional(fetcher, amfi.SCHEME_MASTER, amfi.parse_scheme_master)
+        blank = {r.amfi_code for r in records if r.plan is None or r.option_kind is None}
+        if labels is not None:
+            amfi.fill_plan_and_option(records, labels)
 
         by_code = {
             i.amfi_code: i
@@ -390,6 +394,10 @@ class _Refresh:
                 "scheme_key": record.scheme_key,
                 **_classification_values(record),
             }
+            if labels is None and record.amfi_code in blank and instrument is not None:
+                # Without the scheme master, keep the plan and option it gave last time.
+                for key in ("plan", "option", "option_kind"):
+                    del values[key]
             if instrument is None:
                 by_code[record.amfi_code] = self._create(values)
             else:

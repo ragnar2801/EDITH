@@ -38,6 +38,9 @@ FILES: dict[str, RemoteFile] = {
     nse.SYMBOL_CHANGES: RemoteFile(_NSE + nse.SYMBOL_CHANGES, _BROWSER),
     nse.NAME_CHANGES: RemoteFile(_NSE + nse.NAME_CHANGES, _BROWSER),
     amfi.NAV_ALL: RemoteFile("https://portal.amfiindia.com/spages/NAVAll.txt", _PLAIN),
+    amfi.SCHEME_MASTER: RemoteFile(
+        "https://portal.amfiindia.com/DownloadSchemeData_Po.aspx?mf=0", _PLAIN
+    ),
     nasdaq.NASDAQ_LISTED: RemoteFile(
         "https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt", _PLAIN
     ),

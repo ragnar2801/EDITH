@@ -227,6 +227,37 @@ def test_missing_change_files_are_only_a_warning(refresh, lists) -> None:
     assert any("symbolchange.csv" in warning for warning in result.warnings)
 
 
+def test_every_active_fund_in_the_scheme_master_has_a_plan_and_option(refresh, factory) -> None:
+    result = refresh("amfi")["amfi"]
+
+    assert result.warnings == []
+    with session_scope(factory) as session:
+        unlabelled = session.scalars(
+            select(Instrument.amfi_code).where(
+                Instrument.kind == "mutual_fund",
+                Instrument.is_active,
+                (Instrument.plan.is_(None)) | (Instrument.option_kind.is_(None)),
+            )
+        ).all()
+    assert unlabelled == []
+    assert (
+        instrument(factory, amfi_code="127044").option,
+        instrument(factory, amfi_code="127044").plan,
+    ) == ("IDCW", "direct")
+
+
+def test_without_the_scheme_master_plan_and_option_are_kept(refresh, factory, lists) -> None:
+    refresh("amfi")
+    (lists / "SchemeData.csv").unlink()
+
+    result = refresh("amfi")["amfi"]
+
+    assert result.status == "ok"
+    assert any("SchemeData.csv" in warning for warning in result.warnings)
+    assert result.updated == 0
+    assert instrument(factory, amfi_code="127042").option == "Growth"
+
+
 def test_a_us_ticker_change_is_matched_by_cik(refresh, factory, edit_list) -> None:
     refresh()
     old = instrument(factory, symbol="GOOGL")

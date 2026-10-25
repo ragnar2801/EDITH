@@ -6,7 +6,7 @@
 > **Already fixed:** React frontend + Python backend (D-023) · SQLite on the laptop (D-013) · free data only (D-012) · scheduled fetch + catch-up (D-022) · Windows + Task Scheduler (D-027) · Nifty 50 benchmark (D-043).
 > Everything else is decided **inside the task that needs it** (see each task's *Decisions* list). How this board works: [`README.md`](README.md)
 
-**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7; T1-18 dropped, D-068) · **Done:** 9 / 12
+**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7; T1-18 dropped, D-068) · **Done:** 10 / 12
 
 ---
 
@@ -24,7 +24,7 @@
 | T1-17 | Portfolio view vs target: value, P&L, XIRR, drift | Feature | Claude | todo | T1-13, T1-15, T1-16, T1-22 |
 | T1-18 | Daily NAV update on Windows | Infra | both | dropped | — (D-068: I sync NAVs by hand in Phase 1) |
 | T1-19 | Phase 1 acceptance: my real funds, reconciled | Verify | both | todo | T1-12 to T1-17, T1-20 |
-| T1-20 | Plan and option for every fund (AMFI leaves 5,623 blank) | Feature | Claude | todo | T1-02 |
+| T1-20 | Plan and option for every fund (AMFI leaves 5,623 blank) | Feature | Claude | done | T1-02 |
 | T1-21 | UI kit and copy clean-up: no prose, info icons, no build talk | Feature | Claude | done | T1-16 |
 | T1-22 | Journeys: new navigation, one fund page, Invest, Models, Settings | Feature | Claude | done | T1-21 |
 | ~~T1-03 to T1-11~~ | Board v2 tasks for stocks, US, LRS and the watchlist | — | — | dropped | see [Dropped tasks](#dropped-tasks-board-v2) |
@@ -329,7 +329,7 @@ T1-14 and T1-15 can be built in parallel. T1-18 was dropped (D-068): in Phase 1 
 ---
 
 ## T1-20 · Plan and option for every fund
-`Feature` · Owner: Claude · Status: todo · Depends on: T1-02
+`Feature` · Owner: Claude · Status: done · Depends on: T1-02
 
 **Goal:** search and buckets always show whether a fund variant is Direct or Regular, Growth or IDCW, so I never pick the wrong one.
 
@@ -338,8 +338,13 @@ T1-14 and T1-15 can be built in parallel. T1-18 was dropped (D-068): in Phase 1 
 - AMFI's scheme master (`portal.amfiindia.com/DownloadSchemeData_Po.aspx?mf=0`, CSV, checked 2026-10-25) has a *Scheme NAV Name* such as "Motilal Oswal Midcap Fund-Direct Plan-Growth Option", plus launch dates and minimum amounts
 - Import it alongside `NAVAll.txt` and fill plan and option where they're blank; keep "Direct + Growth first" in search (D-042)
 
-**Decisions**
-- Source and refresh rhythm for the scheme master; what to do when the two files disagree
+**Decisions** (2026-10-25, decided while building; review welcome)
+- Decided: AMFI's **scheme master** is downloaded with `NAVAll.txt` on every AMFI refresh (saved as `data/sources/SchemeData.csv`) and only **fills plan and option where `NAVAll.txt` leaves them blank**; `NAVAll.txt` wins when both say something (its columns are explicit; about 150 NAV names read as another option, e.g. "Growth Plan - Bonus Option"). Read from the NAV name after the scheme name: *direct* or else **regular** (every scheme has had a direct plan since 2013); *growth* or *cumulative* → Growth, *IDCW* or *dividend* → IDCW, *bonus* → Bonus, *unclaimed* → Unclaimed; a plan with one variant and no option named is **growth-only** (index funds often are). ETFs are one variant and stay without plan or option. If the master can't be downloaded, the refresh warns and keeps the plan and option stored last time (D-069)
+
+**Progress (2026-10-25)**
+- Built: `amfi.parse_scheme_master` and `amfi.fill_plan_and_option`, the download, and the refresh step; byte-for-byte fixture slice `SchemeData.csv` plus Motilal Oswal Midcap and Axis Nifty Capital Markets rows in the `NAVAll.txt` fixture
+- Live (2026-10-25, on a copy of the live database): the master has 16,472 rows; the refresh labelled 5,486 schemes; a second refresh changed nothing; **no active mutual fund is left without plan and option** (588 active ones were blank before). Search for "motilal oswal midcap" shows 127042 first, Direct · Growth, with 127044 Direct · IDCW as its variant
+- Tests: the master parser (plans, IDCW, growth-only plans, unclaimed, "Growth Fund" in a name, cumulative), filling only blanks with `NAVAll.txt` winning, a bot-check page, refresh labels every active fund, a missing master keeps what was stored, the search done-when
 
 **Done when**
 - Searching "motilal oswal midcap" shows 127042 first, labelled Direct · Growth

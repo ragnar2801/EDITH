@@ -14,6 +14,7 @@ Older copies have no Plan and Option columns; both layouts are read.
 """
 
 import re
+from dataclasses import dataclass, replace
 from datetime import date, timedelta
 
 from friday.core.instruments.classify import classify_fund
@@ -24,6 +25,7 @@ from friday.core.instruments.sources.common import (
     header_key,
     optional,
     parse_date,
+    read_rows,
 )
 
 NAV_ALL = "NAVAll.txt"
@@ -118,3 +120,93 @@ def parse_nav_all(text: str) -> list[Record]:
     for record, nav_date in parsed:
         record.active = nav_date is not None and nav_date >= cutoff
     return [record for record, _ in parsed]
+
+
+# -- Scheme master ---------------------------------------------------------------------
+
+SCHEME_MASTER = "SchemeData.csv"
+"""AMFI's scheme master (D-069): ``portal.amfiindia.com/DownloadSchemeData_Po.aspx?mf=0``.
+
+Checked 2026-10-25. Comma-separated, one row per scheme code::
+
+    AMC,Code,Scheme Name,Scheme Type,Scheme Category,Scheme NAV Name,...
+    Motilal Oswal Asset Management Company Limited,127042,Motilal Oswal Midcap Fund,
+        Open Ended,Equity Scheme - Mid Cap Fund,Motilal Oswal Midcap Fund-Direct Plan-Growth
+        Option,...                                          (one line in the file)
+
+Only the *Scheme NAV Name* is used: it names the plan and option for the 5,600 rows of
+``NAVAll.txt`` whose Plan and Option columns are blank.
+"""
+
+_OPTION_LABEL = {"growth": "Growth", "idcw": "IDCW", "bonus": "Bonus"}
+
+
+@dataclass(frozen=True)
+class SchemeLabel:
+    """Plan and option of one scheme code, read from its NAV name in the scheme master."""
+
+    amfi_code: str
+    plan: str
+    option_kind: str | None
+    option: str | None
+
+
+def parse_scheme_master(text: str) -> list[SchemeLabel]:
+    rows = read_rows(
+        text, file=SCHEME_MASTER, required={"amc", "code", "schemename", "schemenavname"}
+    )
+    parsed = []
+    for row in rows:
+        code, scheme, nav_name = row["code"], row["schemename"], row["schemenavname"]
+        if not code.isdigit() or not nav_name:
+            continue
+        # What the NAV name adds to the scheme name, so a fund called "... Growth Fund"
+        # isn't read as the growth option.
+        suffix = (
+            nav_name[len(scheme) :] if nav_name.lower().startswith(scheme.lower()) else nav_name
+        )
+        # Every scheme has had a direct plan since 2013; a variant not called direct is
+        # sold through distributors, which is the regular plan.
+        plan = "direct" if re.search(r"\bdirect\b", suffix, re.IGNORECASE) else "regular"
+        if re.search(r"\bunclaimed\b", suffix, re.IGNORECASE):
+            option_kind, option = "other", "Unclaimed"
+        elif re.search(r"\bcumulative\b", suffix, re.IGNORECASE):
+            option_kind, option = "growth", "Growth"
+        else:
+            option_kind = _option_kind("", suffix)
+            option = _OPTION_LABEL.get(option_kind or "")
+        parsed.append(
+            (row["amc"].lower(), scheme.lower(), SchemeLabel(code, plan, option_kind, option))
+        )
+
+    # A plan with one variant and no option in its name is a growth-only scheme (index
+    # funds often are): AMCs always name IDCW options.
+    variants: dict[tuple[str, str, str], int] = {}
+    for amc, scheme, label in parsed:
+        key = (amc, scheme, label.plan)
+        variants[key] = variants.get(key, 0) + 1
+    return [
+        replace(label, option_kind="growth", option="Growth")
+        if label.option_kind is None and variants[(amc, scheme, label.plan)] == 1
+        else label
+        for amc, scheme, label in parsed
+    ]
+
+
+def fill_plan_and_option(records: list[Record], labels: list[SchemeLabel]) -> int:
+    """Fill plan and option where ``NAVAll.txt`` left them blank (D-069) and return how many
+    records changed. ``NAVAll.txt`` wins where both say something: its columns are explicit,
+    while NAV names are loose (about 150 read as another option, e.g. "Growth Plan - Bonus")."""
+    by_code = {label.amfi_code: label for label in labels}
+    filled = 0
+    for record in records:
+        label = by_code.get(record.amfi_code or "")
+        if label is None or record.kind != "mutual_fund":
+            continue  # an ETF is one variant: no plan or option to tell apart
+        changed = False
+        if record.plan is None:
+            record.plan, changed = label.plan, True
+        if record.option_kind is None and label.option_kind:
+            record.option_kind, record.option, changed = label.option_kind, label.option, True
+        filled += changed
+    return filled
