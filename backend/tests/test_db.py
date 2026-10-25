@@ -2,11 +2,12 @@ from datetime import UTC, datetime, timedelta, timezone
 from decimal import Decimal
 
 import pytest
+from alembic.script import ScriptDirectory
 from sqlalchemy import Column, Integer, MetaData, Table, insert, select, text
 from sqlalchemy.exc import StatementError
 
 from friday.config import Settings
-from friday.core.db import make_engine, upgrade_database
+from friday.core.db import alembic_config, make_engine, upgrade_database
 from friday.core.types import DecimalText, UtcDateTime
 
 metadata = MetaData()
@@ -84,4 +85,4 @@ def test_migrations_run_and_are_repeatable(settings: Settings) -> None:
     with engine.connect() as connection:
         version = connection.execute(text("SELECT version_num FROM alembic_version")).scalar()
     engine.dispose()
-    assert version == "0002"
+    assert version == ScriptDirectory.from_config(alembic_config(settings)).get_current_head()

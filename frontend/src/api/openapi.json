@@ -76,6 +76,45 @@
         "title": "ClassificationOut",
         "type": "object"
       },
+      "CoverageOut": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "first": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First"
+          },
+          "last": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last"
+          }
+        },
+        "required": [
+          "first",
+          "last",
+          "count"
+        ],
+        "title": "CoverageOut",
+        "type": "object"
+      },
       "Echo": {
         "properties": {
           "at": {
@@ -125,6 +164,152 @@
           "type"
         ],
         "title": "FieldError",
+        "type": "object"
+      },
+      "FundRef": {
+        "properties": {
+          "amfi_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amfi Code"
+          },
+          "fund_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fund Category"
+          },
+          "fund_house": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fund House"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "option": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "amfi_code",
+          "fund_house",
+          "fund_category",
+          "plan",
+          "option",
+          "is_active"
+        ],
+        "title": "FundRef",
+        "type": "object"
+      },
+      "FundResultOut": {
+        "properties": {
+          "added": {
+            "title": "Added",
+            "type": "integer"
+          },
+          "corrected": {
+            "title": "Corrected",
+            "type": "integer"
+          },
+          "instrument_id": {
+            "title": "Instrument Id",
+            "type": "integer"
+          },
+          "last_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Date"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "fallback",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instrument_id",
+          "name",
+          "status",
+          "added",
+          "corrected",
+          "last_date",
+          "message"
+        ],
+        "title": "FundResultOut",
         "type": "object"
       },
       "Health": {
@@ -696,6 +881,173 @@
         "title": "Money",
         "type": "object"
       },
+      "NavPointOut": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "nav": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Nav",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "nav"
+        ],
+        "title": "NavPointOut",
+        "type": "object"
+      },
+      "NavStatsOut": {
+        "properties": {
+          "cagr_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cagr Pct"
+          },
+          "change_1d_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change 1D Pct"
+          },
+          "change_1y_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change 1Y Pct"
+          },
+          "change_since_first_pct": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Change Since First Pct",
+            "type": "string"
+          },
+          "first": {
+            "$ref": "#/components/schemas/NavPointOut"
+          },
+          "high_52w": {
+            "$ref": "#/components/schemas/NavPointOut"
+          },
+          "latest": {
+            "$ref": "#/components/schemas/NavPointOut"
+          },
+          "low_52w": {
+            "$ref": "#/components/schemas/NavPointOut"
+          }
+        },
+        "required": [
+          "first",
+          "latest",
+          "change_1d_pct",
+          "change_1y_pct",
+          "change_since_first_pct",
+          "cagr_pct",
+          "high_52w",
+          "low_52w"
+        ],
+        "title": "NavStatsOut",
+        "type": "object"
+      },
+      "NavStatusOut": {
+        "properties": {
+          "funds": {
+            "items": {
+              "$ref": "#/components/schemas/TrackedFundOut"
+            },
+            "title": "Funds",
+            "type": "array"
+          },
+          "last_run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SyncRunOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "last_run",
+          "funds"
+        ],
+        "title": "NavStatusOut",
+        "type": "object"
+      },
+      "NavSummaryOut": {
+        "properties": {
+          "coverage": {
+            "$ref": "#/components/schemas/CoverageOut"
+          },
+          "instrument_id": {
+            "title": "Instrument Id",
+            "type": "integer"
+          },
+          "is_fund": {
+            "title": "Is Fund",
+            "type": "boolean"
+          },
+          "stats": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NavStatsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tracked": {
+            "title": "Tracked",
+            "type": "boolean"
+          },
+          "tracked_by_me": {
+            "title": "Tracked By Me",
+            "type": "boolean"
+          },
+          "used_by": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Used By",
+            "type": "array"
+          }
+        },
+        "required": [
+          "instrument_id",
+          "is_fund",
+          "tracked",
+          "tracked_by_me",
+          "used_by",
+          "coverage",
+          "stats"
+        ],
+        "title": "NavSummaryOut",
+        "type": "object"
+      },
       "Override": {
         "properties": {
           "allocation": {
@@ -911,6 +1263,129 @@
           "last_success"
         ],
         "title": "SourceOut",
+        "type": "object"
+      },
+      "SyncIn": {
+        "properties": {
+          "instrument_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrument Ids"
+          }
+        },
+        "title": "SyncIn",
+        "type": "object"
+      },
+      "SyncRunOut": {
+        "properties": {
+          "added": {
+            "title": "Added",
+            "type": "integer"
+          },
+          "corrected": {
+            "title": "Corrected",
+            "type": "integer"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
+          "finished_at": {
+            "format": "date-time",
+            "title": "Finished At",
+            "type": "string"
+          },
+          "funds": {
+            "title": "Funds",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/FundResultOut"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "partial",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "started_at",
+          "finished_at",
+          "funds",
+          "added",
+          "corrected",
+          "failed",
+          "results"
+        ],
+        "title": "SyncRunOut",
+        "type": "object"
+      },
+      "TrackedFundOut": {
+        "properties": {
+          "coverage": {
+            "$ref": "#/components/schemas/CoverageOut"
+          },
+          "fund": {
+            "$ref": "#/components/schemas/FundRef"
+          },
+          "last_result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FundResultOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tracked_by_me": {
+            "title": "Tracked By Me",
+            "type": "boolean"
+          },
+          "used_by": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Used By",
+            "type": "array"
+          }
+        },
+        "required": [
+          "fund",
+          "tracked_by_me",
+          "used_by",
+          "coverage",
+          "last_result"
+        ],
+        "title": "TrackedFundOut",
         "type": "object"
       },
       "Variant": {
@@ -1332,6 +1807,295 @@
         "summary": "Put Classification",
         "tags": [
           "instruments"
+        ]
+      }
+    },
+    "/api/v1/instruments/{instrument_id}/nav-summary": {
+      "get": {
+        "description": "Whether a fund is tracked, which NAV dates Friday has, and its headline figures.",
+        "operationId": "getNavSummary",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instrument_id",
+            "required": true,
+            "schema": {
+              "title": "Instrument Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NavSummaryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Nav Summary",
+        "tags": [
+          "navs"
+        ]
+      }
+    },
+    "/api/v1/instruments/{instrument_id}/navs": {
+      "get": {
+        "description": "A fund's NAVs, oldest first.",
+        "operationId": "getNavs",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instrument_id",
+            "required": true,
+            "schema": {
+              "title": "Instrument Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NavPointOut"
+                  },
+                  "title": "Response Getnavs",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Navs",
+        "tags": [
+          "navs"
+        ]
+      }
+    },
+    "/api/v1/instruments/{instrument_id}/tracking": {
+      "delete": {
+        "description": "Stop keeping this fund's NAVs up to date. NAVs already stored stay.",
+        "operationId": "untrackFund",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instrument_id",
+            "required": true,
+            "schema": {
+              "title": "Instrument Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NavSummaryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Delete Tracking",
+        "tags": [
+          "navs"
+        ]
+      },
+      "put": {
+        "description": "Keep this fund's NAVs. Sync it afterwards to download its history.",
+        "operationId": "trackFund",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instrument_id",
+            "required": true,
+            "schema": {
+              "title": "Instrument Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NavSummaryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Put Tracking",
+        "tags": [
+          "navs"
+        ]
+      }
+    },
+    "/api/v1/navs/status": {
+      "get": {
+        "description": "Every tracked fund with the NAV dates Friday has, and the last sync.",
+        "operationId": "getNavStatus",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NavStatusOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Status",
+        "tags": [
+          "navs"
+        ]
+      }
+    },
+    "/api/v1/navs/sync": {
+      "post": {
+        "description": "Download missing NAVs for every tracked fund, or only the given ones (D-046).",
+        "operationId": "syncNavs",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/SyncIn"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncRunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Sync",
+        "tags": [
+          "navs"
         ]
       }
     }

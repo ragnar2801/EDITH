@@ -1,15 +1,14 @@
 """Instrument search, detail and my classification overrides (T1-02)."""
 
-from collections.abc import Iterator
 from datetime import date
 from decimal import Decimal
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from friday.core.db import session_scope
+from friday.api.deps import SessionDep
 from friday.core.instruments.classify import Classification
 from friday.core.instruments.models import Instrument, InstrumentImport
 from friday.core.instruments.search import MAX_LIMIT, scheme_variants, search_instruments
@@ -31,14 +30,6 @@ Currency = Literal["INR", "USD"]
 Bucket = Literal["equity", "debt", "gold", "silver", "other"]
 AssetClass = Literal["equity", "debt", "gold", "silver", "other", "hybrid", "unclassified"]
 Exposure = Literal["IN", "US", "GLOBAL"]
-
-
-def get_session(request: Request) -> Iterator[Session]:
-    with session_scope(request.app.state.session_factory) as session:
-        yield session
-
-
-SessionDep = Annotated[Session, Depends(get_session)]
 
 
 class Share(BaseModel):

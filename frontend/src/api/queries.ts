@@ -96,3 +96,101 @@ export function useClearClassification(id: number) {
     },
   })
 }
+
+export function useNavStatus() {
+  return useQuery({
+    queryKey: ['nav-status'],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/api/v1/navs/status')
+      if (error) throw failure(error)
+      return data
+    },
+  })
+}
+
+export function useNavSummary(id: number) {
+  return useQuery({
+    queryKey: ['nav-summary', id],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/api/v1/instruments/{instrument_id}/nav-summary', {
+        params: { path: { instrument_id: id } },
+      })
+      if (error) throw failure(error)
+      return data
+    },
+    retry: false,
+  })
+}
+
+/** A fund's NAVs from `start` (a plain date) to the latest, oldest first. */
+export function useNavs(id: number, start: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: ['navs', id, start ?? 'all'],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/api/v1/instruments/{instrument_id}/navs', {
+        params: { path: { instrument_id: id }, query: start ? { start } : {} },
+      })
+      if (error) throw failure(error)
+      return data
+    },
+    enabled,
+    placeholderData: keepPreviousData,
+  })
+}
+
+/** NAVs changed: every NAV view and anything computed from NAVs is stale. */
+function invalidateNavs(queryClient: ReturnType<typeof useQueryClient>) {
+  return Promise.all(
+    ['nav-status', 'nav-summary', 'navs'].map((key) =>
+      queryClient.invalidateQueries({ queryKey: [key] }),
+    ),
+  )
+}
+
+/** Sync every tracked fund, or only `instrumentIds`. */
+export function useSyncNavs() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (instrumentIds?: number[]) => {
+      const { data, error } = await api.POST('/api/v1/navs/sync', {
+        body: instrumentIds ? { instrument_ids: instrumentIds } : {},
+      })
+      if (error) throw failure(error)
+      return data
+    },
+    onSettled: () => invalidateNavs(queryClient),
+  })
+}
+
+/** Track a fund and download its history straight away. */
+export function useTrackFund(id: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const tracked = await api.PUT('/api/v1/instruments/{instrument_id}/tracking', {
+        params: { path: { instrument_id: id } },
+      })
+      if (tracked.error) throw failure(tracked.error)
+      const { data, error } = await api.POST('/api/v1/navs/sync', {
+        body: { instrument_ids: [id] },
+      })
+      if (error) throw failure(error)
+      return data
+    },
+    onSettled: () => invalidateNavs(queryClient),
+  })
+}
+
+export function useUntrackFund(id: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { data, error } = await api.DELETE('/api/v1/instruments/{instrument_id}/tracking', {
+        params: { path: { instrument_id: id } },
+      })
+      if (error) throw failure(error)
+      return data
+    },
+    onSettled: () => invalidateNavs(queryClient),
+  })
+}

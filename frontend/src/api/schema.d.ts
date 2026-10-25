@@ -122,6 +122,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/instruments/{instrument_id}/nav-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Nav Summary
+         * @description Whether a fund is tracked, which NAV dates Friday has, and its headline figures.
+         */
+        get: operations["getNavSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/instruments/{instrument_id}/navs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Navs
+         * @description A fund's NAVs, oldest first.
+         */
+        get: operations["getNavs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/instruments/{instrument_id}/tracking": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Put Tracking
+         * @description Keep this fund's NAVs. Sync it afterwards to download its history.
+         */
+        put: operations["trackFund"];
+        post?: never;
+        /**
+         * Delete Tracking
+         * @description Stop keeping this fund's NAVs up to date. NAVs already stored stay.
+         */
+        delete: operations["untrackFund"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/navs/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Status
+         * @description Every tracked fund with the NAV dates Friday has, and the last sync.
+         */
+        get: operations["getNavStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/navs/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sync
+         * @description Download missing NAVs for every tracked fund, or only the given ones (D-046).
+         */
+        post: operations["syncNavs"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -153,6 +257,15 @@ export interface components {
              */
             exposure: "IN" | "US" | "GLOBAL";
         };
+        /** CoverageOut */
+        CoverageOut: {
+            /** Count */
+            count: number;
+            /** First */
+            first: string | null;
+            /** Last */
+            last: string | null;
+        };
         /** Echo */
         Echo: {
             /**
@@ -170,6 +283,45 @@ export interface components {
             msg: string;
             /** Type */
             type: string;
+        };
+        /** FundRef */
+        FundRef: {
+            /** Amfi Code */
+            amfi_code: string | null;
+            /** Fund Category */
+            fund_category: string | null;
+            /** Fund House */
+            fund_house: string | null;
+            /** Id */
+            id: number;
+            /** Is Active */
+            is_active: boolean;
+            /** Name */
+            name: string;
+            /** Option */
+            option: string | null;
+            /** Plan */
+            plan: string | null;
+        };
+        /** FundResultOut */
+        FundResultOut: {
+            /** Added */
+            added: number;
+            /** Corrected */
+            corrected: number;
+            /** Instrument Id */
+            instrument_id: number;
+            /** Last Date */
+            last_date: string | null;
+            /** Message */
+            message: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "fallback" | "failed";
         };
         /** Health */
         Health: {
@@ -354,6 +506,52 @@ export interface components {
              */
             currency: "INR" | "USD";
         };
+        /** NavPointOut */
+        NavPointOut: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Nav */
+            nav: string;
+        };
+        /** NavStatsOut */
+        NavStatsOut: {
+            /** Cagr Pct */
+            cagr_pct: string | null;
+            /** Change 1D Pct */
+            change_1d_pct: string | null;
+            /** Change 1Y Pct */
+            change_1y_pct: string | null;
+            /** Change Since First Pct */
+            change_since_first_pct: string;
+            first: components["schemas"]["NavPointOut"];
+            high_52w: components["schemas"]["NavPointOut"];
+            latest: components["schemas"]["NavPointOut"];
+            low_52w: components["schemas"]["NavPointOut"];
+        };
+        /** NavStatusOut */
+        NavStatusOut: {
+            /** Funds */
+            funds: components["schemas"]["TrackedFundOut"][];
+            last_run: components["schemas"]["SyncRunOut"] | null;
+        };
+        /** NavSummaryOut */
+        NavSummaryOut: {
+            coverage: components["schemas"]["CoverageOut"];
+            /** Instrument Id */
+            instrument_id: number;
+            /** Is Fund */
+            is_fund: boolean;
+            stats: components["schemas"]["NavStatsOut"] | null;
+            /** Tracked */
+            tracked: boolean;
+            /** Tracked By Me */
+            tracked_by_me: boolean;
+            /** Used By */
+            used_by: string[];
+        };
         /** Override */
         Override: {
             /** Allocation */
@@ -425,6 +623,51 @@ export interface components {
              * @enum {string}
              */
             source: "nse" | "amfi" | "us";
+        };
+        /** SyncIn */
+        SyncIn: {
+            /** Instrument Ids */
+            instrument_ids?: number[] | null;
+        };
+        /** SyncRunOut */
+        SyncRunOut: {
+            /** Added */
+            added: number;
+            /** Corrected */
+            corrected: number;
+            /** Failed */
+            failed: number;
+            /**
+             * Finished At
+             * Format: date-time
+             */
+            finished_at: string;
+            /** Funds */
+            funds: number;
+            /** Id */
+            id: number;
+            /** Results */
+            results: components["schemas"]["FundResultOut"][];
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "partial" | "failed";
+        };
+        /** TrackedFundOut */
+        TrackedFundOut: {
+            coverage: components["schemas"]["CoverageOut"];
+            fund: components["schemas"]["FundRef"];
+            last_result: components["schemas"]["FundResultOut"] | null;
+            /** Tracked By Me */
+            tracked_by_me: boolean;
+            /** Used By */
+            used_by: string[];
         };
         /**
          * Variant
@@ -662,6 +905,195 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InstrumentDetail"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getNavSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                instrument_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NavSummaryOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getNavs: {
+        parameters: {
+            query?: {
+                start?: string | null;
+                end?: string | null;
+            };
+            header?: never;
+            path: {
+                instrument_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NavPointOut"][];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    trackFund: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                instrument_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NavSummaryOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    untrackFund: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                instrument_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NavSummaryOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getNavStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NavStatusOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    syncNavs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SyncIn"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncRunOut"];
                 };
             };
             /** @description Problem details (RFC 9457) */

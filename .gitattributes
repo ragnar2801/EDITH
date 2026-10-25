@@ -7,3 +7,4 @@
 
 # Source-list fixtures are byte-for-byte slices of real downloads (CRLF and all).
 backend/tests/fixtures/instruments/** -text
+backend/tests/fixtures/navs/** -text

@@ -49,6 +49,9 @@ Amount = _decimal_string(2)
 Price = _decimal_string(4)
 """Price or NAV: 4 decimal places."""
 
+Nav = _decimal_string(8)
+"""Mutual fund NAV, exactly as published: up to 8 decimal places (D-045)."""
+
 Units = _decimal_string(8)
 """Quantity or units: up to 8 decimal places (fractional US shares)."""
 

@@ -3,9 +3,11 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session, sessionmaker
 
 from friday.api.app import create_app
 from friday.config import Settings
+from friday.core.db import make_engine, make_session_factory, upgrade_database
 
 
 @pytest.fixture
@@ -22,3 +24,11 @@ def settings(tmp_path: Path) -> Settings:
 def client(settings: Settings) -> Iterator[TestClient]:
     with TestClient(create_app(settings)) as test_client:
         yield test_client
+
+
+@pytest.fixture
+def factory(settings: Settings) -> Iterator[sessionmaker[Session]]:
+    upgrade_database(settings)
+    engine = make_engine(settings)
+    yield make_session_factory(engine)
+    engine.dispose()

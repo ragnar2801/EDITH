@@ -60,7 +60,34 @@ class Fetcher(Protocol):
         ...
 
 
-def _decode(content: bytes) -> str:
+def get_with_retries(
+    client: httpx2.Client,
+    url: str,
+    headers: dict[str, str],
+    *,
+    attempts: int,
+    backoff_seconds: float,
+) -> httpx2.Response:
+    """GET ``url``, retrying network errors and 5xx answers with exponential backoff.
+    Anything but a 200 in the end is a :class:`FetchError`."""
+    for attempt in range(1, attempts + 1):
+        try:
+            response = client.get(url, headers=headers)
+            if response.status_code < 500:
+                break
+            error = f"HTTP {response.status_code}"
+        except httpx2.HTTPError as exc:
+            error = f"{type(exc).__name__}: {exc}"
+        if attempt == attempts:
+            raise FetchError(f"{url}: {error} (after {attempt} attempts)")
+        time.sleep(backoff_seconds * 2 ** (attempt - 1))
+
+    if response.status_code != 200:
+        raise FetchError(f"{url}: HTTP {response.status_code}")
+    return response
+
+
+def decode(content: bytes) -> str:
     try:
         return content.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -77,7 +104,7 @@ class FolderFetcher:
         path = self.folder / file
         if not path.is_file():
             raise FetchError(f"{path} not found")
-        return _decode(path.read_bytes())
+        return decode(path.read_bytes())
 
 
 class HttpFetcher:
@@ -107,20 +134,13 @@ class HttpFetcher:
                 raise FetchError("set FRIDAY_SEC_USER_AGENT to 'Your Name your@email' first")
             headers["User-Agent"] = self.sec_user_agent
 
-        for attempt in range(1, self.attempts + 1):
-            try:
-                response = self.client.get(remote.url, headers=headers)
-                if response.status_code < 500:
-                    break
-                error = f"HTTP {response.status_code}"
-            except httpx2.HTTPError as exc:
-                error = f"{type(exc).__name__}: {exc}"
-            if attempt == self.attempts:
-                raise FetchError(f"{remote.url}: {error} (after {attempt} attempts)")
-            time.sleep(self.backoff_seconds * 2 ** (attempt - 1))
-
-        if response.status_code != 200:
-            raise FetchError(f"{remote.url}: HTTP {response.status_code}")
+        response = get_with_retries(
+            self.client,
+            remote.url,
+            headers,
+            attempts=self.attempts,
+            backoff_seconds=self.backoff_seconds,
+        )
         self.save_dir.mkdir(parents=True, exist_ok=True)
         (self.save_dir / file).write_bytes(response.content)
-        return _decode(response.content)
+        return decode(response.content)

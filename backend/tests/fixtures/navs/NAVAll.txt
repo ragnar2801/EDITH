@@ -1,0 +1,36 @@
+Scheme Code;ISIN Div Payout/ ISIN Growth;ISIN Div Reinvestment;Scheme Name;Plan;Option;Net Asset Value;Date
+ 
+Open Ended Schemes(Debt Scheme - Credit Risk Fund)
+ 
+Franklin Templeton Mutual Fund
+ 
+118553;INF090I01JL3;-;Franklin India Credit Risk Fund (No. of segregated portfolios-3);Direct Plan;;25.5650;11-Jun-2023
+118552;INF090I01JJ7;INF090I01JK5;Franklin India Credit Risk Fund (No. of segregated portfolios-3);Direct Plan;;14.0105;11-Jun-2023
+116153;INF090I01ET7;-;Franklin India Credit Risk Fund (No. of segregated portfolios-3);;;25.3348;11-Jun-2023
+116154;INF090I01ES9;INF090I01ER1;Franklin India Credit Risk Fund (No. of segregated portfolios-3);;;13.5858;11-Jun-2023
+148304;INF090I01VZ8;-;Franklin India Credit Risk Fund (No. of segregated portfolios-3);Direct Plan;Growth;0.0000;23-Oct-2026
+148303;INF090I01VX3;-;Franklin India Credit Risk Fund (No. of segregated portfolios-3);Regular Plan;Growth;0.0000;23-Oct-2026
+147956;INF090I01TK4;-;Franklin India Credit Risk Fund (No. of segregated portfolios-3);Direct Plan;;0.0000;20-Jul-2020
+ 
+Open Ended Schemes(Hybrid Scheme - Arbitrage Fund)
+ 
+Bandhan Mutual Fund
+ 
+108844;INF194K01623;INF194K01631;BANDHAN Arbitrage Fund;;;14.86269632;17-Feb-2017
+108846;INF194K01615;-;BANDHAN Arbitrage Fund;;;21.25167644;17-Feb-2017
+ 
+Open Ended Schemes(Other Scheme - Index Funds)
+ 
+UTI Mutual Fund
+ 
+120717;INF789F01WY2;INF789F01WZ9;UTI Nifty 50 Index Fund;Direct Plan;IDCW;80.1956;23-Oct-2026
+120716;INF789F01XA0;-;UTI Nifty 50 Index Fund;Direct Plan;Growth;159.177;23-Oct-2026
+100822;INF789F01JN2;-;UTI Nifty 50 Index Fund;Regular Plan;Growth;156.7345;23-Oct-2026
+ 
+Open Ended Schemes(Equity Scheme - Flexi Cap Fund)
+ 
+PPFAS Mutual Fund
+ 
+122639;INF879O01027;-;Parag Parikh Flexi Cap Fund;Direct Plan;Growth;88.9695;23-Oct-2026
+153964;-;INF879O01308;Parag Parikh Flexi Cap Fund;Direct Plan;Monthly IDCW Payout;88.9699;23-Oct-2026
+ 

@@ -1,4 +1,5 @@
-"""``friday`` command: serve, migrate, export the OpenAPI schema, refresh and search instruments."""
+"""``friday`` command: serve, migrate, export the OpenAPI schema, refresh and search instruments,
+track funds and sync their NAVs."""
 
 import argparse
 import json
@@ -87,6 +88,75 @@ def _search_instruments(args: argparse.Namespace) -> None:
         print("No matches.")
 
 
+def _funds_by_code(session, codes: list[str]) -> list:
+    from sqlalchemy import select
+
+    from friday.core.instruments.models import Instrument
+
+    found = {
+        instrument.amfi_code: instrument
+        for instrument in session.scalars(select(Instrument).where(Instrument.amfi_code.in_(codes)))
+    }
+    unknown = [code for code in codes if code not in found]
+    if unknown:
+        raise SystemExit(
+            f"Unknown AMFI scheme codes: {', '.join(unknown)}. Run `just instruments` first?"
+        )
+    return [found[code] for code in codes]
+
+
+def _track_funds(args: argparse.Namespace) -> None:
+    from friday.core.db import make_engine, make_session_factory, session_scope
+    from friday.core.navs.service import NotAFund, track
+
+    settings = Settings()
+    upgrade_database(settings)
+    engine = make_engine(settings)
+    with session_scope(make_session_factory(engine)) as session:
+        for instrument in _funds_by_code(session, args.codes):
+            try:
+                track(session, instrument)
+            except NotAFund as error:
+                raise SystemExit(str(error)) from None
+            print(f"tracking  AMFI {instrument.amfi_code}  {instrument.name}")
+    engine.dispose()
+    print("Run `just navs` to download their NAV history.")
+
+
+def _sync_navs(args: argparse.Namespace) -> None:
+    from friday.core.db import make_engine, make_session_factory, session_scope
+    from friday.core.navs.download import HttpNavFetcher
+    from friday.core.navs.service import NotTracked, sync_navs
+
+    settings = Settings()
+    upgrade_database(settings)
+    engine = make_engine(settings)
+    factory = make_session_factory(engine)
+    ids = None
+    if args.fund:
+        with session_scope(factory) as session:
+            ids = [instrument.id for instrument in _funds_by_code(session, args.fund)]
+    fetcher = HttpNavFetcher()
+    try:
+        result = sync_navs(factory, fetcher, ids)
+    except NotTracked as error:
+        raise SystemExit(f"Track these funds first: {error}") from None
+    finally:
+        fetcher.close()
+        engine.dispose()
+
+    for fund in result.results:
+        last = fund.last_date.isoformat() if fund.last_date else "-"
+        print(f"{fund.status:8} {fund.added:5} added  last {last}  {fund.name}")
+        if fund.message:
+            print(f"         note: {fund.message}")
+    if not result.results:
+        print("No funds tracked yet. Track some with `friday navs track <AMFI code>`.")
+    print(f"Sync {result.status}: {result.added} NAVs added.")
+    if result.status != "ok":
+        raise SystemExit(1)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="friday")
     commands = parser.add_subparsers(required=True)
@@ -125,6 +195,19 @@ def main() -> None:
     search.add_argument("query", nargs="+")
     search.add_argument("--limit", type=int, default=10)
     search.set_defaults(func=_search_instruments)
+
+    navs = commands.add_parser("navs", help="fund NAVs: track funds and sync their NAVs")
+    nav_commands = navs.add_subparsers(required=True)
+
+    nav_sync = nav_commands.add_parser(
+        "sync", help="download missing NAVs for every tracked fund, up to today"
+    )
+    nav_sync.add_argument("--fund", nargs="+", metavar="AMFI_CODE", help="only these funds")
+    nav_sync.set_defaults(func=_sync_navs)
+
+    nav_track = nav_commands.add_parser("track", help="keep NAVs for these funds")
+    nav_track.add_argument("codes", nargs="+", metavar="AMFI_CODE")
+    nav_track.set_defaults(func=_track_funds)
 
     args = parser.parse_args()
     args.func(args)

@@ -1,12 +1,9 @@
 import shutil
-from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 from sqlalchemy.orm import Session, sessionmaker
 
-from friday.config import Settings
-from friday.core.db import make_engine, make_session_factory, upgrade_database
 from friday.core.instruments.download import FolderFetcher
 from friday.core.instruments.refresh import SourceResult, refresh_instruments
 
@@ -19,14 +16,6 @@ def lists(tmp_path: Path) -> Path:
     folder = tmp_path / "lists"
     shutil.copytree(FIXTURES, folder)
     return folder
-
-
-@pytest.fixture
-def factory(settings: Settings) -> Iterator[sessionmaker[Session]]:
-    upgrade_database(settings)
-    engine = make_engine(settings)
-    yield make_session_factory(engine)
-    engine.dispose()
 
 
 @pytest.fixture

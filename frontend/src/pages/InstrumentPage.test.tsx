@@ -4,7 +4,16 @@ import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 
 import { routes } from '@/app/routes'
-import { detail, fakeApi, infosys, parag, problem } from '@/test/fake-api'
+import {
+  detail,
+  fakeApi,
+  infosys,
+  navSummary,
+  parag,
+  problem,
+  recentNavs,
+  syncRun,
+} from '@/test/fake-api'
 
 function renderAt(path: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -141,4 +150,59 @@ test('an unknown instrument says so', async () => {
 
   expect(await screen.findByRole('heading', { name: 'Instrument not found' })).toBeInTheDocument()
   expect(screen.getByText('No instrument with id 999.')).toBeInTheDocument()
+})
+
+test('a tracked fund shows its NAV figures and chart', async () => {
+  fakeApi({
+    'GET /api/v1/instruments/7': () => detail(parag),
+    'GET /api/v1/instruments/7/nav-summary': () => navSummary(),
+    'GET /api/v1/instruments/7/navs': () => recentNavs,
+  })
+  renderAt('/instruments/7')
+
+  const card = (await screen.findByText('NAV history')).closest('[data-slot=card]') as HTMLElement
+  expect(await within(card).findByText('Latest NAV')).toBeInTheDocument()
+  expect(within(card).getAllByText('₹88.9695')[0]).toBeInTheDocument()
+  expect(within(card).getByText('−0.49%')).toHaveClass('text-destructive')
+  expect(within(card).getByText('+11.21%')).toHaveClass('text-positive')
+  expect(within(card).getByText('₹72.50')).toBeInTheDocument() // 52-week low
+  expect(await within(card).findByRole('img', { name: 'NAV over time' })).toBeInTheDocument()
+  expect(within(card).getByRole('button', { name: '1Y' })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('tracking a fund downloads its history', async () => {
+  let tracked = false
+  const calls = fakeApi({
+    'GET /api/v1/instruments/7': () => detail(parag),
+    'GET /api/v1/instruments/7/nav-summary': () =>
+      tracked
+        ? navSummary()
+        : navSummary({
+            tracked: false,
+            tracked_by_me: false,
+            coverage: { first: null, last: null, count: 0 },
+            stats: null,
+          }),
+    'PUT /api/v1/instruments/7/tracking': () => {
+      tracked = true
+      return navSummary({ coverage: { first: null, last: null, count: 0 }, stats: null })
+    },
+    'POST /api/v1/navs/sync': () => syncRun(),
+    'GET /api/v1/instruments/7/navs': () => recentNavs,
+  })
+  renderAt('/instruments/7')
+
+  await userEvent.click(await screen.findByRole('button', { name: 'Track NAVs' }))
+
+  expect(await screen.findByText('Latest NAV')).toBeInTheDocument()
+  const sync = calls.find((call) => call.method === 'POST')
+  expect(await sync?.json()).toEqual({ instrument_ids: [7] })
+})
+
+test('a stock has no NAV card', async () => {
+  fakeApi({ 'GET /api/v1/instruments/3': () => detail(infosys, { source: 'nse' }) })
+  renderAt('/instruments/3')
+
+  expect(await screen.findByRole('heading', { name: 'Infosys Limited' })).toBeInTheDocument()
+  expect(screen.queryByText('NAV history')).not.toBeInTheDocument()
 })

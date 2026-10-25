@@ -41,6 +41,10 @@ revision message:
 instruments *args:
     uv run --project backend friday instruments refresh {{ args }}
 
+# Download missing NAVs for every tracked fund, e.g. `just navs` or `just navs --fund 122639`
+navs *args:
+    uv run --project backend friday navs sync {{ args }}
+
 # Regenerate the TypeScript API types from the backend schema
 api:
     uv run --project backend friday openapi --out frontend/src/api/openapi.json

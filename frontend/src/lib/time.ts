@@ -16,3 +16,13 @@ export function formatDate(date: string): string {
     new Date(Date.UTC(year, month - 1, day)),
   )
 }
+
+/** Short month label for chart axes: "Oct 2026". */
+export function formatMonthYear(date: string): string {
+  const [year, month] = date.split('-').map(Number)
+  return new Intl.DateTimeFormat('en-IN', {
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(Date.UTC(year, month - 1, 1)))
+}

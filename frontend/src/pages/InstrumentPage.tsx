@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router'
 
 import { useClearClassification, useInstrument, useSetClassification } from '@/api/queries'
 import type { Schemas } from '@/api/client'
+import { NavHistoryCard } from '@/components/NavHistoryCard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -74,6 +75,7 @@ function Details({ instrument }: { instrument: InstrumentDetail }) {
           {!instrument.is_active && <Badge variant="secondary">inactive</Badge>}
         </div>
       </div>
+      {instrument.amfi_code && <NavHistoryCard instrumentId={instrument.id} />}
       <ClassificationCard instrument={instrument} />
       <IdentifiersCard instrument={instrument} />
       {instrument.variants.length > 0 && <VariantsCard instrument={instrument} />}

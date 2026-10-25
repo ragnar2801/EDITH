@@ -89,3 +89,58 @@ export function detail(
     ...extra,
   }
 }
+
+export function navSummary(
+  extra: Partial<Schemas['NavSummaryOut']> = {},
+): Schemas['NavSummaryOut'] {
+  return {
+    instrument_id: parag.id,
+    is_fund: true,
+    tracked: true,
+    tracked_by_me: true,
+    used_by: [],
+    coverage: { first: '2013-05-28', last: '2026-10-23', count: 3298 },
+    stats: {
+      first: { date: '2013-05-28', nav: '9.9992' },
+      latest: { date: '2026-10-23', nav: '88.9695' },
+      change_1d_pct: '-0.49',
+      change_1y_pct: '11.21',
+      change_since_first_pct: '789.76',
+      cagr_pct: '17.23',
+      high_52w: { date: '2026-06-01', nav: '95' },
+      low_52w: { date: '2025-11-03', nav: '72.5' },
+    },
+    ...extra,
+  }
+}
+
+export const recentNavs: Schemas['NavPointOut'][] = [
+  { date: '2026-10-21', nav: '89.9443' },
+  { date: '2026-10-22', nav: '89.4088' },
+  { date: '2026-10-23', nav: '88.9695' },
+]
+
+export function syncRun(extra: Partial<Schemas['SyncRunOut']> = {}): Schemas['SyncRunOut'] {
+  return {
+    id: 1,
+    status: 'ok',
+    started_at: '2026-10-25T04:00:00Z',
+    finished_at: '2026-10-25T04:00:03Z',
+    funds: 2,
+    added: 26,
+    corrected: 0,
+    failed: 0,
+    results: [
+      {
+        instrument_id: parag.id,
+        name: parag.name,
+        status: 'ok',
+        added: 13,
+        corrected: 0,
+        last_date: '2026-10-23',
+        message: null,
+      },
+    ],
+    ...extra,
+  }
+}

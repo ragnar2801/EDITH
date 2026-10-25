@@ -1,12 +1,12 @@
 import {
+  Activity,
   ArrowLeftRight,
   Banknote,
   BriefcaseBusiness,
-  Eye,
+  FlaskConical,
   LayoutDashboard,
+  PieChart,
   Search,
-  Send,
-  Activity,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -19,61 +19,62 @@ export type Section = {
   description: string
 }
 
+/** Phase 1 is mutual funds only (D-043). */
 export const SECTIONS: Section[] = [
   {
     path: '/',
     label: 'Dashboard',
     icon: LayoutDashboard,
-    task: 'T1-08',
-    description: 'Portfolio value, P&L, allocation and XIRR, in INR and USD.',
+    task: 'T1-17',
+    description: 'What your funds are worth, how they have done, and how far each is from target.',
+  },
+  {
+    path: '/buckets',
+    label: 'Buckets',
+    icon: PieChart,
+    task: 'T1-13',
+    description: 'Target splits: funds with weights, a rebalance policy and a benchmark.',
+  },
+  {
+    path: '/backtest',
+    label: 'Backtest',
+    icon: FlaskConical,
+    task: 'T1-14',
+    description: 'How a bucket would have done: lump sum, SIP, SWP or your own timeline.',
   },
   {
     path: '/holdings',
     label: 'Holdings',
     icon: BriefcaseBusiness,
-    task: 'T1-03',
-    description: 'What you own: units and cost per holding, with lots.',
+    task: 'T1-15',
+    description: 'The funds you own: units and cost per fund and folio.',
   },
   {
     path: '/transactions',
     label: 'Transactions',
     icon: ArrowLeftRight,
-    task: 'T1-03',
-    description: 'Buys, sells, dividends, splits and bonuses.',
+    task: 'T1-15',
+    description: 'Purchases, SIP instalments, redemptions, switches and IDCW.',
   },
   {
     path: '/cash',
     label: 'Cash',
     icon: Banknote,
-    task: 'T1-04',
-    description: 'Cash accounts in INR and USD, with earmarks.',
-  },
-  {
-    path: '/remittances',
-    label: 'Remittances & LRS',
-    icon: Send,
-    task: 'T1-04',
-    description: 'Money sent to the US, with LRS and TCS totals per financial year.',
-  },
-  {
-    path: '/watchlist',
-    label: 'Watchlist',
-    icon: Eye,
-    task: 'T1-07',
-    description: 'Stocks and funds you are watching, with your reasons and buy zones.',
+    task: 'T1-16',
+    description: 'INR cash with an emergency earmark, and where new cash should go.',
   },
   {
     path: '/instruments',
     label: 'Instruments',
     icon: Search,
     task: 'T1-02',
-    description: 'Find any NSE stock or ETF, Indian mutual fund, or US stock or ETF.',
+    description: 'Find any Indian mutual fund, or any NSE or US listing.',
   },
   {
     path: '/status',
     label: 'Data status',
     icon: Activity,
-    task: 'T1-09',
-    description: 'When prices were last fetched and how the daily jobs ran.',
+    task: 'T1-12',
+    description: 'Fund NAVs Friday keeps and when they were last synced.',
   },
 ]

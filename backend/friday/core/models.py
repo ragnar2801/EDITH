@@ -6,5 +6,14 @@ from friday.core.instruments.models import (
     InstrumentAlias,
     InstrumentImport,
 )
+from friday.core.navs.models import FundNav, NavSync, TrackedFund
 
-__all__ = ["ClassificationOverride", "Instrument", "InstrumentAlias", "InstrumentImport"]
+__all__ = [
+    "ClassificationOverride",
+    "FundNav",
+    "Instrument",
+    "InstrumentAlias",
+    "InstrumentImport",
+    "NavSync",
+    "TrackedFund",
+]
