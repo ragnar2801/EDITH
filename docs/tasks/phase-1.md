@@ -365,7 +365,7 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12. 
 **Progress (2026-10-25)**
 - Built: shadcn `dialog`, `alert-dialog`, `tooltip`, `tabs`, `dropdown-menu`, `skeleton`, `sonner` (by hand, on the installed `radix-ui`); app kit `PageHeader`, `Section`, `InfoTip`, `Field` + `ErrorText`, `DataTable`, `RowActions`, `EmptyState`, `Loading`, `ConfirmProvider` + `useConfirm`; `Stat` takes an info tip
 - Every screen: subtitles and explanatory card text gone; hints → info tips or placeholders; deletes confirm in a dialog; saves, deletes and syncs toast; row buttons → `⋯` menus; AMFI codes out of list rows (kept on the fund's identifiers); `SectionPage` deleted; nav lists only built screens
-- Split for T1-22 to move without rewriting: `components/cash/` (summary, accounts, plan, invest rules), `components/holdings/` (transaction forms in dialogs, SIPs and purchases tables), `components/fund/FundDetails`, `components/data/` (NAV sync, tracked funds, fund lists), `components/models/ModelEditor`
+- Split for T1-22 to move without rewriting: `components/cash/` (summary, accounts, plan, invest rules), `components/holdings/` (transaction forms in dialogs, SIPs and purchases tables), `components/fund/FundDetails`, `components/status/` (NAV sync, tracked funds, fund lists), `components/models/ModelEditor`
 - Small changes on the way: the model editor is a page of its own (`/buckets/new`, `/buckets/:id/edit`), and a new model lands on its backtest; the planner's amount starts at the investable cash and shows "Choose a target model" when none is set; NAV, units and notes sit under "More options"; tracking reasons read "Model Core", "Holding"
 - Tests: 46 frontend (kit tests for the info tip and confirm dialog, a delete-with-confirm test), 265 backend unchanged. `lint`, `test` pass on Linux; screenshots on real AMFI data at desktop and phone width, light and dark
 
@@ -406,6 +406,7 @@ T1-14 and T1-15 can be built in parallel. T1-18 can start any time after T1-12. 
 - Journeys J1 to J8 driven in the running app with Playwright on real data (J1 on a fresh database, downloading the real AMFI list from the banner; J2 recorded a lump sum from the Models screen in 3 steps without leaving it; J7 opened the same fund page from a model, from Invest and from Settings; old `/holdings/:id` redirected). Screenshots at desktop and phone width, light and dark
 - Tests: 66 frontend (shell, freshness and redirects; 3-step add; first-run banner and checklist; set as target; fund page tabs; weekday helper), 267 backend. `lint`, `test`, `api-check` pass on Linux
 - Not yet: value, weight and drift columns on Portfolio and the model Overview come with T1-17
+- Windows CI caught that the root `data/` ignore rule also hid `frontend/src/components/data/` (the T1-21 commit didn't build from a clean clone); the folder is now `components/status/`
 
 **Done when**
 - Journeys J1 to J8 in `ui-redesign.md` work as written, checked in the running app
