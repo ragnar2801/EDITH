@@ -35,6 +35,10 @@ export function Stat({ label, info, value, hint, tone }: Props) {
   )
 }
 
-export function StatGrid({ children }: { children: ReactNode }) {
-  return <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">{children}</dl>
+export function StatGrid({ className, children }: { className?: string; children: ReactNode }) {
+  return (
+    <dl className={cn('grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4', className)}>
+      {children}
+    </dl>
+  )
 }

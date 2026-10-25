@@ -69,38 +69,3 @@ def returns(flows: list[Flow], value: Decimal, on: date) -> Returns:
         found = xirr(dated)
         rate = figure(found * 100) if found is not None else None
     return Returns(invested, redeemed, value, gain, pct(gain, invested), rate, since, on)
-
-
-def replay(series: list[tuple[date, Decimal]], flows: list[Flow], on: date) -> Returns | None:
-    """The same money on the same dates in one other fund (the Nifty 50 index fund, D-070),
-    each flow at that fund's NAV on or before its date. A sale takes out the same rupees,
-    capped at what the other fund holds by then. ``None`` when the fund has no NAV on or
-    before the first flow."""
-    points = sorted(series)
-    units, taken, j, nav = ZERO, [], 0, None
-
-    def nav_on(day: date) -> Decimal | None:
-        nonlocal j, nav
-        while j < len(points) and points[j][0] <= day:
-            nav = points[j][1]
-            j += 1
-        return nav
-
-    for flow in sorted(flows, key=lambda f: f.date):
-        price = nav_on(flow.date)
-        if price is None:
-            return None
-        if flow.amount > 0:
-            units += flow.amount / price
-            taken.append(flow)
-        elif flow.amount < 0:
-            if -flow.amount >= units * price:
-                out, units = money(units * price), ZERO  # everything it holds
-            else:
-                out = -flow.amount
-                units -= out / price
-            if out:
-                taken.append(Flow(flow.date, -out))
-    price = nav_on(on)
-    value = money(units * price) if price is not None else ZERO
-    return returns(taken, value, on)

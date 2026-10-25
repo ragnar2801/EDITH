@@ -630,6 +630,8 @@ export function useCashPlan(amount: string | null) {
 export type Portfolio = Schemas['PortfolioOut']
 export type FundPosition = Schemas['FundPositionOut']
 
+export type PortfolioHistory = Schemas['HistoryOut']
+
 /** Value, P&L, XIRR, allocation and drift (T1-17), all worked out by the backend. */
 export function usePortfolio({ enabled = true } = {}) {
   return useQuery({
@@ -637,6 +639,23 @@ export function usePortfolio({ enabled = true } = {}) {
     enabled,
     queryFn: async () => {
       const { data, error } = await api.GET('/api/v1/portfolio')
+      if (error) throw failure(error)
+      return data
+    },
+  })
+}
+
+/** Value, invested and the benchmark over time from `start` (T1-23), with the range's gain. */
+export function usePortfolioHistory(start: string | undefined, enabled = true) {
+  return useQuery({
+    // Under 'portfolio', so every change that refreshes the portfolio refreshes this too.
+    queryKey: ['portfolio', 'history', start ?? 'all'],
+    enabled,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, error } = await api.GET('/api/v1/portfolio/history', {
+        params: { query: start ? { start } : {} },
+      })
       if (error) throw failure(error)
       return data
     },

@@ -5,29 +5,29 @@ import { Stat, StatGrid } from '@/components/Stat'
 import { inr } from '@/lib/money'
 import { formatPercent, toneOf } from '@/lib/percent'
 import { ASSET_LABELS } from '@/lib/portfolio'
-import { formatDate } from '@/lib/time'
+import { formatDate, formatDayMonth } from '@/lib/time'
 
-/** Value, gain and XIRR of every fund I hold, next to the same money in the benchmark (D-070). */
+/** Value, gain, the day's move and XIRR of every fund I hold, next to the same money in the
+ * benchmark (D-070, D-072, D-073), and my SIPs. */
 export function PortfolioSummary({ data }: { data: Portfolio }) {
   const total = data.returns
   const benchmark = data.benchmark
   const benchmarkName = data.benchmark_fund?.name ?? 'the benchmark'
+  const day = data.day
+  const sips = data.sips
   return (
     <div className="flex flex-col gap-2">
-      <StatGrid>
+      <StatGrid className="lg:grid-cols-3">
         <Stat
           label="Value"
           value={total ? inr(total.value) : '—'}
-          hint={benchmark && `${benchmarkName}: ${inr(benchmark.value)}`}
+          hint={`${inr(data.cost)} invested`}
           info={
             <InfoTip label="Value">
-              Units held at each fund&apos;s latest NAV
-              {total ? ` (${formatDate(total.on)})` : ''}; below it, the same money on the same
-              dates in {benchmarkName}.
+              Units held at each fund&apos;s latest NAV{total ? ` (${formatDate(total.on)})` : ''}.
             </InfoTip>
           }
         />
-        <Stat label="Invested" value={inr(data.cost)} />
         <Stat
           label="Gain"
           value={total ? inr(total.gain) : '—'}
@@ -40,14 +40,46 @@ export function PortfolioSummary({ data }: { data: Portfolio }) {
           }
         />
         <Stat
+          label="Day"
+          value={day ? inr(day.gain) : '—'}
+          tone={toneOf(day?.gain)}
+          hint={day && formatPercent(day.return_pct)}
+          info={
+            <InfoTip label="Day">
+              Each fund&apos;s change between its last two NAVs, less money put in.
+            </InfoTip>
+          }
+        />
+        <Stat
           label="XIRR"
           value={formatPercent(total?.xirr_pct)}
           tone={toneOf(total?.xirr_pct)}
-          hint={benchmark?.xirr_pct && `${benchmarkName}: ${formatPercent(benchmark.xirr_pct)}`}
+          hint={benchmark?.xirr_pct && `Benchmark: ${formatPercent(benchmark.xirr_pct)}`}
           info={
             <InfoTip label="XIRR">
               Yearly return on your dated purchases and sales, shown once you have held a year.
             </InfoTip>
+          }
+        />
+        <Stat
+          label="vs benchmark"
+          value={data.ahead === null ? '—' : inr(data.ahead)}
+          tone={toneOf(data.ahead)}
+          hint={benchmark && `Same money: ${inr(benchmark.value)}`}
+          info={
+            <InfoTip label="vs benchmark">
+              Your gain minus what the same purchases and sales, on the same dates, would have made
+              in {benchmarkName}.
+            </InfoTip>
+          }
+        />
+        <Stat
+          label="SIPs a month"
+          value={sips.count > 0 ? inr(sips.monthly) : '—'}
+          hint={
+            sips.next_date && sips.next_fund
+              ? `Next ${formatDayMonth(sips.next_date)} · ${sips.next_fund.name}`
+              : undefined
           }
         />
       </StatGrid>

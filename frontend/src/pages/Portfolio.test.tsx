@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 
 import type { Schemas } from '@/api/client'
@@ -50,6 +51,9 @@ const empty: Schemas['PortfolioOut'] = {
   unrealised: null,
   benchmark_fund: null,
   benchmark: null,
+  ahead: null,
+  day: null,
+  sips: { monthly: '0.00', count: 0, next_date: null, next_fund: null },
   funds: [],
   allocation: [],
   target: null,
@@ -70,6 +74,9 @@ const held: Schemas['PortfolioOut'] = {
   unrealised: '4400.00',
   benchmark_fund: fundRef(nifty),
   benchmark: returns({ value: '13500.00', gain: '6000.00', xirr_pct: '19.87' }),
+  ahead: '900.00',
+  day: { start: '2026-10-22', end: '2026-10-23', gain: '-120.50', return_pct: '-0.83' },
+  sips: { monthly: '5000.00', count: 1, next_date: '2026-11-05', next_fund: fundRef(parag) },
   funds: [
     {
       fund: fundRef(parag),
@@ -83,6 +90,8 @@ const held: Schemas['PortfolioOut'] = {
       share: '100.00',
       returns: returns(),
       benchmark: returns({ value: '13500.00', gain: '6000.00', xirr_pct: '19.87' }),
+      ahead: '900.00',
+      day: { start: '2026-10-22', end: '2026-10-23', gain: '-120.50', return_pct: '-0.83' },
     },
   ],
   allocation: [{ asset: 'equity', value: '14400.00', share: '100.00' }],
@@ -111,27 +120,87 @@ function stat(label: string) {
   return screen.getByText(label, { selector: 'dt' }).parentElement!
 }
 
-test('Portfolio shows value, gain and XIRR exactly as the API sends them (D-070)', async () => {
+const history: Schemas['HistoryOut'] = {
+  benchmark_fund: fundRef(nifty),
+  points: [
+    { date: '2024-01-01', value: '10000.00', invested: '10000.00', benchmark: '10000.00' },
+    { date: '2026-10-23', value: '14400.00', invested: '10000.00', benchmark: '13500.00' },
+  ],
+  change: { start: '2024-01-01', end: '2026-10-23', gain: '6900.00', return_pct: '60.00' },
+  benchmark_change: {
+    start: '2024-01-01',
+    end: '2026-10-23',
+    gain: '6000.00',
+    return_pct: '50.00',
+  },
+}
+
+test('Portfolio shows value, gain, the day and XIRR exactly as the API sends them', async () => {
   fakeApi({
     'GET /api/v1/portfolio': () => held,
+    'GET /api/v1/portfolio/history': () => history,
     'GET /api/v1/holdings': () => [holdingRow],
   })
   renderAt('/')
 
   await screen.findByText('Value', { selector: 'dt' })
   expect(within(stat('Value')).getByText('₹14,400.00')).toBeInTheDocument()
-  expect(within(stat('Value')).getByText(`${nifty.name}: ₹13,500.00`)).toBeInTheDocument()
-  expect(within(stat('Invested')).getByText('₹10,000.00')).toBeInTheDocument()
+  expect(within(stat('Value')).getByText('₹10,000.00 invested')).toBeInTheDocument()
   expect(within(stat('Gain')).getByText('+46.00% · ₹2,500.00 realised')).toBeInTheDocument()
+  expect(within(stat('Day')).getByText('-₹120.50')).toBeInTheDocument()
+  expect(within(stat('Day')).getByText('−0.83%')).toBeInTheDocument()
   expect(within(stat('XIRR')).getByText('+23.45%')).toBeInTheDocument()
-  expect(within(stat('XIRR')).getByText(`${nifty.name}: +19.87%`)).toBeInTheDocument()
+  expect(within(stat('XIRR')).getByText('Benchmark: +19.87%')).toBeInTheDocument()
+  expect(within(stat('vs benchmark')).getByText('₹900.00')).toBeInTheDocument()
+  expect(within(stat('vs benchmark')).getByText('Same money: ₹13,500.00')).toBeInTheDocument()
+  expect(within(stat('SIPs a month')).getByText('₹5,000.00')).toBeInTheDocument()
+  expect(within(stat('SIPs a month')).getByText(`Next 5 Nov · ${parag.name}`)).toBeInTheDocument()
 
-  const row = screen.getByRole('link', { name: parag.name }).closest('tr')!
+  const table = screen.getByRole('table', { name: 'Holdings' })
+  const row = within(table).getByRole('link', { name: parag.name }).closest('tr')!
   expect(within(row).getByText('₹6,900.00')).toBeInTheDocument()
+  expect(within(row).getByText('90.000 units')).toBeInTheDocument()
+  expect(within(row).getByText('-₹120.50')).toBeInTheDocument() // day
+  expect(within(row).getByText('₹900.00')).toBeInTheDocument() // vs benchmark
   expect(within(row).getByText('100.00%')).toBeInTheDocument() // weight
-  expect(within(row).getByText('60.00%')).toBeInTheDocument() // target
+  expect(within(row).getByText('of 60.00%')).toBeInTheDocument() // target
   expect(within(row).getByText(/1 SIP/)).toBeInTheDocument()
   expect(screen.getByRole('region', { name: 'Allocation' })).toHaveTextContent('Equity')
+})
+
+test("the value chart shows the range's gain and return from the API (D-072)", async () => {
+  const calls = fakeApi({
+    'GET /api/v1/portfolio': () => held,
+    'GET /api/v1/portfolio/history': () => history,
+    'GET /api/v1/holdings': () => [holdingRow],
+  })
+  renderAt('/')
+
+  const chart = await screen.findByRole('region', { name: 'Value over time' })
+  const range = await within(chart).findByLabelText('Over this range')
+  await within(range).findByText('₹6,900.00')
+  expect(within(range).getByText('+60.00%')).toBeInTheDocument()
+  expect(within(range).getByText('+50.00%')).toBeInTheDocument()
+  expect(within(chart).getByRole('img', { name: 'Portfolio value over time' })).toBeInTheDocument()
+
+  await userEvent.click(within(chart).getByRole('button', { name: '1Y' }))
+  await vi.waitFor(() =>
+    expect(calls.some((call) => new URL(call.url).search === '?start=2025-10-23')).toBe(true),
+  )
+})
+
+test('the target model shows each fund against its weight, with Invest', async () => {
+  fakeApi({
+    'GET /api/v1/portfolio': () => held,
+    'GET /api/v1/portfolio/history': () => history,
+    'GET /api/v1/holdings': () => [holdingRow],
+  })
+  renderAt('/')
+
+  const target = await screen.findByRole('region', { name: 'Target model' })
+  expect(within(target).getByText(/of 40\.00% · −40\.00 pts/)).toBeInTheDocument()
+  expect(within(target).getByRole('link', { name: 'Invest' })).toHaveAttribute('href', '/invest')
+  expect(within(target).getByRole('link', { name: 'Core' })).toHaveAttribute('href', '/models/1')
 })
 
 test('with nothing held, Portfolio shows no totals', async () => {

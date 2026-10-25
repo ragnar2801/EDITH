@@ -10,6 +10,8 @@ import { FundListBanner } from '@/components/portfolio/FundListBanner'
 import { HoldingsTable } from '@/components/portfolio/HoldingsTable'
 import { Allocation, PortfolioSummary } from '@/components/portfolio/PortfolioSummary'
 import { SetupChecklist } from '@/components/portfolio/SetupChecklist'
+import { TargetDrift } from '@/components/portfolio/TargetDrift'
+import { ValueChart } from '@/components/portfolio/ValueChart'
 import { RouteTabs } from '@/components/RouteTabs'
 import { Button } from '@/components/ui/button'
 import { useAddTransaction } from '@/hooks/use-add-transaction'
@@ -80,7 +82,8 @@ function Setup() {
   )
 }
 
-/** Totals and allocation appear once a fund is held; the table shows its own empty state. */
+/** Totals, the value chart, the target model and allocation appear once a fund is held; the
+ * table shows its own empty state. */
 function FundsTab() {
   const portfolio = usePortfolio()
   const held = portfolio.data?.funds.length ? portfolio.data : undefined
@@ -88,8 +91,14 @@ function FundsTab() {
     <>
       <ErrorText error={portfolio.error} />
       {held && <PortfolioSummary data={held} />}
+      {held && <ValueChart portfolio={held} />}
       <HoldingsTable portfolio={portfolio.data} />
-      {held && <Allocation data={held} />}
+      {held && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <TargetDrift data={held} />
+          <Allocation data={held} />
+        </div>
+      )}
     </>
   )
 }

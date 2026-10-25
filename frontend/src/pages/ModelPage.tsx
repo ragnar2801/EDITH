@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button'
 import { REBALANCE_LABELS, type Bucket } from '@/lib/buckets'
 import { fundPath } from '@/lib/instruments'
 import { MODELS_PATH, modelPath } from '@/lib/models'
-import { formatPercent } from '@/lib/percent'
+import { formatPercent, formatPoints } from '@/lib/percent'
 
 /** One model: what's in it, and how it would have done (J6). */
 export function ModelPage() {
@@ -160,10 +160,4 @@ function Overview({ bucket, isTarget }: { bucket: Bucket; isTarget: boolean }) {
       )}
     </>
   )
-}
-
-/** "-2.50" → "−2.50 pts": the figure is the API's, this only adds the sign and unit. */
-function formatPoints(value: string | null | undefined) {
-  if (value === null || value === undefined) return '—'
-  return formatPercent(value).replace('%', ' pts')
 }

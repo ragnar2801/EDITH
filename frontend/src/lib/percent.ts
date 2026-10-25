@@ -16,3 +16,9 @@ export function toneOf(value: string | null | undefined): 'positive' | 'negative
   if (!value || /^-?0*(\.0+)?$/.test(value)) return undefined
   return value.startsWith('-') ? 'negative' : 'positive'
 }
+
+/** "-2.50" → "−2.50 pts": the figure is the API's, this only adds the sign and unit. */
+export function formatPoints(value: string | null | undefined): string {
+  if (value === null || value === undefined) return '—'
+  return formatPercent(value).replace('%', ' pts')
+}

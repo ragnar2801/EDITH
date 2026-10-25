@@ -14,7 +14,9 @@ export function Table({
   children: ReactNode
 }) {
   return (
-    <div className={cn('overflow-x-auto rounded-lg border', className)}>
+    // `relative` keeps absolutely placed children (screen-reader labels) inside the scroll box,
+    // so a wide table scrolls on its own instead of widening the page.
+    <div className={cn('relative overflow-x-auto rounded-lg border', className)}>
       <table className="w-full text-sm" aria-label={label}>
         {children}
       </table>

@@ -208,6 +208,17 @@ def _validate_sip(data: SipInput) -> None:
         raise InvalidHolding("the end date can't be before the start date")
 
 
+def sip_active(sip: Sip) -> bool:
+    return sip.end_date is None or sip.end_date >= today()
+
+
+def next_due(sip: Sip, after: date) -> date | None:
+    """The SIP's first due date on or after ``after``; ``None`` once it has ended."""
+    if not sip_active(sip):
+        return None
+    return next(due_dates(max(sip.start_date, after), sip.day, sip.end_date, date.max), None)
+
+
 def due_dates(start: date, day: int, end: date | None, until: date) -> Iterator[date]:
     """The SIP's due dates from ``start`` to ``end`` (or ``until``), both inclusive."""
     year, month = start.year, start.month

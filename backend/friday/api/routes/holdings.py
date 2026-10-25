@@ -29,8 +29,8 @@ from friday.core.holdings.service import (
     list_holdings,
     remaining_cost,
     sell,
+    sip_active,
     sold_cost,
-    today,
     update_lot,
     update_sip,
 )
@@ -182,10 +182,6 @@ def _lot(lot: Lot) -> LotOut:
     )
 
 
-def _active(sip: Sip) -> bool:
-    return sip.end_date is None or sip.end_date >= today()
-
-
 def _sip(sip: Sip) -> SipOut:
     return SipOut(
         id=sip.id,
@@ -194,7 +190,7 @@ def _sip(sip: Sip) -> SipOut:
         start_date=sip.start_date,
         end_date=sip.end_date,
         note=sip.note,
-        active=_active(sip),
+        active=sip_active(sip),
         instalments=sum(not lot.skipped for lot in sip.instalments),
     )
 
@@ -270,7 +266,7 @@ def list_all(session: SessionDep) -> list[HoldingSummaryOut]:
             units=value.units,
             cost=value.cost,
             lots=sum(not lot.skipped for lot in value.lots),
-            active_sips=sum(_active(sip) for sip in value.sips),
+            active_sips=sum(sip_active(sip) for sip in value.sips),
             nav_last=covered[value.instrument.id].last,
         )
         for value in values

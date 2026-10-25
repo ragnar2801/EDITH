@@ -592,6 +592,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/portfolio/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Portfolio History
+         * @description Value, invested and the benchmark over time, from ``start`` (or the first purchase)
+         *     to the latest NAV date, with the gain and return over that range (D-072).
+         */
+        get: operations["getPortfolioHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sales": {
         parameters: {
             query?: never;
@@ -919,6 +940,23 @@ export interface components {
             /** Total */
             total: string;
         };
+        /** ChangeOut */
+        ChangeOut: {
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Gain */
+            gain: string;
+            /** Return Pct */
+            return_pct: string | null;
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+        };
         /** ClassificationOut */
         ClassificationOut: {
             /** Allocation */
@@ -1075,9 +1113,12 @@ export interface components {
         };
         /** FundPositionOut */
         FundPositionOut: {
+            /** Ahead */
+            ahead: string | null;
             benchmark: components["schemas"]["ReturnsOut"] | null;
             /** Cost */
             cost: string;
+            day: components["schemas"]["ChangeOut"] | null;
             fund: components["schemas"]["FundRef"];
             /** Nav */
             nav: string | null;
@@ -1173,6 +1214,28 @@ export interface components {
             status: "ok";
             /** Version */
             version: string;
+        };
+        /** HistoryOut */
+        HistoryOut: {
+            benchmark_change: components["schemas"]["ChangeOut"] | null;
+            benchmark_fund: components["schemas"]["FundRef"] | null;
+            change: components["schemas"]["ChangeOut"] | null;
+            /** Points */
+            points: components["schemas"]["HistoryPointOut"][];
+        };
+        /** HistoryPointOut */
+        HistoryPointOut: {
+            /** Benchmark */
+            benchmark: string | null;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Invested */
+            invested: string;
+            /** Value */
+            value: string;
         };
         /** HoldingOut */
         HoldingOut: {
@@ -1653,6 +1716,8 @@ export interface components {
         };
         /** PortfolioOut */
         PortfolioOut: {
+            /** Ahead */
+            ahead: string | null;
             /** Allocation */
             allocation: components["schemas"]["AssetOut"][];
             benchmark: components["schemas"]["ReturnsOut"] | null;
@@ -1660,6 +1725,7 @@ export interface components {
             cash: components["schemas"]["CashTotalsOut"];
             /** Cost */
             cost: string;
+            day: components["schemas"]["ChangeOut"] | null;
             /** Drift */
             drift: components["schemas"]["DriftOut"][];
             /** Funds */
@@ -1677,6 +1743,7 @@ export interface components {
             /** Realised */
             realised: string;
             returns: components["schemas"]["ReturnsOut"] | null;
+            sips: components["schemas"]["SipsOut"];
             target: components["schemas"]["TargetOut"] | null;
             /** Unrealised */
             unrealised: string | null;
@@ -1965,6 +2032,16 @@ export interface components {
              * @enum {string}
              */
             strategy: "sip";
+        };
+        /** SipsOut */
+        SipsOut: {
+            /** Count */
+            count: number;
+            /** Monthly */
+            monthly: string;
+            /** Next Date */
+            next_date: string | null;
+            next_fund: components["schemas"]["FundRef"] | null;
         };
         /** SourceOut */
         SourceOut: {
@@ -3324,6 +3401,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PortfolioOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getPortfolioHistory: {
+        parameters: {
+            query?: {
+                start?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryOut"];
                 };
             };
             /** @description Problem details (RFC 9457) */

@@ -49,7 +49,7 @@ test('the portfolio lists my funds with units and cost from the API', async () =
 
   const link = await screen.findByRole('link', { name: /Parag Parikh/ })
   const row = link.closest('tr')!
-  expect(within(row).getByText('1,386.507')).toBeInTheDocument()
+  expect(within(row).getByText('1,386.507 units')).toBeInTheDocument()
   expect(within(row).getByText('₹1,12,500.00')).toBeInTheDocument()
   expect(link.getAttribute('href')).toBe(`/funds/${parag.id}`)
 })

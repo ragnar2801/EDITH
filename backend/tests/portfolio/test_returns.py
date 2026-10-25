@@ -3,7 +3,8 @@
 from datetime import date
 from decimal import Decimal
 
-from friday.core.portfolio.returns import Flow, replay, returns
+from friday.core.portfolio.history import replay
+from friday.core.portfolio.returns import Flow, returns
 
 
 def d(text: str) -> Decimal:

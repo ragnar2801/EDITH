@@ -1,17 +1,19 @@
-"""The portfolio view: value, P&L, XIRR, allocation and drift (T1-17, D-070, D-071)."""
+"""The portfolio view: value, P&L, XIRR, allocation and drift (T1-17, D-070, D-071); the
+day's move, the gap to the benchmark, SIPs and value over time (T1-23, D-072 to D-074)."""
 
 from datetime import date, datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
 from friday.api.deps import SessionDep
 from friday.api.schemas import FundRef
 from friday.core.instruments.models import Instrument
 from friday.core.navs.service import last_run
+from friday.core.portfolio.history import Change, Point
 from friday.core.portfolio.returns import Returns
-from friday.core.portfolio.service import FundPosition, Portfolio, portfolio
+from friday.core.portfolio.service import FundPosition, Portfolio, history, portfolio
 from friday.core.schema_types import Amount, Nav, Percent, Units, UtcDatetime
 
 router = APIRouter(tags=["portfolio"])
@@ -35,6 +37,16 @@ class ReturnsOut(BaseModel):
     """The NAV date the value is at."""
 
 
+class ChangeOut(BaseModel):
+    start: date
+    """The date the change is measured from."""
+    end: date
+    gain: Amount
+    """Value at the end − value at the start − money put in between."""
+    return_pct: Percent | None
+    """Time-weighted return between the two dates."""
+
+
 class FundPositionOut(BaseModel):
     fund: FundRef
     role: Literal["target", "emergency", "outside"]
@@ -51,6 +63,10 @@ class FundPositionOut(BaseModel):
     """Blank when Friday has no NAV for the fund: sync NAVs."""
     benchmark: ReturnsOut | None
     """The same money on the same dates in the benchmark fund."""
+    ahead: Amount | None
+    """Gain − the benchmark's gain: rupees ahead of (or, below 0, behind) the benchmark."""
+    day: ChangeOut | None
+    """The move between the fund's last two NAVs, less money put in."""
 
 
 class AssetOut(BaseModel):
@@ -81,6 +97,14 @@ class CashTotalsOut(BaseModel):
     total: Amount
 
 
+class SipsOut(BaseModel):
+    monthly: Amount
+    """Every active SIP's amount together."""
+    count: int
+    next_date: date | None
+    next_fund: FundRef | None
+
+
 class PortfolioOut(BaseModel):
     returns: ReturnsOut | None
     """All funds with a NAV together; blank when I hold none."""
@@ -89,7 +113,13 @@ class PortfolioOut(BaseModel):
     unrealised: Amount | None
     benchmark_fund: FundRef | None
     benchmark: ReturnsOut | None
+    ahead: Amount | None
+    """Gain − the benchmark's gain on the same flows."""
+    day: ChangeOut | None
+    """The funds' day moves added up, from the earliest previous NAV date to the latest."""
+    sips: SipsOut
     funds: list[FundPositionOut]
+    """Biggest first; funds without a NAV last."""
     allocation: list[AssetOut]
     target: TargetOut | None
     drift: list[DriftOut]
@@ -101,6 +131,25 @@ class PortfolioOut(BaseModel):
     """The oldest of the held funds' latest NAV dates."""
     nav_newest: date | None
     last_sync: UtcDatetime | None
+
+
+class HistoryPointOut(BaseModel):
+    date: date
+    value: Amount
+    invested: Amount
+    """What the units held on the date cost."""
+    benchmark: Amount | None
+    """The same money in the benchmark fund."""
+
+
+class HistoryOut(BaseModel):
+    benchmark_fund: FundRef | None
+    points: list[HistoryPointOut]
+    """Every NAV date from the start, or the last date of each week or month over long
+    ranges (for drawing only)."""
+    change: ChangeOut | None
+    """Over the range, worked out on every date."""
+    benchmark_change: ChangeOut | None
 
 
 def _ref(instrument: Instrument) -> FundRef:
@@ -122,6 +171,12 @@ def _returns(value: Returns | None) -> ReturnsOut | None:
     )
 
 
+def _change(value: Change | None) -> ChangeOut | None:
+    if value is None:
+        return None
+    return ChangeOut(start=value.start, end=value.end, gain=value.gain, return_pct=value.return_pct)
+
+
 def _fund(view: Portfolio, fund: FundPosition) -> FundPositionOut:
     return FundPositionOut(
         fund=_ref(fund.instrument),
@@ -135,6 +190,8 @@ def _fund(view: Portfolio, fund: FundPosition) -> FundPositionOut:
         share=view.share(fund),
         returns=_returns(fund.returns),
         benchmark=_returns(fund.benchmark),
+        ahead=fund.ahead,
+        day=_change(fund.day),
     )
 
 
@@ -151,6 +208,14 @@ def get_portfolio(session: SessionDep) -> PortfolioOut:
         unrealised=view.unrealised,
         benchmark_fund=_ref(view.benchmark_fund) if view.benchmark_fund else None,
         benchmark=_returns(view.benchmark),
+        ahead=view.ahead,
+        day=_change(view.day),
+        sips=SipsOut(
+            monthly=view.sips.monthly,
+            count=view.sips.count,
+            next_date=view.sips.next_date,
+            next_fund=_ref(view.sips.next_fund) if view.sips.next_fund else None,
+        ),
         funds=[_fund(view, fund) for fund in view.funds],
         allocation=[AssetOut(asset=s.asset, value=s.value, share=s.share) for s in view.allocation],
         target=TargetOut(id=view.target.id, name=view.target.name) if view.target else None,
@@ -170,4 +235,28 @@ def get_portfolio(session: SessionDep) -> PortfolioOut:
         nav_oldest=dates[0] if dates else None,
         nav_newest=dates[1] if dates else None,
         last_sync=finished,
+    )
+
+
+@router.get("/portfolio/history", operation_id="getPortfolioHistory")
+def get_portfolio_history(
+    session: SessionDep, start: Annotated[date | None, Query()] = None
+) -> HistoryOut:
+    """Value, invested and the benchmark over time, from ``start`` (or the first purchase)
+    to the latest NAV date, with the gain and return over that range (D-072)."""
+    view = history(session, start)
+    bench: dict[date, Point] = {p.date: p for p in view.benchmark or []}
+    return HistoryOut(
+        benchmark_fund=_ref(view.benchmark_fund) if view.benchmark_fund else None,
+        points=[
+            HistoryPointOut(
+                date=p.date,
+                value=p.value,
+                invested=p.cost,
+                benchmark=bench[p.date].value if p.date in bench else None,
+            )
+            for p in view.points
+        ],
+        change=_change(view.change),
+        benchmark_change=_change(view.benchmark_change),
     )

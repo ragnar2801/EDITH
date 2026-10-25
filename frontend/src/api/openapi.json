@@ -757,6 +757,45 @@
         "title": "CashTotalsOut",
         "type": "object"
       },
+      "ChangeOut": {
+        "properties": {
+          "end": {
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "gain": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Gain",
+            "type": "string"
+          },
+          "return_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Pct"
+          },
+          "start": {
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "gain",
+          "return_pct"
+        ],
+        "title": "ChangeOut",
+        "type": "object"
+      },
       "ClassificationOut": {
         "properties": {
           "allocation": {
@@ -1232,6 +1271,18 @@
       },
       "FundPositionOut": {
         "properties": {
+          "ahead": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ahead"
+          },
           "benchmark": {
             "anyOf": [
               {
@@ -1246,6 +1297,16 @@
             "pattern": "^-?\\d+(\\.\\d+)?$",
             "title": "Cost",
             "type": "string"
+          },
+          "day": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChangeOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "fund": {
             "$ref": "#/components/schemas/FundRef"
@@ -1339,7 +1400,9 @@
           "nav_date",
           "share",
           "returns",
-          "benchmark"
+          "benchmark",
+          "ahead",
+          "day"
         ],
         "title": "FundPositionOut",
         "type": "object"
@@ -1588,6 +1651,94 @@
           "server_time"
         ],
         "title": "Health",
+        "type": "object"
+      },
+      "HistoryOut": {
+        "properties": {
+          "benchmark_change": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChangeOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "benchmark_fund": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FundRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "change": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChangeOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryPointOut"
+            },
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "benchmark_fund",
+          "points",
+          "change",
+          "benchmark_change"
+        ],
+        "title": "HistoryOut",
+        "type": "object"
+      },
+      "HistoryPointOut": {
+        "properties": {
+          "benchmark": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Benchmark"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "invested": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Invested",
+            "type": "string"
+          },
+          "value": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "value",
+          "invested",
+          "benchmark"
+        ],
+        "title": "HistoryPointOut",
         "type": "object"
       },
       "HoldingOut": {
@@ -3160,6 +3311,18 @@
       },
       "PortfolioOut": {
         "properties": {
+          "ahead": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ahead"
+          },
           "allocation": {
             "items": {
               "$ref": "#/components/schemas/AssetOut"
@@ -3194,6 +3357,16 @@
             "pattern": "^-?\\d+(\\.\\d+)?$",
             "title": "Cost",
             "type": "string"
+          },
+          "day": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChangeOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "drift": {
             "items": {
@@ -3272,6 +3445,9 @@
               }
             ]
           },
+          "sips": {
+            "$ref": "#/components/schemas/SipsOut"
+          },
           "target": {
             "anyOf": [
               {
@@ -3302,6 +3478,9 @@
           "unrealised",
           "benchmark_fund",
           "benchmark",
+          "ahead",
+          "day",
+          "sips",
           "funds",
           "allocation",
           "target",
@@ -4173,6 +4352,49 @@
           "amount"
         ],
         "title": "SipParams",
+        "type": "object"
+      },
+      "SipsOut": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "monthly": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Monthly",
+            "type": "string"
+          },
+          "next_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Date"
+          },
+          "next_fund": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FundRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "monthly",
+          "count",
+          "next_date",
+          "next_fund"
+        ],
+        "title": "SipsOut",
         "type": "object"
       },
       "SourceOut": {
@@ -6280,6 +6502,57 @@
           }
         },
         "summary": "Get Portfolio",
+        "tags": [
+          "portfolio"
+        ]
+      }
+    },
+    "/api/v1/portfolio/history": {
+      "get": {
+        "description": "Value, invested and the benchmark over time, from ``start`` (or the first purchase)\nto the latest NAV date, with the gain and return over that range (D-072).",
+        "operationId": "getPortfolioHistory",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Get Portfolio History",
         "tags": [
           "portfolio"
         ]

@@ -1,25 +1,46 @@
-"""The portfolio view (T1-17, D-070, D-071): what my funds are worth, what they made, how
-they did against the same money in the Nifty 50 index fund, how they split over asset
-classes and how far each is from my target split.
+"""The portfolio view (T1-17, D-070, D-071; T1-23, D-072 to D-074): what my funds are
+worth, what they made, how they did against the same money in the Nifty 50 index fund,
+how they moved on the last NAV date, how they split over asset classes, how far each is
+from my target split, and the same over time.
 
 Every figure is worked out here; the UI only shows them (D-032).
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from decimal import Decimal
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from friday.core.buckets.models import Bucket
 from friday.core.buckets.service import default_benchmark
-from friday.core.cash.service import cash_total, get_settings, latest_nav
+from friday.core.cash.service import cash_total, get_settings
 from friday.core.holdings.models import Lot
-from friday.core.holdings.service import Holding, list_holdings, sold_cost
+from friday.core.holdings.service import (
+    Holding,
+    list_holdings,
+    next_due,
+    sip_active,
+    sold_cost,
+    today,
+)
 from friday.core.instruments.models import BUCKETS, Instrument
 from friday.core.instruments.service import effective_classification
+from friday.core.navs.models import FundNav
 from friday.core.navs.service import nav_series
-from friday.core.portfolio.returns import ZERO, Flow, Returns, money, pct, replay, returns
+from friday.core.portfolio.history import (
+    Change,
+    Move,
+    Point,
+    change,
+    combine,
+    daily,
+    mirror,
+    replay,
+    thin,
+)
+from friday.core.portfolio.returns import ZERO, Flow, Returns, money, pct, returns
 
 UNCLASSIFIED = "unclassified"
 EARMARKS = ("deployable", "emergency", "reserved")
@@ -41,10 +62,17 @@ class FundPosition:
     """``None`` when Friday has no NAV for the fund yet."""
     benchmark: Returns | None
     lots: list[Lot]
+    day: Change | None = None
+    """The move between the fund's last two NAVs, less money put in (D-073)."""
 
     @property
     def value(self) -> Decimal | None:
         return self.returns.value if self.returns else None
+
+    @property
+    def ahead(self) -> Decimal | None:
+        """Rupees gained beyond the same money in the benchmark; below 0 is behind."""
+        return ahead(self.returns, self.benchmark)
 
     @property
     def unrealised(self) -> Decimal | None:
@@ -71,6 +99,15 @@ class Drift:
 
 
 @dataclass(frozen=True)
+class Sips:
+    monthly: Decimal
+    """Every active SIP's amount together."""
+    count: int
+    next_date: date | None
+    next_fund: Instrument | None
+
+
+@dataclass(frozen=True)
 class Portfolio:
     funds: list[FundPosition]
     returns: Returns | None
@@ -83,6 +120,14 @@ class Portfolio:
     target: Bucket | None
     drift: list[Drift]
     cash: dict[str, Decimal]
+    day: Change | None
+    """The funds' day moves added up (D-073): from the earliest of their previous NAV dates
+    to the latest of their last ones."""
+    sips: Sips
+
+    @property
+    def ahead(self) -> Decimal | None:
+        return ahead(self.returns, self.benchmark)
 
     @property
     def nav_dates(self) -> tuple[date, date] | None:
@@ -114,6 +159,36 @@ class Portfolio:
         return self.returns.gain - self.realised if self.returns else None
 
 
+def ahead(mine: Returns | None, benchmark: Returns | None) -> Decimal | None:
+    """Gain less the benchmark's gain on the same flows (D-072)."""
+    return mine.gain - benchmark.gain if mine and benchmark else None
+
+
+def _moves(lots: list[Lot]) -> list[Move]:
+    """Every buy and sale of a fund's lots as moves (D-072), with the proceeds of a sale
+    rounded to the paisa as in :func:`_flows`."""
+    moves = []
+    for lot in lots:
+        if lot.skipped:
+            continue
+        moves.append(Move(lot.buy_date, lot.units, lot.amount, lot.amount, lot.nav))
+        for sale in lot.sales:
+            proceeds = money(sale.units * sale.nav)
+            moves.append(Move(sale.sale_date, -sale.units, -sold_cost(sale), -proceeds, sale.nav))
+    return moves
+
+
+def _last_navs(session: Session, instrument_id: int, count: int) -> list[tuple[date, Decimal]]:
+    """The fund's last ``count`` stored NAVs, oldest first."""
+    rows = session.execute(
+        select(FundNav.nav_date, FundNav.nav)
+        .where(FundNav.instrument_id == instrument_id)
+        .order_by(FundNav.nav_date.desc())
+        .limit(count)
+    ).all()
+    return [(row[0], row[1]) for row in reversed(rows)]
+
+
 def _flows(lots: list[Lot]) -> tuple[list[Flow], Decimal]:
     """Cash flows of a fund's lots, and the P&L its sales realised (exact)."""
     flows, realised = [], ZERO
@@ -129,10 +204,13 @@ def _flows(lots: list[Lot]) -> tuple[list[Flow], Decimal]:
 
 
 def _position(
-    session: Session, held: Holding, role: str, benchmark: list[tuple[date, Decimal]] | None
+    held: Holding,
+    role: str,
+    last: list[tuple[date, Decimal]],
+    benchmark: list[tuple[date, Decimal]] | None,
 ) -> FundPosition:
     flows, realised = _flows(held.lots)
-    latest = latest_nav(session, held.instrument.id)
+    latest = last[-1] if last else None
     nav_date, nav = latest if latest else (None, None)
     result = mirror = None
     if latest:
@@ -183,6 +261,52 @@ def _drift(bucket: Bucket, funds: list[FundPosition]) -> list[Drift]:
     return rows
 
 
+def _day(funds: list[FundPosition], navs: dict[int, list[tuple[date, Decimal]]]):
+    """Each fund's move between its own last two NAVs, less money put in (D-073), and the
+    moves added up.
+
+    Each fund uses its own dates because funds publish on different days: liquid funds
+    have NAVs at weekends, equity funds don't. The total's return is its gain over what
+    the funds were worth on their previous NAV dates."""
+    moved, gains, base, starts, ends = [], [], ZERO, [], []
+    for fund in funds:
+        last = navs[fund.instrument.id]
+        if len(last) < 2:
+            moved.append(fund)
+            continue
+        pair = [day for day, _ in last]
+        line = daily(_moves(fund.lots), last, pair)
+        day = change(line, pair[0])
+        moved.append(replace(fund, day=day))
+        if day:
+            gains.append(day.gain)
+            base += line[0].value
+            starts.append(pair[0])
+            ends.append(pair[1])
+    if not gains:
+        return moved, None
+    gain = money(sum(gains, ZERO))
+    rate = pct(gain, base) if base > 0 else None
+    return moved, Change(min(starts), max(ends), gain, rate)
+
+
+def _sips(holdings: list[Holding]) -> Sips:
+    active = [sip for held in holdings for sip in held.sips if sip_active(sip)]
+    upcoming = [(due, sip) for sip in active if (due := next_due(sip, today()))]
+    first = min(upcoming, key=lambda pair: (pair[0], pair[1].id), default=None)
+    return Sips(
+        monthly=money(sum((sip.amount for sip in active), ZERO)),
+        count=len(active),
+        next_date=first[0] if first else None,
+        next_fund=first[1].instrument if first else None,
+    )
+
+
+def _sort_key(fund: FundPosition):
+    """Biggest first; funds without a NAV last."""
+    return (fund.value is None, -(fund.value or ZERO), fund.instrument.name)
+
+
 def portfolio(session: Session) -> Portfolio:
     settings = get_settings(session)
     target = settings.target_bucket
@@ -190,8 +314,9 @@ def portfolio(session: Session) -> Portfolio:
     benchmark_fund = (target.benchmark if target else None) or default_benchmark(session)
     series = nav_series(session, benchmark_fund.id) if benchmark_fund else None
 
-    funds = []
-    for held in list_holdings(session):
+    funds, navs = [], {}
+    holdings = list_holdings(session)
+    for held in holdings:
         if not any(not lot.skipped for lot in held.lots):
             continue  # a SIP with no instalment yet
         role = (
@@ -201,25 +326,88 @@ def portfolio(session: Session) -> Portfolio:
             if held.instrument.id == settings.emergency_fund_id
             else "outside"
         )
-        funds.append(_position(session, held, role, series))
+        navs[held.instrument.id] = _last_navs(session, held.instrument.id, 2)
+        funds.append(_position(held, role, navs[held.instrument.id], series))
 
-    priced = [f for f in funds if f.returns]
-    overall = mirror = None
+    priced, day = _day([f for f in funds if f.returns], navs)
+    funds = sorted([*priced, *(f for f in funds if f.returns is None)], key=_sort_key)
+    overall = same = None
     if priced:
         on = max(f.returns.on for f in priced)
         flows = [flow for f in priced for flow in _flows(f.lots)[0]]
         overall = returns(flows, sum((f.value for f in priced), ZERO), on)
         if series:
-            mirror = replay(series, flows, on)
+            same = replay(series, flows, on)
     return Portfolio(
         funds=funds,
         returns=overall,
         realised=money(sum((f.realised for f in priced), ZERO)),
         cost=money(sum((f.cost for f in funds), ZERO)),
         benchmark_fund=benchmark_fund if series else None,
-        benchmark=mirror,
+        benchmark=same,
         allocation=_allocation(priced),
         target=target,
         drift=_drift(target, funds) if target else [],
         cash={earmark: money(cash_total(session, earmark)) for earmark in EARMARKS},
+        day=day,
+        sips=_sips(holdings),
+    )
+
+
+@dataclass(frozen=True)
+class History:
+    points: list[Point]
+    """What is drawn: value and cost of every fund with a NAV (thinned, D-072)."""
+    benchmark: list[Point] | None
+    """The same money in the benchmark, on the same dates."""
+    benchmark_fund: Instrument | None
+    change: Change | None
+    """Gain and time-weighted return over the range, worked out on every date."""
+    benchmark_change: Change | None
+
+
+def history(session: Session, start: date | None = None) -> History:
+    """Value, cost and the benchmark's value on every NAV date from the first purchase (or
+    the last date on or before ``start``) to the latest NAV date (D-072). Funds without a
+    stored NAV are left out, as in the totals (D-070)."""
+    settings = get_settings(session)
+    target = settings.target_bucket
+    benchmark_fund = (target.benchmark if target else None) or default_benchmark(session)
+    held = []
+    for holding in list_holdings(session):
+        series = nav_series(session, holding.instrument.id)
+        moves = _moves(holding.lots)
+        if series and moves:
+            held.append((moves, series))
+    if not held:
+        return History([], None, benchmark_fund, None, None)
+
+    on = max(series[-1][0] for _, series in held)
+    first = min(move.date for moves, _ in held for move in moves)
+    dates = sorted(
+        {day for _, series in held for day, _ in series if first <= day <= on}
+        | {move.date for moves, _ in held for move in moves if move.date <= on}
+    )
+    points = combine([daily(moves, series, dates) for moves, series in held])
+
+    bench = None
+    if benchmark_fund:
+        index = nav_series(session, benchmark_fund.id)
+        flows = [Flow(move.date, move.flow) for moves, _ in held for move in moves]
+        copied = mirror(index, flows) if index else None
+        if copied is not None:
+            bench = daily(copied, index, dates)
+
+    def shown(line: list[Point]) -> list[Point]:
+        if start is None:
+            return thin(line)
+        base = max((i for i, p in enumerate(line) if p.date <= start), default=0)
+        return thin(line[base:])
+
+    return History(
+        points=shown(points),
+        benchmark=shown(bench) if bench else None,
+        benchmark_fund=benchmark_fund if bench else None,
+        change=change(points, start),
+        benchmark_change=change(bench, start) if bench else None,
     )

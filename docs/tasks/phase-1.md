@@ -6,7 +6,7 @@
 > **Already fixed:** React frontend + Python backend (D-023) · SQLite on the laptop (D-013) · free data only (D-012) · scheduled fetch + catch-up (D-022) · Windows + Task Scheduler (D-027) · Nifty 50 benchmark (D-043).
 > Everything else is decided **inside the task that needs it** (see each task's *Decisions* list). How this board works: [`README.md`](README.md)
 
-**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7; T1-18 dropped, D-068) · **Done:** 11 / 12
+**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7; T1-18 dropped, D-068) · **Done:** 12 / 13
 
 ---
 
@@ -27,6 +27,7 @@
 | T1-20 | Plan and option for every fund (AMFI leaves 5,623 blank) | Feature | Claude | done | T1-02 |
 | T1-21 | UI kit and copy clean-up: no prose, info icons, no build talk | Feature | Claude | done | T1-16 |
 | T1-22 | Journeys: new navigation, one fund page, Invest, Models, Settings | Feature | Claude | done | T1-21 |
+| T1-23 | Portfolio that answers: value over time, the day, vs the benchmark, SIPs, target | Feature | Claude | done | T1-17 |
 | ~~T1-03 to T1-11~~ | Board v2 tasks for stocks, US, LRS and the watchlist | — | — | dropped | see [Dropped tasks](#dropped-tasks-board-v2) |
 
 ```
@@ -439,6 +440,35 @@ T1-14 and T1-15 can be built in parallel. T1-18 was dropped (D-068): in Phase 1 
 - Clicking any fund name anywhere opens the same fund page
 - The target model is visible on Models, Invest and Settings, and set from Models
 - Old URLs redirect; `just lint`, `just test`, `just api-check` pass; screenshots at desktop and phone width, light and dark
+
+---
+
+## T1-23 · Portfolio that answers: value over time, the day, vs the benchmark, SIPs, target
+`Feature` · Owner: Claude · Status: done · Depends on: T1-17
+
+**Goal:** opening Portfolio tells me how I got here, how today went, whether my picks beat just buying the index, what my SIPs commit me to and which fund new money should go to, without opening another screen.
+
+**Scope**
+- Found 2026-10-25 (my review of T1-17: "very minimal, not providing any real value"): four tiles, a table and allocation bars; no history, no daily move, the benchmark only as a second line, drift only on the model page, the table in name order
+- Backend: value, invested and the benchmark over time with the gain and return over a range; each fund's day move; rupees ahead of the benchmark per fund and overall; SIPs a month and the next instalment; funds biggest first
+- Portfolio · Funds: tiles, *Value over time* chart with range presets, a reworked holdings table, and a *Target model* section with Invest
+
+**Decisions** (2026-10-25, decided while building; review welcome)
+- Decided: `GET /portfolio/history?start=` gives value, invested (cost of the units then held) and the same money in the benchmark on every NAV date from the first purchase, thinned to the last date of each week, then month, above 500 points; over the range the **gain** (value change − money put in) and a **time-weighted return**, both worked out on every date. **Ahead** = gain − the benchmark's gain on the same flows, per fund and overall. A second endpoint so the tiles don't wait for the chart (D-072)
+- Decided: **Day** = each fund's change between its own last two NAVs, less money put in; the total adds up the funds' gains, its return is that ÷ what they were worth on their previous NAV dates (D-073)
+- Decided: layout: six tiles (Value with invested, Gain, Day, XIRR with the benchmark's, vs benchmark, SIPs a month with the next one), *Value over time*, holdings biggest first (Invested, Value with units, Gain, Day, XIRR, vs benchmark, Weight with target), *Target model* (share vs weight bars, drift in points, links to the model and Invest) beside Allocation. Drift also on Portfolio, still no bands (D-074)
+
+**Progress (2026-10-25)**
+- Built: `friday.core.portfolio.history` (pure: moves walked over dates, priced at the stored NAV or, before the first one, the trade's NAV; funds added point by point; the benchmark replay as moves, so `replay` lives here now; gain and time-weighted return between two dates; thinning) and in `friday.core.portfolio.service` the day move per fund, `ahead`, the SIP summary, funds sorted biggest first and `history()`; `GET /api/v1/portfolio/history`; `GET /portfolio` adds `day`, `ahead` and `sips`. The SIP "active" rule moved from the API route into `friday.core.holdings.service` (`sip_active`, `next_due`). No new tables
+- UI: `PortfolioSummary` (six tiles), `ValueChart` (the SVG line chart with value, invested dashed and the benchmark dashed; 1M to Max presets; the range's gain, return and the benchmark's return from the API), `HoldingsTable` (new columns, rows in the API's order, *Sold* for funds with nothing left), `TargetDrift`; `formatPoints` moved to `lib/percent`. `DataTable`'s scroll box is now `relative`: a screen-reader label in a wide table's header was widening the whole page on phones
+- Found on real data: liquid funds have NAVs on Saturdays and Sundays, so a portfolio-wide "last two NAV dates" made Sunday the day and every equity fund's move ₹0. Each fund now uses its own last two NAVs (D-073), with a test for funds that publish on different days
+- Checked on a scratch database with the real AMFI list and NAVs (Parag Parikh lump sums from Apr 2023 with 300 units sold in Sep 2025, a ₹10,000 Edelweiss Mid Cap SIP since Jan 2024, Nippon India Large Cap from Jun 2025, HDFC Liquid as the emergency fund, a 40 / 25 / 35 model benchmarked on UTI Nifty 50): the history's last point equals the Value and Invested tiles to the paisa; the range's gain from the first purchase equals the Gain tile; `GET /portfolio/history` answers in about 80 ms for 3½ years; no sideways scroll at 390 px; desktop light and dark
+- Tests: 8 pure (value, cost and money per date; pricing before the first stored NAV; gain and time-weighted return from the start and over a range; nothing held before a day; funds added up; thinning by week and month) and 7 API (the day per fund and in total; funds with NAVs on different days; ahead of the benchmark and biggest first; SIPs a month and the next one; history with the benchmark; history from a start date; nothing held). Frontend: tiles and table exactly as sent, the chart's range figures and its 1Y request, the target model with Invest. 303 backend, 72 frontend; `lint` passes
+
+**Done when**
+- The history, the day and the benchmark gap have hand-worked tests ✔
+- Every figure on Portfolio is the API's string (the page only formats and draws) ✔
+- The last point of the chart is the value Portfolio shows; no sideways scroll at phone width ✔
 
 ---
 
