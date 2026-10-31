@@ -1,7 +1,7 @@
 import { Banknote } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router'
 
-import { useBuckets, useCash, useHoldings, usePortfolio, type Bucket } from '@/api/queries'
+import { useBuckets, useCash, usePortfolio, type Bucket } from '@/api/queries'
 import { Buckets, EditBucketButton, NewBucketButton } from '@/components/buckets/Buckets'
 import { CashAccounts } from '@/components/cash/CashAccounts'
 import { CashSummary } from '@/components/cash/CashSummary'
@@ -13,13 +13,11 @@ import { FundListBanner } from '@/components/portfolio/FundListBanner'
 import { HoldingsTable } from '@/components/portfolio/HoldingsTable'
 import { ModelDrift } from '@/components/portfolio/ModelDrift'
 import { Allocation, PortfolioSummary } from '@/components/portfolio/PortfolioSummary'
-import { SetupChecklist } from '@/components/portfolio/SetupChecklist'
 import { ValueChart } from '@/components/portfolio/ValueChart'
 import { RouteTabs } from '@/components/RouteTabs'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { NativeSelect } from '@/components/ui/native-select'
-import { useAddTransaction } from '@/hooks/use-add-transaction'
 import { bucketLabel, bucketParam, investPath } from '@/lib/buckets'
 
 /** What I own: funds, the buckets they're set aside in, and cash. */
@@ -28,7 +26,6 @@ export function PortfolioPage() {
     <div className="flex flex-col gap-6">
       <PageHeader title="Portfolio" />
       <FundListBanner />
-      <Setup />
       <RouteTabs
         label="Portfolio"
         tabs={[
@@ -38,48 +35,6 @@ export function PortfolioPage() {
         ]}
       />
     </div>
-  )
-}
-
-function Setup() {
-  const cash = useCash()
-  const holdings = useHoldings()
-  const buckets = useBuckets()
-  const addTransaction = useAddTransaction()
-  if (!cash.isSuccess || !holdings.isSuccess || !buckets.isSuccess) return null
-
-  return (
-    <SetupChecklist
-      steps={[
-        {
-          label: 'Add your cash',
-          done: cash.data.accounts.length > 0,
-          action: (
-            <Button asChild size="sm" variant="outline">
-              <Link to="/cash">Add cash</Link>
-            </Button>
-          ),
-        },
-        {
-          label: 'Add your funds',
-          done: holdings.data.length > 0,
-          action: (
-            <Button size="sm" variant="outline" onClick={() => addTransaction()}>
-              Add transaction
-            </Button>
-          ),
-        },
-        {
-          label: 'Make a bucket',
-          done: buckets.data.some((bucket) => bucket.model),
-          action: (
-            <Button asChild size="sm" variant="outline">
-              <Link to="/buckets">Buckets</Link>
-            </Button>
-          ),
-        },
-      ]}
-    />
   )
 }
 

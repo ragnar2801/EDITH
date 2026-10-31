@@ -139,7 +139,7 @@ test('the fund lists download from Settings · Data', async () => {
   expect(await post?.json()).toEqual({})
 })
 
-test('first run: a banner downloads the fund list, and a checklist shows what is left', async () => {
+test('first run: a banner downloads the fund list', async () => {
   let downloaded = false
   const calls = fakeApi({
     'GET /api/v1/instruments/sources': () => [amfiSource(downloaded)],
@@ -159,23 +159,9 @@ test('first run: a banner downloads the fund list, and a checklist shows what is
         },
       ]
     },
-    'GET /api/v1/cash': () => ({
-      accounts: [],
-      deployable: '0.00',
-      reserved: '0.00',
-      emergency: { goal: '0.00', cash: '0.00', fund: null, total: '0.00', shortfall: '0.00' },
-    }),
-    'GET /api/v1/holdings': () => [],
-    'GET /api/v1/buckets': () => [],
   })
   renderAt('/')
 
-  const steps = await screen.findByRole('region', { name: 'Get set up' })
-  expect(
-    within(steps)
-      .getAllByRole('listitem')
-      .map((item) => item.textContent),
-  ).toEqual(['Add your cashAdd cash', 'Add your fundsAdd transaction', 'Make a bucketBuckets'])
   const banner = (await screen.findByText('Fund list not downloaded')).closest('[role=status]')!
   await userEvent.click(within(banner as HTMLElement).getByRole('button', { name: 'Download' }))
 
