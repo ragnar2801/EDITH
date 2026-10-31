@@ -279,3 +279,74 @@ def test_comparing_runs_with_other_settings_or_dropped_funds(api, bucket, funds)
     ]
     missing = api.get(f"/api/v1/backtests/{after['id']}/compare", params={"against": 999})
     assert missing.status_code == 404
+
+
+def optimise(api: TestClient, bucket: dict, params: dict, **settings):
+    return api.post(
+        "/api/v1/backtests/optimise",
+        json={"bucket_id": bucket["id"], "params": params, **settings},
+    )
+
+
+LUMP = {"strategy": "regular", "capital": "100000", "start": "2026-10-01"}
+
+
+def test_optimise_tries_every_split_and_reruns_the_best(api: TestClient, bucket) -> None:
+    response = optimise(api, bucket, LUMP, step=10)
+
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert (body["tried"], body["eligible"], len(body["points"])) == (11, 11, 11)
+    assert body["start_date"] == "2026-10-09"
+    assert [(f["name"], f["weight"]) for f in body["model"]["funds"]] == [
+        ("Parag Parikh Flexi Cap Fund", "60"),
+        ("UTI Nifty 50 Index Fund", "40"),
+    ]
+    assert body["benchmark"]["name"] == "UTI Nifty 50 Index Fund"
+    top = body["top"]
+    assert len(top) == 10
+    xirrs = [Decimal(c["metrics"]["xirr_pct"]) for c in top]
+    assert xirrs == sorted(xirrs, reverse=True)
+    # the exact figures are the backtest's own for that split
+    split = [{"instrument_id": f["instrument_id"], "weight": f["weight"]} for f in top[0]["funds"]]
+    if len(split) == 1:
+        split[0]["weight"] = "100"
+    exact = run(api, bucket, {**LUMP, "split": split}).json()["result"]["metrics"]
+    assert top[0]["metrics"] == exact
+
+
+def test_optimise_keeps_to_the_limits(api: TestClient, bucket) -> None:
+    every = optimise(api, bucket, LUMP, step=10, goal="drawdown").json()
+    least = Decimal(every["top"][0]["metrics"]["max_drawdown_pct"])
+    assert all(Decimal(p["max_drawdown_pct"]) >= least for p in every["points"])
+
+    capped = optimise(
+        api, bucket, LUMP, step=10, min_weight=20, max_weight=80, max_drawdown_pct=str(least)
+    ).json()
+    assert capped["tried"] == 7
+    assert all(Decimal(c["metrics"]["max_drawdown_pct"]) <= least for c in capped["top"])
+    assert capped["eligible"] == sum(p["eligible"] for p in capped["points"])
+
+
+@pytest.mark.parametrize(
+    ("grid", "status", "reason"),
+    [
+        ({"step": 3}, 422, "step must divide 100"),
+        ({"min_weight": 60, "max_weight": 40}, 422, "lowest weight must be at most"),
+        ({"min_weight": 55}, 422, "No split with these weights adds up to 100."),
+    ],
+)
+def test_optimise_refuses_a_grid_it_cant_use(api, bucket, grid, status, reason) -> None:
+    response = optimise(api, bucket, LUMP, **grid)
+
+    assert response.status_code == status
+    assert reason in response.text
+
+
+def test_optimise_refuses_too_many_funds_or_splits(api, bucket, monkeypatch) -> None:
+    from friday.core.backtest import search
+
+    monkeypatch.setattr(search, "MAX_SPLITS", 5)
+    assert "That is 21 splits and the most is 5" in optimise(api, bucket, LUMP).text
+    monkeypatch.setattr(search, "MAX_FUNDS", 1)
+    assert "up to 1 funds" in optimise(api, bucket, LUMP).text

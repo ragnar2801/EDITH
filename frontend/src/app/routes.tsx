@@ -36,6 +36,7 @@ export const routes: RouteObject[] = [
       { path: '/models/new', element: <ModelEditorPage /> },
       { path: '/models/:id', element: <ModelPage /> },
       { path: '/models/:id/backtest', element: <ModelPage /> },
+      { path: '/models/:id/optimise', element: <ModelPage /> },
       { path: '/models/:id/edit', element: <ModelEditorPage /> },
       { path: '/funds', element: <FundsPage /> },
       { path: '/funds/:id', element: <FundPage /> },

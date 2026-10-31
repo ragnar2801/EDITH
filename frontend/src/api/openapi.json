@@ -693,6 +693,51 @@
         "title": "BucketRef",
         "type": "object"
       },
+      "Candidate": {
+        "description": "A split with its figures from the exact engine (D-078).",
+        "properties": {
+          "funds": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateFund"
+            },
+            "title": "Funds",
+            "type": "array"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/MetricsOut"
+          }
+        },
+        "required": [
+          "funds",
+          "metrics"
+        ],
+        "title": "Candidate",
+        "type": "object"
+      },
+      "CandidateFund": {
+        "properties": {
+          "instrument_id": {
+            "title": "Instrument Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "weight": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Weight",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instrument_id",
+          "name",
+          "weight"
+        ],
+        "title": "CandidateFund",
+        "type": "object"
+      },
       "CashOut": {
         "properties": {
           "accounts": {
@@ -3069,6 +3114,162 @@
         "title": "NavSummaryOut",
         "type": "object"
       },
+      "OptimiseIn": {
+        "properties": {
+          "bucket_id": {
+            "title": "Bucket Id",
+            "type": "integer"
+          },
+          "goal": {
+            "default": "xirr",
+            "enum": [
+              "xirr",
+              "drawdown",
+              "sharpe"
+            ],
+            "title": "Goal",
+            "type": "string"
+          },
+          "max_drawdown_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Drawdown Pct"
+          },
+          "max_weight": {
+            "default": 100,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Max Weight",
+            "type": "integer"
+          },
+          "min_weight": {
+            "default": 0,
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Min Weight",
+            "type": "integer"
+          },
+          "min_xirr_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Xirr Pct"
+          },
+          "params": {
+            "discriminator": {
+              "mapping": {
+                "regular": "#/components/schemas/RegularParams",
+                "sip": "#/components/schemas/SipParams"
+              },
+              "propertyName": "strategy"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RegularParams"
+              },
+              {
+                "$ref": "#/components/schemas/SipParams"
+              }
+            ],
+            "title": "Params"
+          },
+          "step": {
+            "default": 5,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Step",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bucket_id",
+          "params"
+        ],
+        "title": "OptimiseIn",
+        "type": "object"
+      },
+      "OptimiseOut": {
+        "properties": {
+          "benchmark": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BenchmarkOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "eligible": {
+            "title": "Eligible",
+            "type": "integer"
+          },
+          "end_date": {
+            "format": "date",
+            "title": "End Date",
+            "type": "string"
+          },
+          "model": {
+            "$ref": "#/components/schemas/Candidate"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/SearchPoint"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "top": {
+            "items": {
+              "$ref": "#/components/schemas/Candidate"
+            },
+            "title": "Top",
+            "type": "array"
+          },
+          "tried": {
+            "title": "Tried",
+            "type": "integer"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "start_date",
+          "end_date",
+          "tried",
+          "eligible",
+          "points",
+          "model",
+          "benchmark",
+          "top",
+          "warnings"
+        ],
+        "title": "OptimiseOut",
+        "type": "object"
+      },
       "Override": {
         "properties": {
           "allocation": {
@@ -4058,6 +4259,39 @@
         "title": "SaleOut",
         "type": "object"
       },
+      "SearchPoint": {
+        "description": "One split, for drawing: rounded figures from the search.",
+        "properties": {
+          "eligible": {
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "max_drawdown_pct": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Max Drawdown Pct",
+            "type": "string"
+          },
+          "xirr_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Xirr Pct"
+          }
+        },
+        "required": [
+          "xirr_pct",
+          "max_drawdown_pct",
+          "eligible"
+        ],
+        "title": "SearchPoint",
+        "type": "object"
+      },
       "SettingsIn": {
         "properties": {
           "emergency_fund_id": {
@@ -5002,6 +5236,48 @@
           }
         },
         "summary": "Run",
+        "tags": [
+          "backtests"
+        ]
+      }
+    },
+    "/api/v1/backtests/optimise": {
+      "post": {
+        "description": "Try every split of the bucket's funds and rank them (D-077); nothing is stored.",
+        "operationId": "optimiseSplit",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OptimiseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptimiseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Optimise Split",
         "tags": [
           "backtests"
         ]

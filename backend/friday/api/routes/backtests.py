@@ -1,5 +1,5 @@
 """Backtests of a bucket: run, save, load, delete, figures for a window (T1-14), and two runs
-compared (T1-24)."""
+compared (T1-24), and every split of a bucket searched (T1-25)."""
 
 from datetime import date
 
@@ -16,10 +16,14 @@ from friday.core.backtest.schemas import (
     BacktestResult,
     ComparisonOut,
     IntervalOut,
+    OptimiseOut,
+    SearchParams,
+    SearchSettings,
     Strategy,
 )
 from friday.core.backtest.service import (
     compare_runs,
+    optimise,
     run_backtest,
     run_interval,
     saved_runs,
@@ -38,6 +42,11 @@ class BacktestIn(BaseModel):
     params: BacktestParams
     save: bool = False
     name: str | None = Field(default=None, max_length=120)
+
+
+class OptimiseIn(SearchSettings):
+    bucket_id: int
+    params: SearchParams
 
 
 class BacktestRunSummary(BaseModel):
@@ -106,6 +115,16 @@ def run(session: SessionDep, payload: BacktestIn) -> BacktestRunOut:
         session, bucket, payload.params, result, saved=payload.save, name=payload.name
     )
     return _out(session, stored)
+
+
+@router.post("/backtests/optimise", operation_id="optimiseSplit")
+def optimise_split(session: SessionDep, payload: OptimiseIn) -> OptimiseOut:
+    """Try every split of the bucket's funds and rank them (D-077); nothing is stored."""
+    bucket = _bucket(session, payload.bucket_id)
+    try:
+        return optimise(session, bucket, payload.params, payload)
+    except EngineError as error:
+        raise HTTPException(422, _sentence(error)) from None
 
 
 @router.get("/buckets/{bucket_id}/backtests", operation_id="listSavedBacktests")

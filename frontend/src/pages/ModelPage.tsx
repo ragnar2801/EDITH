@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 
 import { useBuckets, usePlanSettings, usePortfolio } from '@/api/queries'
 import { BacktestWorkspace } from '@/components/backtest/BacktestWorkspace'
+import { OptimiseWorkspace } from '@/components/backtest/OptimiseWorkspace'
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/DataTable'
 import { ErrorText } from '@/components/Field'
 import { InfoTip } from '@/components/InfoTip'
@@ -90,6 +91,11 @@ export function ModelPage() {
             path: modelPath(bucket.id, 'backtest'),
             label: 'Backtest',
             content: <BacktestWorkspace bucket={bucket} />,
+          },
+          {
+            path: modelPath(bucket.id, 'optimise'),
+            label: 'Optimise',
+            content: <OptimiseWorkspace bucket={bucket} />,
           },
         ]}
       />

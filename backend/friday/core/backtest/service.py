@@ -1,26 +1,32 @@
-"""Run a backtest of a bucket on its stored NAVs, keep the run, slice it and compare two runs
-(D-048, D-049, D-075, D-076)."""
+"""Run a backtest of a bucket on its stored NAVs, keep the run, slice it, compare two runs and
+search every split of its funds (D-048, D-049, D-075 to D-078)."""
 
+import math
 from datetime import UTC, date, datetime
 from decimal import Decimal
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from friday.core.backtest import engine
+from friday.core.backtest import engine, search
 from friday.core.backtest.engine import CustomTrade, Day, EngineError
 from friday.core.backtest.models import BacktestRun
 from friday.core.backtest.schemas import (
     BacktestParams,
     BacktestResult,
     BenchmarkOut,
+    Candidate,
+    CandidateFund,
     ComparisonOut,
     CurvePoint,
     CustomParams,
     FundOutcomeOut,
     IntervalOut,
     MetricsOut,
+    OptimiseOut,
     RegularParams,
+    SearchPoint,
+    SearchSettings,
     SipParams,
     SwpParams,
     TradeOut,
@@ -34,6 +40,8 @@ from friday.core.navs.service import nav_series
 
 KEEP_UNSAVED = 20
 """Unsaved runs kept, newest first; older ones are deleted (D-049)."""
+TOP = 10
+"""Splits the search shows, re-run with the engine (D-078)."""
 
 
 def _compile(params: CustomParams, members: set[int]) -> list[CustomTrade]:
@@ -344,4 +352,125 @@ def compare_runs(
         volatility_pct=engine.figure(now.volatility_pct - then.volatility_pct),
         sharpe=change(now.sharpe, then.sharpe),
         weights=weights,
+    )
+
+
+def _better(goal: str, candidate: Candidate) -> tuple[float, float]:
+    """Sort key: best first for ``goal``, the same order as the search's ranking."""
+    m = candidate.metrics
+    xirr = float(m.xirr_pct) if m.xirr_pct is not None else -math.inf
+    drawdown = float(m.max_drawdown_pct)
+    if goal == "xirr":
+        return (-xirr, drawdown)
+    if goal == "drawdown":
+        return (drawdown, -xirr)
+    return (-(float(m.sharpe) if m.sharpe is not None else -math.inf), drawdown)
+
+
+def optimise(
+    session: Session,
+    bucket: Bucket,
+    params: RegularParams | SipParams,
+    settings: SearchSettings,
+) -> OptimiseOut:
+    """Try every split of the bucket's funds on the weight grid, rank them for the goal, and
+    re-run the best and the bucket's own split with the engine (D-077, D-078)."""
+    if params.split is not None:
+        raise EngineError("the search tries the splits itself; leave the split out")
+    members = bucket.funds
+    if len(members) > search.MAX_FUNDS:
+        raise EngineError(f"the search works on models of up to {search.MAX_FUNDS} funds")
+    count = search.count_splits(
+        len(members), settings.step, settings.min_weight, settings.max_weight
+    )
+    if count == 0:
+        raise EngineError("no split with these weights adds up to 100")
+    if count > search.MAX_SPLITS:
+        raise EngineError(
+            f"that is {count:,} splits and the most is {search.MAX_SPLITS:,}; "
+            "use a bigger step or a narrower range of weights"
+        )
+
+    warnings: list[str] = []
+    ids = [member.instrument_id for member in members]
+    names = {member.instrument_id: member.instrument.name for member in members}
+    series = {m.instrument_id: _series(session, m.instrument, warnings) for m in members}
+    missing = [names[fund_id] for fund_id, points in series.items() if not points]
+    if missing:
+        raise EngineError(f"no NAVs yet for {', '.join(missing)}; sync NAVs first")
+    aligned = engine.align(series, params.start, params.end)
+    if aligned.start >= len(aligned.dates) - 1:
+        raise EngineError("the funds have no NAVs in common for these dates")
+    if isinstance(params, RegularParams):
+        period = params.rebalance or bucket.rebalance
+        plan = search.Plan("regular", float(params.capital), period)
+    else:
+        plan = search.Plan("sip", float(params.amount), params.frequency)
+
+    splits = search.grid(len(members), settings.step, settings.min_weight, settings.max_weight)
+    measures = search.measure(aligned, ids, splits, plan, float(params.risk_free_pct))
+    limit = settings.max_drawdown_pct
+    floor = settings.min_xirr_pct
+    eligible, best = search.rank(
+        measures,
+        settings.goal,
+        float(limit) if limit is not None else None,
+        float(floor) if floor is not None else None,
+        TOP,
+    )
+
+    def exact(weights: list[tuple[int, Decimal]]) -> tuple[Candidate, list[Day]]:
+        held = [(fund_id, weight) for fund_id, weight in weights if weight > 0]
+        if isinstance(params, RegularParams):
+            run = engine.run_regular(aligned, held, params.capital, period)
+        else:
+            run = engine.run_sip(aligned, held, params.amount, params.frequency)
+        funds = [CandidateFund(instrument_id=i, name=names[i], weight=w) for i, w in held]
+        metrics = _metrics(run.days, params.risk_free_pct, None)
+        return Candidate(funds=funds, metrics=metrics), run.days
+
+    model, days = exact([(member.instrument_id, member.weight_pct) for member in members])
+    top = sorted(
+        (exact(list(zip(ids, map(Decimal, splits[k]), strict=True)))[0] for k in best),
+        key=lambda candidate: _better(settings.goal, candidate),
+    )
+
+    benchmark = None
+    if bucket.benchmark is not None:
+        bench_series = _series(session, bucket.benchmark, warnings)
+        bench_days = engine.replay_flows(bench_series, days) if bench_series else None
+        if bench_days is not None:
+            benchmark = BenchmarkOut(
+                instrument_id=bucket.benchmark.id,
+                name=bucket.benchmark.name,
+                curve=[],
+                metrics=_metrics(bench_days, params.risk_free_pct, None),
+            )
+
+    began = aligned.dates[aligned.start]
+    if params.start and began > params.start:
+        youngest = max(ids, key=lambda fund_id: series[fund_id][0][0])
+        warnings.append(
+            f"Started on {began.isoformat()} instead of {params.start.isoformat()}: "
+            f"{names[youngest]} has no NAV before then."
+        )
+    return OptimiseOut(
+        start_date=began,
+        end_date=aligned.dates[-1],
+        tried=len(splits),
+        eligible=int(eligible.sum()),
+        points=[
+            SearchPoint(
+                xirr_pct=engine.figure(xirr),
+                max_drawdown_pct=engine.figure(drawdown),
+                eligible=bool(ok),
+            )
+            for xirr, drawdown, ok in zip(
+                measures.xirr_pct, measures.max_drawdown_pct, eligible, strict=True
+            )
+        ],
+        model=model,
+        benchmark=benchmark,
+        top=top,
+        warnings=warnings,
     )

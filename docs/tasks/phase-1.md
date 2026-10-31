@@ -6,7 +6,7 @@
 > **Already fixed:** React frontend + Python backend (D-023) · SQLite on the laptop (D-013) · free data only (D-012) · scheduled fetch + catch-up (D-022) · Windows + Task Scheduler (D-027) · Nifty 50 benchmark (D-043).
 > Everything else is decided **inside the task that needs it** (see each task's *Decisions* list). How this board works: [`README.md`](README.md)
 
-**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7; T1-18 dropped, D-068) · **Done:** 13 / 14
+**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7; T1-18 dropped, D-068) · **Done:** 14 / 15
 
 ---
 
@@ -29,6 +29,7 @@
 | T1-22 | Journeys: new navigation, one fund page, Invest, Models, Settings | Feature | Claude | done | T1-21 |
 | T1-23 | Portfolio that answers: value over time, the day, vs the benchmark, SIPs, target | Feature | Claude | done | T1-17 |
 | T1-24 | Backtest a tweaked split without changing the model, and compare runs | Feature | Claude | done | T1-14 |
+| T1-25 | Optimise: try every split of a model's funds and rank them | Feature | Claude | done | T1-24 |
 | ~~T1-03 to T1-11~~ | Board v2 tasks for stocks, US, LRS and the watchlist | — | — | dropped | see [Dropped tasks](#dropped-tasks-board-v2) |
 
 ```
@@ -497,6 +498,34 @@ T1-14 and T1-15 can be built in parallel. T1-18 was dropped (D-068): in Phase 1 
 - A run with a split uses its weights, keeps the model as it was, and reloads with the split ✔
 - A split that isn't a valid model split is refused with the reason ✔
 - The comparison has a hand-checked test; every figure on the tab is the API's string ✔
+
+---
+
+## T1-25 · Optimise: try every split of a model's funds and rank them
+`Feature` · Owner: Claude · Status: done · Depends on: T1-24
+
+**Goal:** for a model of up to 5 funds, I can try every split in 5% steps as a lump sum or a SIP, see all of them as return against drawdown, and pick from the best few for a goal I choose, then open one in the Backtest tab.
+
+**Scope**
+- Found 2026-10-31 (my request: "if total instruments are less than 6, can we maximize gain or minimize drawdown, automatically run all possible iterations in increments of 5, configurable in future")
+- Backend: every split of the model's funds on a weight grid, measured together; the best ten re-run with the exact engine
+- An *Optimise* tab on the model: settings, every split as a dot (return against drawdown) with the model and the benchmark marked, the best ten with *Try this split*
+
+**Decisions** (2026-10-31)
+- Decided: the search tries **every split of the model's funds** in steps of 5% (a setting, 1 to 50, dividing 100), with weights between a lowest and a highest (0 and 100 by default; 0 lets a fund drop out). Up to **5 funds** and **50,000 splits**. Lump sum (with the model's or a chosen rebalance) and SIP; SWP isn't searched. **Goals:** highest XIRR, lowest max drawdown, best Sharpe, each with an optional *max drawdown* and *min XIRR* limit. Runs start on the first date every fund in the model has a NAV, so all splits cover the same dates. Nothing is stored: a search takes seconds (D-077)
+- Decided: **numpy** for the search: each split's value curve is the funds' curves combined by weight, worked out for thousands of splits at once in floats. Ranking only; the **best ten and the model's own split are re-run with the exact engine** (D-048), so every figure shown in the table is exact. A test checks the search against the engine (D-078)
+
+**Progress (2026-10-31)**
+- Built: `friday.core.backtest.search` (pure, numpy: the grid and its size, every split's value curve from the funds' curves, XIRR solved for all splits at once, CAGR, drawdown, volatility and Sharpe as the engine works them out, ranking within the limits); `optimise` in `friday.core.backtest.service` (checks, the search, the best ten and the model's own split re-run with the engine, the benchmark on the same flows); `POST /api/v1/backtests/optimise`. numpy 2.5.4 added. No new tables
+- UI: an **Optimise** tab on the model (settings left: lump sum or SIP, goal, max drawdown, min XIRR, dates; step, lowest and highest weight and risk-free rate under *More options*); splits tried and within limits; `ScatterChart` (every split as a dot, those outside the limits greyed, the model, the benchmark and the best marked); the best ten under *Your model*, each with *Try this split*, which opens the Backtest tab with that split, the same settings and the search's start date
+- Checked on a copy of my database: *CORE* (5 funds), ₹10,000 SIP, 5% steps: 10,626 splits and the exact re-runs in **1.3 s**. With no limits the best XIRR is 100% small cap (23.53% against the model's 16.72%), as expected; capped at 40% a fund, 20/40/40 Flexi/Mid/Small gives 20.51% with a smaller drawdown than the model. *Try this split* on 5/95 Mid/Small gave the same XIRR (23.37%) and drawdown (24.09%) in the Backtest tab as in the table. No sideways scroll at 375 px
+- Tests: 10 search (grid sizes and the two-fund grid by hand; search against the engine for a lump sum, a quarterly-rebalanced lump sum and a SIP, to 1e-6; ranking for each goal and the limits) and 6 API (every split tried and the best re-run, exactly the backtest's figures; limits; refused grids; too many funds or splits). Frontend: settings to request, table, *Try this split* into the Backtest tab, more than 5 funds
+- Not built: a check across sub-periods (does a split win in every stretch, not just this one); a later task if I want it
+
+**Done when**
+- Every split on the grid is tried, and the limits and goals pick the right ones (hand-checked on two funds) ✔
+- The search's figures for a split match the engine's to the rounding, for a lump sum with rebalancing and a SIP ✔
+- A 5-fund model in 5% steps on my real NAVs finishes in seconds; *Try this split* opens it in the Backtest tab ✔
 
 ---
 

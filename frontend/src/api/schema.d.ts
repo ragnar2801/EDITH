@@ -24,6 +24,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/backtests/optimise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Optimise Split
+         * @description Try every split of the bucket's funds and rank them (D-077); nothing is stored.
+         */
+        post: operations["optimiseSplit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/backtests/{run_id}": {
         parameters: {
             query?: never;
@@ -939,6 +959,24 @@ export interface components {
             /** Name */
             name: string;
         };
+        /**
+         * Candidate
+         * @description A split with its figures from the exact engine (D-078).
+         */
+        Candidate: {
+            /** Funds */
+            funds: components["schemas"]["CandidateFund"][];
+            metrics: components["schemas"]["MetricsOut"];
+        };
+        /** CandidateFund */
+        CandidateFund: {
+            /** Instrument Id */
+            instrument_id: number;
+            /** Name */
+            name: string;
+            /** Weight */
+            weight: string;
+        };
         /** CashOut */
         CashOut: {
             /** Accounts */
@@ -1659,6 +1697,63 @@ export interface components {
             /** Used By */
             used_by: string[];
         };
+        /** OptimiseIn */
+        OptimiseIn: {
+            /** Bucket Id */
+            bucket_id: number;
+            /**
+             * Goal
+             * @default xirr
+             * @enum {string}
+             */
+            goal: "xirr" | "drawdown" | "sharpe";
+            /** Max Drawdown Pct */
+            max_drawdown_pct?: string | null;
+            /**
+             * Max Weight
+             * @default 100
+             */
+            max_weight: number;
+            /**
+             * Min Weight
+             * @default 0
+             */
+            min_weight: number;
+            /** Min Xirr Pct */
+            min_xirr_pct?: string | null;
+            /** Params */
+            params: components["schemas"]["RegularParams"] | components["schemas"]["SipParams"];
+            /**
+             * Step
+             * @default 5
+             */
+            step: number;
+        };
+        /** OptimiseOut */
+        OptimiseOut: {
+            benchmark: components["schemas"]["BenchmarkOut"] | null;
+            /** Eligible */
+            eligible: number;
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
+            model: components["schemas"]["Candidate"];
+            /** Points */
+            points: components["schemas"]["SearchPoint"][];
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Top */
+            top: components["schemas"]["Candidate"][];
+            /** Tried */
+            tried: number;
+            /** Warnings */
+            warnings: string[];
+        };
         /** Override */
         Override: {
             /** Allocation */
@@ -1953,6 +2048,18 @@ export interface components {
             sale_date: string;
             /** Units */
             units: string;
+        };
+        /**
+         * SearchPoint
+         * @description One split, for drawing: rounded figures from the search.
+         */
+        SearchPoint: {
+            /** Eligible */
+            eligible: boolean;
+            /** Max Drawdown Pct */
+            max_drawdown_pct: string;
+            /** Xirr Pct */
+            xirr_pct: string | null;
         };
         /** SettingsIn */
         SettingsIn: {
@@ -2272,6 +2379,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BacktestRunOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    optimiseSplit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OptimiseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OptimiseOut"];
                 };
             };
             /** @description Problem details (RFC 9457) */

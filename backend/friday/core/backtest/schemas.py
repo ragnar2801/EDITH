@@ -229,3 +229,71 @@ class ComparisonOut(BaseModel):
     sharpe: Figure | None
     weights: list[WeightChange]
     """Only the funds whose weight changed, in this run's order then the dropped ones."""
+
+
+Goal = Literal["xirr", "drawdown", "sharpe"]
+
+
+class SearchSettings(BaseModel):
+    """Which splits to try and what makes one better (D-077)."""
+
+    goal: Goal = "xirr"
+    """Highest XIRR, lowest max drawdown, or best Sharpe."""
+    step: Annotated[int, Field(ge=1, le=50)] = 5
+    """Weights go up in steps of this many percent; it must divide 100."""
+    min_weight: Annotated[int, Field(ge=0, le=100)] = 0
+    """Lowest weight for a fund; 0 lets a fund drop out."""
+    max_weight: Annotated[int, Field(ge=1, le=100)] = 100
+    max_drawdown_pct: Annotated[Percent, Field(gt=0)] | None = None
+    """Leave out splits that fell further than this."""
+    min_xirr_pct: Percent | None = None
+    """Leave out splits with a lower XIRR than this."""
+
+    @model_validator(mode="after")
+    def _a_grid(self):
+        if 100 % self.step:
+            raise ValueError("step must divide 100 (1, 2, 4, 5, 10, 20, 25 or 50)")
+        if self.min_weight > self.max_weight:
+            raise ValueError("the lowest weight must be at most the highest")
+        return self
+
+
+SearchParams = Annotated[RegularParams | SipParams, Field(discriminator="strategy")]
+
+
+class CandidateFund(BaseModel):
+    instrument_id: int
+    name: str
+    weight: Percent
+
+
+class Candidate(BaseModel):
+    """A split with its figures from the exact engine (D-078)."""
+
+    funds: list[CandidateFund]
+    """Funds with a weight above 0, in the model's order."""
+    metrics: MetricsOut
+
+
+class SearchPoint(BaseModel):
+    """One split, for drawing: rounded figures from the search."""
+
+    xirr_pct: Percent | None
+    max_drawdown_pct: Percent
+    eligible: bool
+    """Within the limits."""
+
+
+class OptimiseOut(BaseModel):
+    start_date: date
+    end_date: date
+    tried: int
+    eligible: int
+    points: list[SearchPoint]
+    model: Candidate
+    """The model's own split, for comparison."""
+    benchmark: BenchmarkOut | None
+    """The same money in the benchmark fund; its curve is left empty."""
+    top: list[Candidate]
+    """The best splits within the limits, best first."""
+    warnings: list[str]

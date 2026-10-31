@@ -400,6 +400,19 @@ export function useBacktestInterval(
   })
 }
 
+export type Optimised = Schemas['OptimiseOut']
+
+/** Every split of a model's funds, ranked (D-077). Nothing is stored. */
+export function useOptimise() {
+  return useMutation({
+    mutationFn: async (body: Schemas['OptimiseIn']) => {
+      const { data, error } = await api.POST('/api/v1/backtests/optimise', { body })
+      if (error) throw failure(error)
+      return data
+    },
+  })
+}
+
 /** A run less an earlier one (D-076); `null` = nothing to compare with. */
 export function useCompareBacktests(runId: number, against: number | null) {
   return useQuery({

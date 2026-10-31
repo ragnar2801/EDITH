@@ -6,7 +6,7 @@ type FundRef = Schemas['FundRef']
 /** Where models (buckets, D-061) live in the app (D-063). */
 export const MODELS_PATH = '/models'
 
-export function modelPath(id: number, tab?: 'backtest' | 'edit'): string {
+export function modelPath(id: number, tab?: 'backtest' | 'optimise' | 'edit'): string {
   return tab ? `${MODELS_PATH}/${id}/${tab}` : `${MODELS_PATH}/${id}`
 }
 

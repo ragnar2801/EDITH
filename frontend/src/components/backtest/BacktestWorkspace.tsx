@@ -1,5 +1,6 @@
 import { FlaskConical, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { useLocation } from 'react-router'
 import { toast } from 'sonner'
 
 import {
@@ -19,15 +20,22 @@ import { NativeSelect } from '@/components/ui/native-select'
 import { useConfirm } from '@/hooks/use-confirm'
 import { DEFAULT_FORM, STRATEGY_LABELS, fromRun, modelSplit, toParams } from '@/lib/backtest'
 import type { Bucket } from '@/lib/buckets'
+import type { BacktestHandoff } from '@/lib/optimise'
 import { formatDateTime } from '@/lib/time'
 
 import { BacktestControls } from './BacktestControls'
 import { BacktestResults } from './BacktestResults'
 
 /** Backtests of one model (T1-14), ported from Friday: controls on the left, results right.
- * Each run is compared with the one shown before it (D-076). */
+ * Each run is compared with the one shown before it (D-076); a split tried from Optimise
+ * arrives filled in (D-077). */
 export function BacktestWorkspace({ bucket }: { bucket: Bucket }) {
-  const [form, setForm] = useState(() => ({ ...DEFAULT_FORM, split: modelSplit(bucket) }))
+  const handed = useLocation().state as BacktestHandoff | null
+  const [form, setForm] = useState(() => ({
+    ...DEFAULT_FORM,
+    split: modelSplit(bucket),
+    ...handed?.form,
+  }))
   const [shown, setShown] = useState<BacktestRun | null>(null)
   const [previous, setPrevious] = useState<BacktestRun | null>(null)
   const run = useRunBacktest()
