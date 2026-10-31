@@ -199,27 +199,26 @@ test('first run: a banner downloads the fund list, and a checklist shows what is
   expect(await post?.json()).toEqual({ sources: ['amfi'] })
 })
 
-test('phone sync shows where to push and imports the latest copy again', async () => {
-  const run = {
-    status: 'ok',
-    imported_at: '2026-10-31T06:00:00Z',
-    copied_at: '2026-10-31T05:59:00Z',
-    funds: 15,
-    lots: 48,
-    sales: 3,
-    added: 0,
-    removed: 0,
-    warnings: ['AMFI 999999 (Closed fund) isn’t in the fund list; its purchases were left out.'],
-    message: null,
-  }
-  const calls = fakeApi({
+test('phone sync shows what to enter on the phone and the last import', async () => {
+  fakeApi({
     'GET /api/v1/navs/status': () => ({ last_run: null, funds: [] }),
     'GET /api/v1/fm': () => ({
       receiver: { port: 8090, addresses: ['192.168.1.57'], token: 'secret-token' },
-      has_copy: true,
-      last_import: run,
+      last_import: {
+        status: 'ok',
+        imported_at: '2026-10-31T06:00:00Z',
+        sent_at: '2026-10-31T05:59:00Z',
+        funds: 15,
+        lots: 48,
+        sales: 3,
+        added: 0,
+        removed: 0,
+        warnings: [
+          'AMFI 999999 (Closed fund) isn’t in the fund list; its purchases were left out.',
+        ],
+        message: null,
+      },
     }),
-    'POST /api/v1/fm/import': () => ({ ...run, lots: 49 }),
   })
   renderAt('/settings/data')
 
@@ -229,8 +228,5 @@ test('phone sync shows where to push and imports the latest copy again', async (
   expect(within(sync).getByText('secret-token')).toBeInTheDocument()
   expect(within(sync).getByText(/48 purchases and 3 sales of 15 funds/)).toBeInTheDocument()
   expect(within(sync).getByText(/Closed fund/)).toBeInTheDocument()
-
-  await userEvent.click(within(sync).getByRole('button', { name: 'Import again' }))
-  expect(await screen.findByText('49 purchases and 3 sales of 15 funds')).toBeInTheDocument()
-  expect(calls.some((call) => call.url.endsWith('/fm/import'))).toBe(true)
+  expect(within(sync).queryByRole('button', { name: 'Import again' })).not.toBeInTheDocument()
 })

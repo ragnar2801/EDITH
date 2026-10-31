@@ -36,7 +36,9 @@ def test_paths_outside_dist_are_not_served(client: TestClient, settings: Setting
 
 
 def test_missing_build_explains_what_to_do(tmp_path: Path) -> None:
-    settings = Settings(data_dir=tmp_path / "data", frontend_dist=tmp_path / "missing")
+    settings = Settings(
+        data_dir=tmp_path / "data", frontend_dist=tmp_path / "missing", fm_push=False
+    )
 
     with TestClient(create_app(settings)) as client:
         response = client.get("/")

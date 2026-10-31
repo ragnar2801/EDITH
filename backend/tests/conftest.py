@@ -17,7 +17,12 @@ def settings(tmp_path: Path) -> Settings:
     (dist / "index.html").write_text('<!doctype html><div id="root"></div>', encoding="utf-8")
     (dist / "assets").mkdir()
     (dist / "assets" / "app.js").write_text("console.log('friday')", encoding="utf-8")
-    return Settings(data_dir=tmp_path / "data", log_dir=tmp_path / "logs", frontend_dist=dist)
+    return Settings(
+        data_dir=tmp_path / "data",
+        log_dir=tmp_path / "logs",
+        frontend_dist=dist,
+        fm_push=False,  # tests start their own receiver on a free port
+    )
 
 
 @pytest.fixture

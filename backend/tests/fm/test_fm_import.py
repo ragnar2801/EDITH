@@ -1,8 +1,7 @@
-"""Importing FM database copies: what comes in, re-imports, and what is left out."""
+"""Importing FM's lots feed: what comes in, re-imports, and what is left out."""
 
 import json
-import sqlite3
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 import pytest
@@ -11,9 +10,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from friday.core.db import session_scope
+from friday.core.fm.feed import FmFeedError, decimal, read_feed
 from friday.core.fm.models import FmImport
-from friday.core.fm.service import import_file
-from friday.core.fm.snapshot import FmSnapshotError, decimal, read_snapshot
+from friday.core.fm.service import import_feed
 from friday.core.holdings.models import Lot
 from friday.core.holdings.service import BuyInput, create_lump_sum
 
@@ -36,22 +35,22 @@ def fm_lots(factory: sessionmaker[Session]) -> list[tuple]:
         ]
 
 
-def test_floats_become_the_decimals_they_were_typed_as() -> None:
-    assert decimal(63007.451199999996, 2) == Decimal("63007.45")
+def test_float_noise_is_rounded_away() -> None:
+    assert decimal(Decimal("63007.451199999996"), 2) == Decimal("63007.45")
     assert decimal(3916.6499999999996, 8) == Decimal("3916.65000000")
-    assert decimal(15.7247, 8) == Decimal("15.72470000")
     assert decimal(None, 2) is None
 
 
-def test_purchases_and_sales_come_in(fm, factory, funds) -> None:
-    fm.lot("a", "parag", "2025-04-01", 2642.93, 23.84)
-    fm.lot("b", "nifty", "2025-05-08", 100.5, 150.1234)
-    fm.sell("s1", "a", "2026-02-14", 642.93, 30.5)
-    fm.lot("stock", "infy", "2025-01-01", 10, 1500)  # not a fund: ignored
+def test_purchases_and_sales_come_in(feed, factory, funds) -> None:
+    feed.lot("a", "parag", "2025-04-01", 2642.93, 23.84)
+    feed.lot("b", "nifty", "2025-05-08", 100.5, 150.1234)
+    feed.sell("s1", "a", "2026-02-14", 642.93, 30.5)
+    feed.lot("stock", "infy", "2025-01-01", 10, 1500)  # not a fund: ignored
 
-    row = import_file(factory, fm.path)
+    row = import_feed(factory, feed.body())
 
     assert (row.status, row.fm_schema, row.funds, row.lots, row.sales) == ("ok", 32, 2, 2, 1)
+    assert row.sent_at == datetime(2026, 10, 31, 6, tzinfo=UTC)
     assert (row.added, row.removed, json.loads(row.warnings)) == (2, 0, [])
     assert fm_lots(factory) == [
         (
@@ -77,16 +76,16 @@ def test_purchases_and_sales_come_in(fm, factory, funds) -> None:
     ]
 
 
-def test_importing_again_replaces_what_changed_in_fm(fm, factory, funds) -> None:
-    fm.lot("a", "parag", "2025-04-01", 100, 20)
-    fm.lot("b", "parag", "2025-05-01", 50, 22)
-    import_file(factory, fm.path)
-    assert import_file(factory, fm.path).added == 0  # nothing changed: nothing new
+def test_each_sync_replaces_what_came_from_fm(feed, factory, funds) -> None:
+    feed.lot("a", "parag", "2025-04-01", 100, 20)
+    feed.lot("b", "parag", "2025-05-01", 50, 22)
+    import_feed(factory, feed.body())
+    assert import_feed(factory, feed.body()).added == 0  # nothing changed: nothing new
 
-    fm.run("UPDATE lots SET total_units = 120, remaining_units = 120 WHERE id = 'a'")
-    fm.run("DELETE FROM lots WHERE id = 'b'")
-    fm.lot("c", "nifty", "2025-06-01", 10, 200)
-    row = import_file(factory, fm.path)
+    feed.lot("a", "parag", "2025-04-01", 120, 20)  # changed in FM
+    del feed.lots["b"]  # deleted in FM
+    feed.lot("c", "nifty", "2025-06-01", 10, 200)
+    row = import_feed(factory, feed.body())
 
     assert (row.lots, row.added, row.removed) == (2, 1, 1)
     assert [(lot[0], lot[4]) for lot in fm_lots(factory)] == [
@@ -106,26 +105,27 @@ def own_lot(factory, funds) -> None:
         )
 
 
-def test_purchases_entered_in_friday_are_left_alone(own_lot, fm, factory, funds) -> None:
-    fm.lot("a", "parag", "2025-04-01", 100, 20)
-    row = import_file(factory, fm.path)
+def test_purchases_entered_in_friday_stay(own_lot, feed, factory, funds) -> None:
+    feed.lot("a", "parag", "2025-04-01", 100, 20)
+    import_feed(factory, feed.body())
+    row = import_feed(factory, feed.body())
+
     with session_scope(factory) as session:
-        own = session.scalars(select(Lot).where(Lot.source.is_(None))).all()
-        assert len(own) == 1
+        sources = session.scalars(select(Lot.source).order_by(Lot.buy_date)).all()
+    assert sources == ["fm", None]
     assert json.loads(row.warnings) == [
         "Parag Parikh Flexi Cap Fund also has purchases or SIPs entered in Friday; "
         "they count alongside FM's."
     ]
 
 
-def test_what_cant_be_imported_is_listed(fm, factory, funds) -> None:
-    fm.lot("a", "parag", "2025-04-01", 100, 20)
-    fm.lot("ghost", "ghost", "2025-04-01", 10, 10)
-    fm.lot("usd", "nifty", "2025-04-01", 10, 10, currency="usd")
-    fm.lot("odd", "nifty", "2025-04-02", 10, 10)
-    fm.run("UPDATE lots SET remaining_units = 4 WHERE id = 'odd'")
+def test_what_cant_be_imported_is_listed(feed, factory, funds) -> None:
+    feed.lot("a", "parag", "2025-04-01", 100, 20)
+    feed.lot("ghost", "ghost", "2025-04-01", 10, 10)
+    feed.lot("usd", "nifty", "2025-04-01", 10, 10, currency="USD")
+    feed.lot("odd", "nifty", "2025-04-02", 10, 10)["remaining_units"] = 4
 
-    row = import_file(factory, fm.path)
+    row = import_feed(factory, feed.body())
 
     assert row.lots == 2
     assert json.loads(row.warnings) == [
@@ -136,36 +136,24 @@ def test_what_cant_be_imported_is_listed(fm, factory, funds) -> None:
     ]
 
 
-def test_accounts_can_be_left_out(fm, factory, funds) -> None:
-    fm.lot("mine", "parag", "2025-04-01", 100, 20)
-    fm.lot("hers", "parag", "2025-04-02", 100, 20, account="amma")
-
-    row = import_file(factory, fm.path, skip_accounts=frozenset({"amma indmoney"}))
-
-    assert row.lots == 1
-    assert [lot[0] for lot in fm_lots(factory)] == ["mine"]
-
-
-def test_a_file_that_isnt_an_fm_copy_is_logged_and_refused(tmp_path, factory) -> None:
-    junk = tmp_path / "junk.db"
-    junk.write_text("not a database", encoding="utf-8")
-    with pytest.raises(FmSnapshotError, match="isn't a database file"):
-        import_file(factory, junk)
-
-    other = tmp_path / "other.db"
-    sqlite3.connect(other).execute("CREATE TABLE lots (id TEXT)").connection.close()
-    with pytest.raises(FmSnapshotError, match="no securities, accounts"):
-        read_snapshot(other)
-
+@pytest.mark.parametrize(
+    ("body", "message"),
+    [
+        (b"not json", "it isn't JSON"),
+        (b'{"format": "something"}', "it isn't an FM lots feed"),
+        (b'{"format": "fm-lots", "version": 2, "lots": []}', "FM sent version 2"),
+    ],
+)
+def test_a_feed_that_cant_be_read_is_logged_and_refused(body, message, factory) -> None:
+    with pytest.raises(FmFeedError, match=message):
+        import_feed(factory, body)
     with session_scope(factory) as session:
-        logged = session.scalars(select(FmImport)).all()
-        assert [(row.status, row.message) for row in logged] == [
-            ("failed", "junk.db isn't a database file")
-        ]
+        logged = session.scalars(select(FmImport)).one()
+        assert logged.status == "failed"
+        assert message in logged.message
 
 
-def test_a_removed_column_is_reported(fm, factory, funds) -> None:
-    fm.lot("a", "parag", "2025-04-01", 100, 20)
-    fm.run("ALTER TABLE lots DROP COLUMN unit_price")
-    with pytest.raises(FmSnapshotError, match="FM's tables have changed: 'unit_price'"):
-        read_snapshot(fm.path)
+def test_a_removed_field_is_reported(feed) -> None:
+    del feed.lot("a", "parag", "2025-04-01", 100, 20)["unit_price"]
+    with pytest.raises(FmFeedError, match="FM's lots have changed: 'unit_price'"):
+        read_feed(feed.body())

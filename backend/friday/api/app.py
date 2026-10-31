@@ -1,5 +1,6 @@
 """FastAPI application factory."""
 
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -28,6 +29,8 @@ from friday.core.navs.download import HttpNavFetcher
 
 API_PREFIX = "/api/v1"
 
+log = logging.getLogger(__name__)
+
 
 def create_app(settings: Settings | None = None, *, migrate: bool = True) -> FastAPI:
     settings = settings or Settings()
@@ -37,8 +40,11 @@ def create_app(settings: Settings | None = None, *, migrate: bool = True) -> Fas
         if migrate:
             upgrade_database(settings)
         if settings.fm_push:
-            app.state.fm_receiver = _fm_receiver(app)
-            app.state.fm_receiver.start()
+            try:
+                app.state.fm_receiver = _fm_receiver(app)
+                app.state.fm_receiver.start()
+            except OSError as error:  # the port is taken, e.g. by a second Friday
+                log.warning("FM receiver not started on port %s: %s", settings.fm_push_port, error)
         yield
         if app.state.fm_receiver:
             app.state.fm_receiver.stop()
@@ -53,7 +59,7 @@ def create_app(settings: Settings | None = None, *, migrate: bool = True) -> Fas
     app.state.engine = make_engine(settings)
     app.state.session_factory = make_session_factory(app.state.engine)
     app.state.nav_fetcher = HttpNavFetcher()  # tests replace it with a fake
-    app.state.fm_receiver = None  # started with the app when FRIDAY_FM_PUSH is on
+    app.state.fm_receiver = None  # started with the app unless FRIDAY_FM_PUSH is off
     app.state.list_fetcher = HttpFetcher(  # instrument lists; tests use a folder
         settings.sources_dir, sec_user_agent=settings.sec_user_agent
     )
@@ -75,14 +81,7 @@ def create_app(settings: Settings | None = None, *, migrate: bool = True) -> Fas
 def _fm_receiver(app: FastAPI) -> FmReceiver:
     settings: Settings = app.state.settings
     return FmReceiver(
-        folder=settings.fm_dir,
-        token=ensure_token(settings.fm_dir, settings.fm_push_token),
-        host=settings.fm_push_host,
+        token=ensure_token(settings.fm_dir),
         port=settings.fm_push_port,
-        on_push=lambda path: handle_push(
-            app.state.session_factory,
-            path,
-            forward_dir=settings.fm_forward_dir,
-            skip_accounts=settings.fm_skipped,
-        ),
+        on_push=lambda body: handle_push(app.state.session_factory, body),
     )

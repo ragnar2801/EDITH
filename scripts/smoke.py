@@ -52,6 +52,7 @@ def main() -> None:
             **os.environ,
             "FRIDAY_DATA_DIR": str(Path(tmp) / "data"),
             "FRIDAY_LOG_DIR": str(Path(tmp) / "logs"),
+            "FRIDAY_FM_PUSH": "false",  # leave the FM port to the real Friday
         }
         server = subprocess.Popen(
             [sys.executable, "-m", "friday.cli", "serve", "--port", str(port)], cwd=ROOT, env=env

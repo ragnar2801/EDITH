@@ -1322,18 +1322,6 @@
             "title": "Added",
             "type": "integer"
           },
-          "copied_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Copied At"
-          },
           "funds": {
             "title": "Funds",
             "type": "integer"
@@ -1366,6 +1354,18 @@
             "title": "Sales",
             "type": "integer"
           },
+          "sent_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent At"
+          },
           "status": {
             "enum": [
               "ok",
@@ -1385,7 +1385,7 @@
         "required": [
           "status",
           "imported_at",
-          "copied_at",
+          "sent_at",
           "funds",
           "lots",
           "sales",
@@ -1425,10 +1425,6 @@
       },
       "FmStatusOut": {
         "properties": {
-          "has_copy": {
-            "title": "Has Copy",
-            "type": "boolean"
-          },
           "last_import": {
             "anyOf": [
               {
@@ -1452,7 +1448,6 @@
         },
         "required": [
           "receiver",
-          "has_copy",
           "last_import"
         ],
         "title": "FmStatusOut",
@@ -6226,7 +6221,7 @@
     },
     "/api/v1/fm": {
       "get": {
-        "description": "Where the phone pushes to, and what the last import brought in.",
+        "description": "Where the phone sends its lots, and what the last import brought in.",
         "operationId": "getFmStatus",
         "responses": {
           "200": {
@@ -6251,38 +6246,6 @@
           }
         },
         "summary": "Status",
-        "tags": [
-          "fm"
-        ]
-      }
-    },
-    "/api/v1/fm/import": {
-      "post": {
-        "description": "Import the latest pushed copy again, e.g. after downloading the fund list.",
-        "operationId": "importFm",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/FmImportOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "4XX": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Problem details (RFC 9457)"
-          }
-        },
-        "summary": "Import Again",
         "tags": [
           "fm"
         ]

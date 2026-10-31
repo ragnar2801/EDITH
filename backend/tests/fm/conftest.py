@@ -1,105 +1,74 @@
-"""A small FM database, shaped like FM's own tables (plus a column FM might add one day)."""
+"""A lots feed shaped like the one FM builds (``friday_lots_export.dart``), with a field FM
+might add one day."""
 
-import sqlite3
-from pathlib import Path
+import json
 
 import pytest
 from navs.conftest import fetcher, funds  # noqa: F401 (shared fixtures)
 
-SCHEMA = """
-CREATE TABLE currencies (id TEXT PRIMARY KEY, name TEXT, code TEXT, symbol TEXT,
-    exchange_rate REAL);
-CREATE TABLE securities (id TEXT PRIMARY KEY, name TEXT, ticker TEXT, current_price REAL,
-    currency_id TEXT, security_type TEXT, market TEXT, is_archived INTEGER, future_col TEXT);
-CREATE TABLE accounts (id TEXT PRIMARY KEY, name TEXT, account_type TEXT);
-CREATE TABLE transactions (id TEXT PRIMARY KEY, type TEXT, timestamp TEXT, amount REAL,
-    currency_id TEXT, security_id TEXT, security_units REAL, security_price_at_transaction REAL,
-    security_account_id TEXT, unit_price_at_transaction REAL);
-CREATE TABLE lots (id TEXT PRIMARY KEY, security_id TEXT, security_account_id TEXT,
-    acquisition_transaction_id TEXT, acquisition_date TEXT, total_units REAL,
-    remaining_units REAL, unit_price REAL, total_cost REAL, currency_id TEXT);
-CREATE TABLE sell_allocations (id TEXT PRIMARY KEY, sell_transaction_id TEXT, lot_id TEXT,
-    allocated_units REAL, allocated_cost REAL);
-PRAGMA user_version = 32;
-"""
+SECURITIES = {
+    "parag": {"name": "Parag flexi cap", "ticker": "122639", "security_type": "MF"},
+    "nifty": {"name": "UTI nifty", "ticker": "120716", "security_type": "MF"},
+    "ghost": {"name": "Closed fund", "ticker": "999999", "security_type": "MF"},
+    "infy": {"name": "Infosys", "ticker": "INFY", "security_type": "STOCK"},
+}
+ACCOUNTS = {"grow": "grow mf", "amma": "Amma IndMoney"}
 
 
-class FmDb:
-    """Builds the file; ``path`` is ready to import after any change."""
+class Feed:
+    def __init__(self) -> None:
+        self.lots: dict[str, dict] = {}
 
-    def __init__(self, path: Path) -> None:
-        self.path = path
-        self.db = sqlite3.connect(path)
-        self.db.executescript(SCHEMA)
-        self.db.executemany(
-            "INSERT INTO currencies VALUES (?, ?, ?, ?, 1)",
-            [("inr", "Rupee", "INR", "₹"), ("usd", "Dollar", "USD", "$")],
-        )
-        self.db.executemany(
-            "INSERT INTO accounts VALUES (?, ?, 'security')",
-            [("grow", "grow mf"), ("amma", "Amma IndMoney")],
-        )
-        self.db.executemany(
-            "INSERT INTO securities VALUES (?, ?, ?, 0, 'inr', ?, 'NASDAQ', 0, 'x')",
-            [
-                ("parag", "Parag flexi cap", "122639", "MF"),
-                ("nifty", "UTI nifty", "120716", "MF"),
-                ("ghost", "Closed fund", "999999", "MF"),
-                ("infy", "Infosys", "INFY", "STOCK"),
-            ],
-        )
-        self.commit()
-
-    def lot(self, lot_id, security, date, units, price, *, account="grow", currency="inr"):
-        cost = units * price
-        self.db.execute(
-            "INSERT INTO transactions VALUES (?, 'BUYSECURITY', ?, ?, ?, ?, ?, NULL, ?, ?)",
-            (
-                f"t-{lot_id}",
-                f"{date}T10:00:00.000",
-                cost,
-                currency,
-                security,
-                units,
-                account,
-                price,
-            ),
-        )
-        self.db.execute(
-            "INSERT INTO lots VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (lot_id, security, account, f"t-{lot_id}", f"{date}T00:00:00.000", units, units,
-             price, cost, currency),
-        )  # fmt: skip
-        self.commit()
+    def lot(self, lot_id, security, date, units, price, *, account="grow", currency="INR"):
+        self.lots[lot_id] = {
+            "id": lot_id,
+            "security_id": security,
+            "acquisition_date": f"{date}T00:00:00.000",
+            "total_units": units,
+            "remaining_units": units,
+            "unit_price": price,
+            "total_cost": units * price,
+            "future_field": "x",
+            "security": {"id": security, "market": "NASDAQ", **SECURITIES[security]},
+            "account": {"id": account, "name": ACCOUNTS[account], "account_type": "security"},
+            "currency": {"id": currency.lower(), "code": currency},
+            "acquisition": {"id": f"t-{lot_id}", "type": "BUYSECURITY"},
+            "sales": [],
+        }
+        return self.lots[lot_id]
 
     def sell(self, sale_id, lot_id, date, units, price):
-        security = self.db.execute(
-            "SELECT security_id FROM lots WHERE id = ?", (lot_id,)
-        ).fetchone()
-        self.db.execute(
-            "INSERT INTO transactions VALUES (?, 'SELLSECURITY', ?, ?, 'inr', ?, ?, ?, 'grow', ?)",
-            (f"t-{sale_id}", f"{date}T11:30:33.264857", units * price, security[0], units, price,
-             price),
-        )  # fmt: skip
-        self.db.execute(
-            "INSERT INTO sell_allocations VALUES (?, ?, ?, ?, 0)",
-            (sale_id, f"t-{sale_id}", lot_id, units),
+        lot = self.lots[lot_id]
+        lot["sales"].append(
+            {
+                "id": sale_id,
+                "lot_id": lot_id,
+                "allocated_units": units,
+                "transaction": {
+                    "id": f"t-{sale_id}",
+                    "type": "SELLSECURITY",
+                    "timestamp": f"{date}T11:30:33.264857",
+                    "amount": units * price,
+                    "security_units": units,
+                    "unit_price_at_transaction": price,
+                },
+            }
         )
-        self.db.execute(
-            "UPDATE lots SET remaining_units = remaining_units - ? WHERE id = ?", (units, lot_id)
-        )
-        self.commit()
+        lot["remaining_units"] -= units
 
-    def run(self, sql: str, *args) -> None:
-        self.db.execute(sql, args)
-        self.commit()
-
-    def commit(self) -> None:
-        self.db.commit()
+    def body(self, **extra) -> bytes:
+        return json.dumps(
+            {
+                "format": "fm-lots",
+                "version": 1,
+                "fm_schema": 32,
+                "sent_at": "2026-10-31T06:00:00.000Z",
+                "lots": list(self.lots.values()),
+                **extra,
+            }
+        ).encode()
 
 
 @pytest.fixture
-def fm(tmp_path: Path):
-    db = FmDb(tmp_path / "finance_manager.db")
-    yield db
-    db.db.close()
+def feed() -> Feed:
+    return Feed()

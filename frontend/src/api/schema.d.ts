@@ -293,31 +293,11 @@ export interface paths {
         };
         /**
          * Status
-         * @description Where the phone pushes to, and what the last import brought in.
+         * @description Where the phone sends its lots, and what the last import brought in.
          */
         get: operations["getFmStatus"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/fm/import": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Import Again
-         * @description Import the latest pushed copy again, e.g. after downloading the fund list.
-         */
-        post: operations["importFm"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1238,8 +1218,6 @@ export interface components {
         FmImportOut: {
             /** Added */
             added: number;
-            /** Copied At */
-            copied_at: string | null;
             /** Funds */
             funds: number;
             /**
@@ -1255,6 +1233,8 @@ export interface components {
             removed: number;
             /** Sales */
             sales: number;
+            /** Sent At */
+            sent_at: string | null;
             /**
              * Status
              * @enum {string}
@@ -1274,8 +1254,6 @@ export interface components {
         };
         /** FmStatusOut */
         FmStatusOut: {
-            /** Has Copy */
-            has_copy: boolean;
             last_import: components["schemas"]["FmImportOut"] | null;
             receiver: components["schemas"]["FmReceiverOut"] | null;
         };
@@ -3117,35 +3095,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FmStatusOut"];
-                };
-            };
-            /** @description Problem details (RFC 9457) */
-            "4XX": {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    importFm: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FmImportOut"];
                 };
             };
             /** @description Problem details (RFC 9457) */

@@ -159,12 +159,11 @@ def _sync_navs(args: argparse.Namespace) -> None:
 
 def _import_fm(args: argparse.Namespace) -> None:
     from friday.core.db import make_engine, make_session_factory
-    from friday.core.fm.receiver import LATEST
-    from friday.core.fm.service import apply_snapshot, import_file
-    from friday.core.fm.snapshot import FmSnapshotError, read_snapshot
+    from friday.core.fm.feed import FmFeedError, read_feed
+    from friday.core.fm.service import apply_feed, import_feed
 
     settings = Settings()
-    path = args.path or settings.fm_dir / LATEST
+    body = args.path.read_bytes()
     upgrade_database(settings)
     engine = make_engine(settings)
     factory = make_session_factory(engine)
@@ -172,20 +171,18 @@ def _import_fm(args: argparse.Namespace) -> None:
         if args.dry_run:
             session = factory()
             try:
-                result = apply_snapshot(
-                    session, read_snapshot(path, skip_accounts=settings.fm_skipped)
-                )
+                result = apply_feed(session, read_feed(body))
             finally:
                 session.rollback()
                 session.close()
             counts = (result.funds, result.lots, result.sales, result.added, result.removed)
             warnings = result.warnings
         else:
-            row = import_file(factory, path, skip_accounts=settings.fm_skipped)
+            row = import_feed(factory, body)
             counts = (row.funds, row.lots, row.sales, row.added, row.removed)
             warnings = json.loads(row.warnings)
-    except FmSnapshotError as error:
-        raise SystemExit(f"Can't import {path}: {error}") from None
+    except FmFeedError as error:
+        raise SystemExit(f"Can't import {args.path}: {error}") from None
     finally:
         engine.dispose()
 
@@ -252,10 +249,8 @@ def main() -> None:
 
     fm = commands.add_parser("fm", help="purchases and sales copied from the FM app")
     fm_commands = fm.add_subparsers(required=True)
-    fm_import = fm_commands.add_parser(
-        "import", help="import an FM database copy (default: the latest one pushed)"
-    )
-    fm_import.add_argument("path", nargs="?", type=Path)
+    fm_import = fm_commands.add_parser("import", help="import a lots feed saved from FM (JSON)")
+    fm_import.add_argument("path", type=Path)
     fm_import.add_argument("--dry-run", action="store_true", help="show what would change")
     fm_import.set_defaults(func=_import_fm)
 

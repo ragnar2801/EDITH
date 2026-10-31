@@ -23,7 +23,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("status", sa.String(length=8), nullable=False),
         sa.Column("imported_at", sa.String(), nullable=False),
-        sa.Column("copied_at", sa.String(), nullable=True),
+        sa.Column("sent_at", sa.String(), nullable=True),
         sa.Column("fm_schema", sa.Integer(), nullable=True),
         sa.Column("funds", sa.Integer(), nullable=False),
         sa.Column("lots", sa.Integer(), nullable=False),

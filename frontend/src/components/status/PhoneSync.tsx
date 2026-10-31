@@ -1,7 +1,7 @@
-import { Copy, Loader2, RefreshCw } from 'lucide-react'
+import { Copy } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { useFmStatus, useImportFm } from '@/api/queries'
+import { useFmStatus } from '@/api/queries'
 import type { Schemas } from '@/api/client'
 import { ErrorText } from '@/components/Field'
 import { InfoTip } from '@/components/InfoTip'
@@ -16,35 +16,21 @@ function counts(run: FmImport): string {
   return `${run.lots} purchases and ${run.sales} sales of ${run.funds} funds`
 }
 
-/** Where FM's Sync to PC on the phone points, and what its last push brought in. */
+/** What to enter in FM's Sync to Friday on the phone, and what its last sync brought in. */
 export function PhoneSync() {
   const status = useFmStatus()
-  const again = useImportFm()
-  const run = again.data ?? status.data?.last_import
+  const run = status.data?.last_import
 
   return (
     <Section
       title="Phone sync"
       info={
         <InfoTip label="Phone sync">
-          Purchases and sales from FM on your phone, sent with its Sync to PC.
+          Purchases and sales from FM on your phone, sent with its Sync to Friday.
         </InfoTip>
       }
-      actions={
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={again.isPending || !status.data?.has_copy}
-          onClick={() =>
-            again.mutate(undefined, { onSuccess: (result) => toast.success(counts(result)) })
-          }
-        >
-          {again.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />}
-          Import again
-        </Button>
-      }
     >
-      <ErrorText error={status.error ?? again.error} />
+      <ErrorText error={status.error} />
       {status.isSuccess && (
         <ul className="divide-y rounded-lg border text-sm">
           <li className="flex flex-wrap justify-between gap-x-4 gap-y-1 px-3 py-2">

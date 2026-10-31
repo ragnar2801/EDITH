@@ -1,7 +1,6 @@
-"""The FM endpoints, read-only FM purchases, and the push receiver the phone talks to."""
+"""The FM status endpoint, read-only FM purchases, and the receiver the phone talks to."""
 
 import http.client
-from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -10,38 +9,26 @@ from sqlalchemy import select
 
 from friday.core.db import session_scope
 from friday.core.fm.receiver import FmReceiver, ensure_token
-from friday.core.fm.service import FM_INCOMING, handle_push, store_copy
+from friday.core.fm.service import handle_push, import_feed
 from friday.core.holdings.models import Lot
 
 
-def push(fm, settings) -> None:
-    store_copy(fm.path, settings.fm_dir / "latest.db")
+def test_status_before_anything_is_sent(client: TestClient) -> None:
+    assert client.get("/api/v1/fm").json() == {"receiver": None, "last_import": None}
 
 
-def test_status_before_anything_is_pushed(client: TestClient) -> None:
-    body = client.get("/api/v1/fm").json()
-    assert body == {"receiver": None, "has_copy": False, "last_import": None}
-    assert client.post("/api/v1/fm/import").status_code == 404
-
-
-def test_import_again_reads_the_latest_copy(client, fm, settings, funds) -> None:
-    fm.lot("a", "parag", "2025-04-01", 100, 20)
-    push(fm, settings)
-
-    imported = client.post("/api/v1/fm/import").json()
-    assert (imported["status"], imported["lots"], imported["added"]) == ("ok", 1, 1)
-
-    body = client.get("/api/v1/fm").json()
-    assert body["has_copy"] is True
-    assert body["last_import"]["lots"] == 1
+def test_status_shows_the_last_import(client, feed, factory, funds) -> None:
+    feed.lot("a", "parag", "2025-04-01", 100, 20)
+    import_feed(factory, feed.body())
+    last = client.get("/api/v1/fm").json()["last_import"]
+    assert (last["status"], last["lots"], last["sent_at"]) == ("ok", 1, "2026-10-31T06:00:00Z")
 
 
 @pytest.fixture
-def fm_holding(client, fm, settings, funds) -> dict:
-    fm.lot("a", "parag", "2025-04-01", 100, 20)
-    fm.sell("s1", "a", "2026-02-14", 40, 30)
-    push(fm, settings)
-    client.post("/api/v1/fm/import")
+def fm_holding(client, feed, factory, funds) -> dict:
+    feed.lot("a", "parag", "2025-04-01", 100, 20)
+    feed.sell("s1", "a", "2026-02-14", 40, 30)
+    import_feed(factory, feed.body())
     return client.get(f"/api/v1/holdings/{funds[PARAG]}").json()
 
 
@@ -62,18 +49,15 @@ def test_fm_purchases_are_read_only(client, fm_holding) -> None:
 
 
 @pytest.fixture
-def receiver(settings, factory, tmp_path):
-    forward = tmp_path / "Documents"
-    token = ensure_token(settings.fm_dir, None)
+def receiver(settings, factory):
     server = FmReceiver(
-        folder=settings.fm_dir,
-        token=token,
+        token=ensure_token(settings.fm_dir),
         host="127.0.0.1",
         port=0,
-        on_push=lambda path: handle_push(factory, path, forward_dir=forward),
+        on_push=lambda body: handle_push(factory, body),
     )
     server.start()
-    yield server, forward
+    yield server
     server.stop()
 
 
@@ -87,32 +71,28 @@ def call(server: FmReceiver, method: str, path: str, body: bytes = b"", token: s
     return answer
 
 
-def test_the_phone_can_push(receiver, fm, factory, funds, settings) -> None:
-    server, forward = receiver
-    fm.lot("a", "parag", "2025-04-01", 100, 20)
-    data = Path(fm.path).read_bytes()
+def test_the_phone_can_send_its_lots(receiver, feed, factory, funds, settings) -> None:
+    feed.lot("a", "parag", "2025-04-01", 100, 20)
+    body = feed.body()
 
-    assert call(server, "GET", "/health") == (200, "ok")
-    assert call(server, "POST", "/db", data, token="wrong")[0] == 401
-    assert call(server, "GET", "/api/v1/fm")[0] == 404  # nothing but the push is served
+    assert call(receiver, "GET", "/health") == (200, "ok")
+    assert call(receiver, "POST", "/lots", body, token="wrong")[0] == 401
+    assert call(receiver, "POST", "/db", body, token=receiver.token)[0] == 404
+    assert call(receiver, "GET", "/api/v1/fm")[0] == 404  # nothing but the lots is served
 
-    assert call(server, "POST", "/db", data, token=server.token) == (
+    assert call(receiver, "POST", "/lots", body, token=receiver.token) == (
         200,
         "Friday imported 1 purchases and 0 sales of 1 funds.",
     )
-    assert (settings.fm_dir / "latest.db").read_bytes() == data
-    assert (forward / FM_INCOMING).read_bytes() == data  # FM desktop picks it up on start
     with session_scope(factory) as session:
         assert session.scalars(select(Lot.source_id)).all() == ["a"]
+    assert [path.name for path in settings.fm_dir.iterdir()] == ["token.txt"]  # feed not kept
 
-    assert call(server, "POST", "/db", b"not a database", token=server.token) == (
+    assert call(receiver, "POST", "/lots", b"not json", token=receiver.token) == (
         422,
-        "Friday couldn't read the copy: latest.db isn't a database file",
+        "Friday couldn't read the lots: it isn't JSON",
     )
-    assert (forward / FM_INCOMING).read_bytes() == data  # the bad copy isn't handed on
 
 
 def test_the_token_is_kept(settings) -> None:
-    token = ensure_token(settings.fm_dir, None)
-    assert ensure_token(settings.fm_dir, None) == token
-    assert ensure_token(settings.fm_dir, " mine ") == "mine"
+    assert ensure_token(settings.fm_dir) == ensure_token(settings.fm_dir)

@@ -50,18 +50,10 @@ You can also track funds from the terminal: `uv run --project backend friday nav
 
 ## Purchases from FM on your phone
 
-Friday can keep a read-only copy of the fund purchases and sales you record in the FM app. FM's **Sync to PC** sends its database to Friday over your home Wi-Fi; each push replaces the FM purchases here, so change them in FM.
+Friday keeps a read-only copy of the fund purchases and sales you record in the FM app. FM's **Sync to Friday** sends every investment purchase with its sales (nothing else) over your home Wi-Fi; each sync replaces the FM purchases here, and purchases you entered in Friday stay. Change FM's purchases in FM.
 
-1. In `.env`, set `FRIDAY_FM_PUSH=true` (see `.env.example` for the port, leaving accounts out, and passing each copy on to FM's desktop app), then `just run`.
-2. Let the port through Windows Firewall, on private networks only. In an administrator PowerShell:
-
-   ```powershell
-   New-NetFirewallRule -DisplayName "Friday FM push" -Direction Inbound -Protocol TCP -LocalPort 8090 -Profile Private -Action Allow
-   ```
-
-3. In FM on the phone, open **Sync to PC** and enter the address, port and token from Friday's **Settings · Data · Phone sync**. Press **Test**, then **Sync to PC**.
-
-Import a copy by hand with `uv run --project backend friday fm import C:\Users\me\Documents\finance_manager.db` (add `--dry-run` to see what would change).
+1. `just run`. The first time, Windows asks whether Python may use the network: allow it on **private** networks only.
+2. In FM on the phone, open **Backup & sync › Sync to Friday** and enter the address, port and token from Friday's **Settings · Data · Phone sync**. Press **Test**, then **Sync to Friday**.
 
 ## Commands
 

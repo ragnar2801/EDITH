@@ -720,7 +720,7 @@ export function usePortfolioHistory(start: string | undefined, enabled = true) {
   })
 }
 
-/** Where FM's phone pushes to and the last import. Pushes arrive in the background. */
+/** Where FM's phone sends its lots and the last import. Imports arrive in the background. */
 export function useFmStatus() {
   return useQuery({
     queryKey: ['fm'],
@@ -730,18 +730,5 @@ export function useFmStatus() {
       return data
     },
     refetchInterval: 30_000,
-  })
-}
-
-/** Import the latest pushed copy again. It can change any fund, so everything refetches. */
-export function useImportFm() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async () => {
-      const { data, error } = await api.POST('/api/v1/fm/import')
-      if (error) throw failure(error)
-      return data
-    },
-    onSettled: () => queryClient.invalidateQueries(),
   })
 }
