@@ -173,6 +173,7 @@ export function lot(extra: Partial<Schemas['LotOut']> = {}): Schemas['LotOut'] {
     units_remaining: '62.500',
     cost_remaining: '5000.00',
     edited: false,
+    source: null,
     skipped: false,
     note: null,
     sales: [],

@@ -129,6 +129,12 @@ def _sold(lot: Lot) -> Decimal:
     return sum((sale.units for sale in lot.sales), ZERO)
 
 
+def _not_copied(lot: Lot) -> None:
+    """Purchases copied from another app are changed there, not here."""
+    if lot.source == "fm":
+        raise HoldingConflict("this purchase comes from FM; change it there")
+
+
 # Lump sums and editing any lot ------------------------------------------------------------
 
 
@@ -155,6 +161,7 @@ def create_lump_sum(session: Session, instrument_id: int, data: BuyInput) -> Lot
 def update_lot(session: Session, lot: Lot, data: BuyInput, *, skipped: bool = False) -> Lot:
     """Change a lot's figures. For a SIP instalment this marks it edited (or skipped), so
     rebuilding the SIP leaves it as it is."""
+    _not_copied(lot)
     sold = _sold(lot)
     if skipped:
         if lot.sip_id is None:
@@ -187,6 +194,7 @@ def update_lot(session: Session, lot: Lot, data: BuyInput, *, skipped: bool = Fa
 
 
 def delete_lot(session: Session, lot: Lot) -> None:
+    _not_copied(lot)
     if lot.sip_id is not None:
         raise InvalidHolding("a SIP instalment can't be deleted; skip it instead")
     if lot.sales:
@@ -358,6 +366,7 @@ def sell(session: Session, data: SaleInput) -> list[LotSale]:
         lot = session.get(Lot, lot_id)
         if lot is None:
             raise InvalidHolding(f"no lot with id {lot_id}")
+        _not_copied(lot)
         if units <= 0:
             raise InvalidHolding("units sold must be more than 0")
         if units > lot.units_remaining:
@@ -393,6 +402,7 @@ def sell(session: Session, data: SaleInput) -> list[LotSale]:
 
 def delete_sale(session: Session, sale: LotSale) -> None:
     """Undo one take: its units go back into the lot."""
+    _not_copied(sale.lot)
     sale.lot.units_remaining += sale.units
     sale.lot.updated_at = _now()
     session.delete(sale)

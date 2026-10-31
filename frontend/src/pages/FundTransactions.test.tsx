@@ -220,3 +220,31 @@ test('add a lump sum from anywhere in three steps: fund, amount, save', async ()
   const post = calls.find((call) => call.method === 'POST' && call.url.endsWith('/lots'))
   expect(await post?.json()).toMatchObject({ instrument_id: parag.id, amount: '25000' })
 })
+
+test('purchases from FM are shown with their account and nothing to change', async () => {
+  const copied = lot({
+    kind: 'lump_sum',
+    sip_id: null,
+    source: 'fm',
+    note: 'grow mf',
+    units_remaining: '30.000',
+    sales: [
+      {
+        id: 21,
+        sale_date: '2026-04-10',
+        units: '32.500',
+        nav: '91',
+        amount: '2957.50',
+        realised: '357.50',
+      },
+    ],
+  })
+  fakeApi({ ...FUND, [`GET ${PATH}`]: () => holding({ lots: [copied], sips: [] }) })
+  renderAt(TRANSACTIONS)
+
+  const row = (await screen.findByText('grow mf')).closest('tr')!
+  expect(within(row).getByText('FM')).toBeInTheDocument()
+  expect(within(row).queryByRole('button', { name: /Actions for/ })).not.toBeInTheDocument()
+  expect(screen.getByText(/Sold 32.500 units/)).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: /Undo the/ })).not.toBeInTheDocument()
+})

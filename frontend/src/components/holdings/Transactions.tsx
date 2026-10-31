@@ -106,6 +106,11 @@ function SipTable({ holding, onEdit }: { holding: Holding; onEdit: (sip: Sip) =>
   )
 }
 
+/** Purchases copied from FM are changed in FM, so they have no actions here. */
+function fromFm(lot: Lot): boolean {
+  return lot.source === 'fm'
+}
+
 function Purchases({ holding, onEdit }: { holding: Holding; onEdit: (lot: Lot) => void }) {
   const id = holding.fund.id
   const skip = useUpdateLot(id)
@@ -148,6 +153,7 @@ function Purchases({ holding, onEdit }: { holding: Holding; onEdit: (lot: Lot) =
                       {KIND_LABELS[lot.kind]}
                       {lot.skipped && <Badge variant="outline">Skipped</Badge>}
                       {lot.edited && !lot.skipped && <Badge variant="outline">Edited</Badge>}
+                      {fromFm(lot) && <Badge variant="outline">FM</Badge>}
                     </span>
                     {lot.note && <div className="text-muted-foreground text-xs">{lot.note}</div>}
                   </Td>
@@ -163,12 +169,17 @@ function Purchases({ holding, onEdit }: { holding: Holding; onEdit: (lot: Lot) =
                         {
                           label: lot.skipped ? 'Unskip' : 'Edit',
                           icon: Pencil,
+                          hidden: fromFm(lot),
                           onSelect: () => onEdit(lot),
                         },
                         {
                           label: 'Skip',
                           icon: SkipForward,
-                          hidden: lot.kind !== 'sip' || lot.skipped || lot.sales.length > 0,
+                          hidden:
+                            fromFm(lot) ||
+                            lot.kind !== 'sip' ||
+                            lot.skipped ||
+                            lot.sales.length > 0,
                           disabled: skip.isPending,
                           onSelect: () =>
                             skip.mutate({
@@ -185,7 +196,7 @@ function Purchases({ holding, onEdit }: { holding: Holding; onEdit: (lot: Lot) =
                           label: 'Delete',
                           icon: Trash2,
                           destructive: true,
-                          hidden: lot.kind !== 'lump_sum' || lot.sales.length > 0,
+                          hidden: fromFm(lot) || lot.kind !== 'lump_sum' || lot.sales.length > 0,
                           onSelect: () => void onDelete(lot),
                         },
                       ]}
@@ -204,18 +215,20 @@ function Purchases({ holding, onEdit }: { holding: Holding; onEdit: (lot: Lot) =
                     </Td>
                     <Td className="py-1.5" colSpan={3} />
                     <Td className="py-1.5">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7"
-                        disabled={undo.isPending}
-                        aria-label={`Undo the ${formatDate(sale.sale_date)} sale of ${formatUnits(sale.units)} units`}
-                        onClick={() =>
-                          undo.mutate(sale.id, { onSuccess: () => toast.success('Sale undone') })
-                        }
-                      >
-                        <Undo2 /> Undo
-                      </Button>
+                      {!fromFm(lot) && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7"
+                          disabled={undo.isPending}
+                          aria-label={`Undo the ${formatDate(sale.sale_date)} sale of ${formatUnits(sale.units)} units`}
+                          onClick={() =>
+                            undo.mutate(sale.id, { onSuccess: () => toast.success('Sale undone') })
+                          }
+                        >
+                          <Undo2 /> Undo
+                        </Button>
+                      )}
                     </Td>
                   </tr>
                 ))}

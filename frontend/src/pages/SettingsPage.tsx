@@ -5,6 +5,7 @@ import { usePlanSettings, useRefreshInstruments } from '@/api/queries'
 import { InvestRulesForm } from '@/components/cash/InvestRules'
 import { FundLists } from '@/components/status/FundLists'
 import { NavSync } from '@/components/status/NavSync'
+import { PhoneSync } from '@/components/status/PhoneSync'
 import { TrackedFunds } from '@/components/status/TrackedFunds'
 import { ErrorText } from '@/components/Field'
 import { Loading } from '@/components/Loading'
@@ -44,6 +45,7 @@ function Data() {
   return (
     <>
       <NavSync />
+      <PhoneSync />
       <TrackedFunds />
       <FundLists
         actions={

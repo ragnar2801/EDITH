@@ -12,6 +12,7 @@ from friday.api.routes import (
     backtests,
     buckets,
     cash,
+    fm,
     holdings,
     instruments,
     navs,
@@ -20,6 +21,8 @@ from friday.api.routes import (
 )
 from friday.config import Settings
 from friday.core.db import make_engine, make_session_factory, upgrade_database
+from friday.core.fm.receiver import FmReceiver, ensure_token
+from friday.core.fm.service import handle_push
 from friday.core.instruments.download import HttpFetcher
 from friday.core.navs.download import HttpNavFetcher
 
@@ -33,7 +36,12 @@ def create_app(settings: Settings | None = None, *, migrate: bool = True) -> Fas
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         if migrate:
             upgrade_database(settings)
+        if settings.fm_push:
+            app.state.fm_receiver = _fm_receiver(app)
+            app.state.fm_receiver.start()
         yield
+        if app.state.fm_receiver:
+            app.state.fm_receiver.stop()
         app.state.engine.dispose()
         for fetcher in (app.state.nav_fetcher, app.state.list_fetcher):
             close = getattr(fetcher, "close", None)
@@ -45,6 +53,7 @@ def create_app(settings: Settings | None = None, *, migrate: bool = True) -> Fas
     app.state.engine = make_engine(settings)
     app.state.session_factory = make_session_factory(app.state.engine)
     app.state.nav_fetcher = HttpNavFetcher()  # tests replace it with a fake
+    app.state.fm_receiver = None  # started with the app when FRIDAY_FM_PUSH is on
     app.state.list_fetcher = HttpFetcher(  # instrument lists; tests use a folder
         settings.sources_dir, sec_user_agent=settings.sec_user_agent
     )
@@ -58,5 +67,22 @@ def create_app(settings: Settings | None = None, *, migrate: bool = True) -> Fas
     app.include_router(holdings.router, prefix=API_PREFIX, responses=PROBLEM_RESPONSES)
     app.include_router(cash.router, prefix=API_PREFIX, responses=PROBLEM_RESPONSES)
     app.include_router(portfolio.router, prefix=API_PREFIX, responses=PROBLEM_RESPONSES)
+    app.include_router(fm.router, prefix=API_PREFIX, responses=PROBLEM_RESPONSES)
     mount_frontend(app, settings.frontend_dist)  # must be last: it catches every other path
     return app
+
+
+def _fm_receiver(app: FastAPI) -> FmReceiver:
+    settings: Settings = app.state.settings
+    return FmReceiver(
+        folder=settings.fm_dir,
+        token=ensure_token(settings.fm_dir, settings.fm_push_token),
+        host=settings.fm_push_host,
+        port=settings.fm_push_port,
+        on_push=lambda path: handle_push(
+            app.state.session_factory,
+            path,
+            forward_dir=settings.fm_forward_dir,
+            skip_accounts=settings.fm_skipped,
+        ),
+    )

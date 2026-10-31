@@ -71,6 +71,8 @@ class LotOut(BaseModel):
     """A SIP instalment I changed by hand: rebuilding the SIP keeps it."""
     skipped: bool
     note: str | None
+    source: Literal["fm"] | None
+    """Copied from the FM app: read-only here."""
     sales: list[SaleOut]
 
 
@@ -178,6 +180,7 @@ def _lot(lot: Lot) -> LotOut:
         edited=lot.edited,
         skipped=lot.skipped,
         note=lot.note,
+        source=lot.source,
         sales=[_sale(sale) for sale in lot.sales],
     )
 
@@ -342,5 +345,5 @@ def add_sale(session: SessionDep, payload: SaleIn) -> HoldingOut:
 @router.delete("/sales/{sale_id}", status_code=204, operation_id="deleteSale")
 def remove_sale(session: SessionDep, sale_id: int) -> Response:
     """Undo a sale from one lot: its units go back into the lot."""
-    delete_sale(session, _get(session, LotSale, sale_id, "sale"))
+    _do(delete_sale, session, _get(session, LotSale, sale_id, "sale"))
     return Response(status_code=204)

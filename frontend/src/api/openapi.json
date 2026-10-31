@@ -1316,6 +1316,148 @@
         "title": "FieldError",
         "type": "object"
       },
+      "FmImportOut": {
+        "properties": {
+          "added": {
+            "title": "Added",
+            "type": "integer"
+          },
+          "copied_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Copied At"
+          },
+          "funds": {
+            "title": "Funds",
+            "type": "integer"
+          },
+          "imported_at": {
+            "format": "date-time",
+            "title": "Imported At",
+            "type": "string"
+          },
+          "lots": {
+            "title": "Lots",
+            "type": "integer"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "removed": {
+            "title": "Removed",
+            "type": "integer"
+          },
+          "sales": {
+            "title": "Sales",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "status",
+          "imported_at",
+          "copied_at",
+          "funds",
+          "lots",
+          "sales",
+          "added",
+          "removed",
+          "warnings",
+          "message"
+        ],
+        "title": "FmImportOut",
+        "type": "object"
+      },
+      "FmReceiverOut": {
+        "properties": {
+          "addresses": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Addresses",
+            "type": "array"
+          },
+          "port": {
+            "title": "Port",
+            "type": "integer"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "port",
+          "addresses",
+          "token"
+        ],
+        "title": "FmReceiverOut",
+        "type": "object"
+      },
+      "FmStatusOut": {
+        "properties": {
+          "has_copy": {
+            "title": "Has Copy",
+            "type": "boolean"
+          },
+          "last_import": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FmImportOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "receiver": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FmReceiverOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "receiver",
+          "has_copy",
+          "last_import"
+        ],
+        "title": "FmStatusOut",
+        "type": "object"
+      },
       "FundOutcomeOut": {
         "properties": {
           "end_value": {
@@ -2694,6 +2836,18 @@
             "title": "Skipped",
             "type": "boolean"
           },
+          "source": {
+            "anyOf": [
+              {
+                "const": "fm",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
           "units": {
             "pattern": "^-?\\d+(\\.\\d+)?$",
             "title": "Units",
@@ -2718,6 +2872,7 @@
           "edited",
           "skipped",
           "note",
+          "source",
           "sales"
         ],
         "title": "LotOut",
@@ -6069,6 +6224,70 @@
         ]
       }
     },
+    "/api/v1/fm": {
+      "get": {
+        "description": "Where the phone pushes to, and what the last import brought in.",
+        "operationId": "getFmStatus",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FmStatusOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Status",
+        "tags": [
+          "fm"
+        ]
+      }
+    },
+    "/api/v1/fm/import": {
+      "post": {
+        "description": "Import the latest pushed copy again, e.g. after downloading the fund list.",
+        "operationId": "importFm",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FmImportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Import Again",
+        "tags": [
+          "fm"
+        ]
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "getHealth",
@@ -6181,7 +6400,7 @@
     },
     "/api/v1/instruments/refresh": {
       "post": {
-        "description": "Download the lists and update instruments, as ``friday instruments refresh`` does\n. Each list is its own transaction; a failed one is reported, not raised.",
+        "description": "Download the lists and update instruments, as ``friday instruments refresh`` does.\nEach list is its own transaction; a failed one is reported, not raised.",
         "operationId": "refreshInstruments",
         "requestBody": {
           "content": {

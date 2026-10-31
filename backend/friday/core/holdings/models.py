@@ -50,6 +50,9 @@ class Lot(Base):
     edited: Mapped[bool] = mapped_column(default=False)  # instalment changed by hand
     skipped: Mapped[bool] = mapped_column(default=False)  # instalment that didn't happen
     note: Mapped[str | None] = mapped_column(String(200))
+    # Bought in another app and copied in (``"fm"``): read-only here, changed there.
+    source: Mapped[str | None] = mapped_column(String(8))
+    source_id: Mapped[str | None] = mapped_column(String(64))
     created_at: Mapped[datetime] = mapped_column(UtcDateTime())
     updated_at: Mapped[datetime] = mapped_column(UtcDateTime())
 
@@ -70,6 +73,7 @@ class LotSale(Base):
     sale_date: Mapped[date] = mapped_column(Date)
     units: Mapped[Decimal] = mapped_column(DecimalText(8))
     nav: Mapped[Decimal] = mapped_column(DecimalText(8))
+    source_id: Mapped[str | None] = mapped_column(String(64))  # set when the lot has a source
     created_at: Mapped[datetime] = mapped_column(UtcDateTime())
 
     lot: Mapped[Lot] = relationship(back_populates="sales")

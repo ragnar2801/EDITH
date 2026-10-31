@@ -284,6 +284,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/fm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Status
+         * @description Where the phone pushes to, and what the last import brought in.
+         */
+        get: operations["getFmStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fm/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Again
+         * @description Import the latest pushed copy again, e.g. after downloading the fund list.
+         */
+        post: operations["importFm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -352,8 +392,8 @@ export interface paths {
         put?: never;
         /**
          * Refresh
-         * @description Download the lists and update instruments, as ``friday instruments refresh`` does
-         *    . Each list is its own transaction; a failed one is reported, not raised.
+         * @description Download the lists and update instruments, as ``friday instruments refresh`` does.
+         *     Each list is its own transaction; a failed one is reported, not raised.
          */
         post: operations["refreshInstruments"];
         delete?: never;
@@ -1194,6 +1234,51 @@ export interface components {
             /** Type */
             type: string;
         };
+        /** FmImportOut */
+        FmImportOut: {
+            /** Added */
+            added: number;
+            /** Copied At */
+            copied_at: string | null;
+            /** Funds */
+            funds: number;
+            /**
+             * Imported At
+             * Format: date-time
+             */
+            imported_at: string;
+            /** Lots */
+            lots: number;
+            /** Message */
+            message: string | null;
+            /** Removed */
+            removed: number;
+            /** Sales */
+            sales: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "failed";
+            /** Warnings */
+            warnings: string[];
+        };
+        /** FmReceiverOut */
+        FmReceiverOut: {
+            /** Addresses */
+            addresses: string[];
+            /** Port */
+            port: number;
+            /** Token */
+            token: string;
+        };
+        /** FmStatusOut */
+        FmStatusOut: {
+            /** Has Copy */
+            has_copy: boolean;
+            last_import: components["schemas"]["FmImportOut"] | null;
+            receiver: components["schemas"]["FmReceiverOut"] | null;
+        };
         /** FundOutcomeOut */
         FundOutcomeOut: {
             /** End Value */
@@ -1599,6 +1684,8 @@ export interface components {
             sip_id: number | null;
             /** Skipped */
             skipped: boolean;
+            /** Source */
+            source: "fm" | null;
             /** Units */
             units: string;
             /** Units Remaining */
@@ -3001,6 +3088,64 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Echo"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getFmStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FmStatusOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    importFm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FmImportOut"];
                 };
             };
             /** @description Problem details (RFC 9457) */

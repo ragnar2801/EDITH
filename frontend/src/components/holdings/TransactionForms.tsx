@@ -348,7 +348,7 @@ export function SipForm({
 
 export function SellForm({ holding, onDone }: { holding: Holding; onDone: () => void }) {
   const sell = useSell(holding.fund.id)
-  const lots = holding.lots.filter(hasUnits)
+  const lots = holding.lots.filter((lot) => hasUnits(lot) && lot.source !== 'fm')
   const [saleDate, setSaleDate] = useState(defaultDate(holding))
   const [nav, setNav] = useState('')
   const [units, setUnits] = useState<Record<number, string>>({})
