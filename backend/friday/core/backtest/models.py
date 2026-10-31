@@ -15,7 +15,7 @@ class BacktestRun(Base):
     __tablename__ = "backtest_runs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    bucket_id: Mapped[int] = mapped_column(ForeignKey("buckets.id", ondelete="CASCADE"), index=True)
+    model_id: Mapped[int] = mapped_column(ForeignKey("models.id", ondelete="CASCADE"), index=True)
     strategy: Mapped[str] = mapped_column(String(10))
     params: Mapped[str] = mapped_column(Text)
     result: Mapped[str] = mapped_column(Text)

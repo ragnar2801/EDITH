@@ -12,11 +12,11 @@ from decimal import ROUND_HALF_UP, Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from friday.core.buckets.models import Bucket
 from friday.core.cash.models import EARMARKS, CashAccount, PlanSettings
 from friday.core.cash.plan import Month, Target, make_plan
 from friday.core.holdings.service import held_ids, holding, today
 from friday.core.instruments.models import Instrument
+from friday.core.models.models import Model
 from friday.core.navs.models import FundNav
 
 ZERO = Decimal(0)
@@ -110,7 +110,7 @@ def cash_total(session: Session, earmark: str) -> Decimal:
 
 @dataclass(frozen=True)
 class SettingsInput:
-    target_bucket_id: int | None
+    target_model_id: int | None
     emergency_goal: Decimal
     emergency_fund_id: int | None
     stagger_fund_id: int | None
@@ -145,22 +145,22 @@ def _fund(session: Session, instrument_id: int, role: str) -> Instrument:
     return instrument
 
 
-def _check_emergency_fund(bucket: Bucket | None, fund: Instrument | None) -> None:
-    if bucket is None or fund is None:
+def _check_emergency_fund(model: Model | None, fund: Instrument | None) -> None:
+    if model is None or fund is None:
         return
-    if any(member.instrument_id == fund.id for member in bucket.funds):
+    if any(member.instrument_id == fund.id for member in model.funds):
         raise InvalidCash(
-            f"the emergency fund {fund.name} is in the target bucket {bucket.name}; "
+            f"the emergency fund {fund.name} is in the target model {model.name}; "
             "emergency money can't be part of the split"
         )
 
 
 def update_settings(session: Session, data: SettingsInput) -> PlanSettings:
-    bucket = None
-    if data.target_bucket_id is not None:
-        bucket = session.get(Bucket, data.target_bucket_id)
-        if bucket is None:
-            raise InvalidCash(f"no bucket with id {data.target_bucket_id}")
+    model = None
+    if data.target_model_id is not None:
+        model = session.get(Model, data.target_model_id)
+        if model is None:
+            raise InvalidCash(f"no model with id {data.target_model_id}")
     emergency = None
     if data.emergency_fund_id is not None:
         emergency = _fund(session, data.emergency_fund_id, "emergency fund")
@@ -174,10 +174,10 @@ def update_settings(session: Session, data: SettingsInput) -> PlanSettings:
         raise InvalidCash(f"stagger over {MONTHS.start} to {MONTHS.stop - 1} months")
     if data.min_per_fund < 0:
         raise InvalidCash("the minimum per fund can't be below 0")
-    _check_emergency_fund(bucket, emergency)
+    _check_emergency_fund(model, emergency)
 
     settings = get_settings(session)
-    settings.target_bucket_id = data.target_bucket_id
+    settings.target_model_id = data.target_model_id
     settings.emergency_goal = data.emergency_goal
     settings.emergency_fund_id = data.emergency_fund_id
     settings.stagger_fund_id = data.stagger_fund_id
@@ -266,7 +266,7 @@ class FundPlan:
 @dataclass(frozen=True)
 class CashPlan:
     amount: Decimal
-    bucket: Bucket
+    model: Model
     emergency: Emergency
     emergency_topup: Decimal
     funds: list[FundPlan]
@@ -288,17 +288,17 @@ class CashPlan:
 def cash_plan(session: Session, amount: Decimal | None = None) -> CashPlan:
     """Where ``amount`` should go (blank: all deployable cash)."""
     settings = get_settings(session)
-    bucket = settings.target_bucket
-    if bucket is None:
-        raise InvalidCash("choose which bucket is your target split first")
+    model = settings.target_model
+    if model is None:
+        raise InvalidCash("choose which model is your target split first")
     if amount is None:
         amount = cash_total(session, "deployable")
     if amount < 0:
         raise InvalidCash("the amount can't be below 0")
-    _check_emergency_fund(bucket, settings.emergency_fund)
+    _check_emergency_fund(model, settings.emergency_fund)
 
     status = emergency(session)
-    values = [(member, fund_value(session, member.instrument)) for member in bucket.funds]
+    values = [(member, fund_value(session, member.instrument)) for member in model.funds]
     plan = make_plan(
         amount,
         status.shortfall,
@@ -308,7 +308,7 @@ def cash_plan(session: Session, amount: Decimal | None = None) -> CashPlan:
         stagger_months=settings.stagger_months,
         today=today(),
     )
-    planned = {m.instrument_id for m in bucket.funds} | {settings.emergency_fund_id}
+    planned = {m.instrument_id for m in model.funds} | {settings.emergency_fund_id}
     others = session.scalars(
         select(Instrument)
         .where(Instrument.id.in_(set(held_ids(session)) - planned))
@@ -317,7 +317,7 @@ def cash_plan(session: Session, amount: Decimal | None = None) -> CashPlan:
     ignored = [value for i in others if (value := fund_value(session, i)).units > 0]
     return CashPlan(
         amount=amount,
-        bucket=bucket,
+        model=model,
         emergency=status,
         emergency_topup=plan.emergency,
         funds=[

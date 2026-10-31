@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { useConfirm } from '@/hooks/use-confirm'
 import { DEFAULT_FORM, STRATEGY_LABELS, fromRun, modelSplit, toParams } from '@/lib/backtest'
-import type { Bucket } from '@/lib/buckets'
+import type { Model } from '@/lib/models'
 import type { BacktestHandoff } from '@/lib/optimise'
 import { formatDateTime } from '@/lib/time'
 
@@ -29,20 +29,20 @@ import { BacktestResults } from './BacktestResults'
 /** Backtests of one model, ported from Friday: controls on the left, results right.
  * Each run is compared with the one shown before it; a split tried from Optimise
  * arrives filled in. */
-export function BacktestWorkspace({ bucket }: { bucket: Bucket }) {
+export function BacktestWorkspace({ model }: { model: Model }) {
   const handed = useLocation().state as BacktestHandoff | null
   const [form, setForm] = useState(() => ({
     ...DEFAULT_FORM,
-    split: modelSplit(bucket),
+    split: modelSplit(model),
     ...handed?.form,
   }))
   const [shown, setShown] = useState<BacktestRun | null>(null)
   const [previous, setPrevious] = useState<BacktestRun | null>(null)
   const run = useRunBacktest()
   const load = useLoadBacktest()
-  const current = shown && shown.bucket_id === bucket.id ? shown : null
+  const current = shown && shown.model_id === model.id ? shown : null
   const baseline =
-    current && previous && previous.bucket_id === bucket.id && previous.id !== current.id
+    current && previous && previous.model_id === model.id && previous.id !== current.id
       ? previous
       : null
 
@@ -56,27 +56,27 @@ export function BacktestWorkspace({ bucket }: { bucket: Bucket }) {
       <Card className="lg:sticky lg:top-20">
         <CardContent className="flex flex-col gap-5">
           <BacktestControls
-            bucket={bucket}
+            model={model}
             form={form}
             onForm={setForm}
             running={run.isPending}
             onRun={() =>
               run.mutate(
-                { bucket_id: bucket.id, params: toParams(form, bucket), save: false },
+                { model_id: model.id, params: toParams(form, model), save: false },
                 { onSuccess: show },
               )
             }
           />
           <ErrorText error={run.error} />
           <SavedRuns
-            bucketId={bucket.id}
+            modelId={model.id}
             current={current}
             loading={load.isPending}
             onLoad={(id) =>
               load.mutate(id, {
                 onSuccess: (loaded) => {
                   show(loaded)
-                  setForm(fromRun(loaded, bucket))
+                  setForm(fromRun(loaded, model))
                 },
               })
             }
@@ -93,26 +93,26 @@ export function BacktestWorkspace({ bucket }: { bucket: Bucket }) {
           onClearBaseline={() => setPrevious(null)}
         />
       ) : (
-        <EmptyState icon={FlaskConical} title={`Ready to backtest ${bucket.name}`} />
+        <EmptyState icon={FlaskConical} title={`Ready to backtest ${model.name}`} />
       )}
     </div>
   )
 }
 
 function SavedRuns({
-  bucketId,
+  modelId,
   current,
   loading,
   onLoad,
   onDeleted,
 }: {
-  bucketId: number
+  modelId: number
   current: BacktestRun | null
   loading: boolean
   onLoad: (id: number) => void
   onDeleted: (id: number) => void
 }) {
-  const saved = useSavedBacktests(bucketId)
+  const saved = useSavedBacktests(modelId)
   const save = useSaveBacktest()
   const remove = useDeleteBacktest()
   const [name, setName] = useState('')
@@ -183,7 +183,7 @@ function SavedRuns({
               onClick={async () => {
                 if (!picked || !(await confirm({ title: 'Delete this saved run?' }))) return
                 remove.mutate(
-                  { id: picked, bucketId },
+                  { id: picked, modelId },
                   {
                     onSuccess: () => {
                       onDeleted(picked)

@@ -14,12 +14,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from friday.core.db import Base
 from friday.core.types import DecimalText, UtcDateTime
 
-BUCKETS = ("equity", "debt", "gold", "silver", "other")
-"""Allocation buckets. Each instrument's split over these sums to 100."""
+ASSETS = ("equity", "debt", "gold", "silver", "other")
+"""Asset classes. Each instrument's split over these sums to 100."""
 
 
 class AllocationColumns:
-    """Percent of the instrument in each bucket. All empty means unclassified."""
+    """Percent of the instrument in each asset class. All empty means unclassified."""
 
     equity_pct: Mapped[Decimal | None] = mapped_column(DecimalText(2))
     debt_pct: Mapped[Decimal | None] = mapped_column(DecimalText(2))
@@ -29,13 +29,13 @@ class AllocationColumns:
     exposure: Mapped[str] = mapped_column(String(8))  # IN | US | GLOBAL
 
     def allocation(self) -> dict[str, Decimal]:
-        """Non-zero buckets, e.g. ``{"equity": Decimal("75"), "debt": Decimal("25")}``."""
-        shares = {bucket: getattr(self, f"{bucket}_pct") for bucket in BUCKETS}
-        return {bucket: pct for bucket, pct in shares.items() if pct}
+        """Non-zero asset classes, e.g. ``{"equity": Decimal("75"), "debt": Decimal("25")}``."""
+        shares = {asset: getattr(self, f"{asset}_pct") for asset in ASSETS}
+        return {asset: pct for asset, pct in shares.items() if pct}
 
     def set_allocation(self, allocation: dict[str, Decimal]) -> None:
-        for bucket in BUCKETS:
-            setattr(self, f"{bucket}_pct", allocation.get(bucket))
+        for asset in ASSETS:
+            setattr(self, f"{asset}_pct", allocation.get(asset))
 
 
 class Instrument(AllocationColumns, Base):

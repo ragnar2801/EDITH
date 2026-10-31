@@ -2,12 +2,12 @@ import type { Schemas } from '@/api/client'
 
 export type InstrumentSummary = Schemas['InstrumentSummary']
 export type InstrumentDetail = Schemas['InstrumentDetail']
-export type Bucket = Schemas['Share']['bucket']
+export type Asset = Schemas['Share']['asset']
 export type Exposure = Schemas['ClassificationOut']['exposure']
 
-export const BUCKETS: Bucket[] = ['equity', 'debt', 'gold', 'silver', 'other']
+export const ASSETS: Asset[] = ['equity', 'debt', 'gold', 'silver', 'other']
 
-export const BUCKET_LABELS: Record<Bucket, string> = {
+export const ASSET_LABELS: Record<Asset, string> = {
   equity: 'Equity',
   debt: 'Debt',
   gold: 'Gold',
@@ -16,7 +16,7 @@ export const BUCKET_LABELS: Record<Bucket, string> = {
 }
 
 export const ASSET_CLASS_LABELS: Record<InstrumentSummary['asset_class'], string> = {
-  ...BUCKET_LABELS,
+  ...ASSET_LABELS,
   hybrid: 'Hybrid',
   unclassified: 'Unclassified',
 }

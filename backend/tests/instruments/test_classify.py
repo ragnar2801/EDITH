@@ -13,7 +13,7 @@ from friday.core.instruments.classify import (
 
 
 def split(**shares: int) -> dict[str, Decimal]:
-    return {bucket: Decimal(pct) for bucket, pct in shares.items()}
+    return {asset: Decimal(pct) for asset, pct in shares.items()}
 
 
 @pytest.mark.parametrize(
@@ -168,7 +168,7 @@ def test_nse_etf_rules(
 
 
 @pytest.mark.parametrize(
-    ("kind", "name", "bucket", "exposure"),
+    ("kind", "name", "asset", "exposure"),
     [
         ("stock", "Apple Inc.", "equity", "US"),
         ("stock", "Infosys Limited American Depositary Shares", "equity", "GLOBAL"),
@@ -185,9 +185,9 @@ def test_nse_etf_rules(
         ("etf", "JPMorgan Equity Premium Income ETF", "equity", "US"),  # "income" isn't debt
     ],
 )
-def test_us_rules(kind: str, name: str, bucket: str, exposure: str) -> None:
+def test_us_rules(kind: str, name: str, asset: str, exposure: str) -> None:
     result = classify_us(kind, name)
-    assert (result.asset_class, result.exposure) == (bucket, exposure)
+    assert (result.asset_class, result.exposure) == (asset, exposure)
 
 
 def test_asset_class_labels() -> None:

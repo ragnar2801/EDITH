@@ -15,7 +15,7 @@ export interface paths {
         put?: never;
         /**
          * Run
-         * @description Run a backtest on the bucket's stored NAVs and keep it; ``save`` keeps it for good.
+         * @description Run a backtest on the model's stored NAVs and keep it; ``save`` keeps it for good.
          */
         post: operations["runBacktest"];
         delete?: never;
@@ -35,7 +35,7 @@ export interface paths {
         put?: never;
         /**
          * Optimise Split
-         * @description Try every split of the bucket's funds and rank them; nothing is stored.
+         * @description Try every split of the model's funds and rank them; nothing is stored.
          */
         post: operations["optimiseSplit"];
         delete?: never;
@@ -100,109 +100,6 @@ export interface paths {
         get: operations["getBacktestInterval"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/buckets": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List All */
-        get: operations["listBuckets"];
-        put?: never;
-        /**
-         * Create
-         * @description Weights must add up to exactly 100. Every fund and the benchmark become tracked.
-         */
-        post: operations["createBucket"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/buckets/default-benchmark": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Default Benchmark
-         * @description The Nifty 50 index fund new buckets are compared with, if the fund list has it.
-         */
-        get: operations["getDefaultBenchmark"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/buckets/{bucket_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get */
-        get: operations["getBucket"];
-        /** Update */
-        put: operations["updateBucket"];
-        post?: never;
-        /**
-         * Delete
-         * @description Delete a bucket and its saved backtests. Its funds' NAVs stay.
-         */
-        delete: operations["deleteBucket"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/buckets/{bucket_id}/backtests": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Saved
-         * @description Saved runs of a bucket, newest first.
-         */
-        get: operations["listSavedBacktests"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/buckets/{bucket_id}/duplicate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Duplicate
-         * @description A copy named "<name> copy": same funds, weights, benchmark and rebalance; no backtests.
-         */
-        post: operations["duplicateBucket"];
         delete?: never;
         options?: never;
         head?: never;
@@ -572,6 +469,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List All */
+        get: operations["listModels"];
+        put?: never;
+        /**
+         * Create
+         * @description Weights must add up to exactly 100. Every fund and the benchmark become tracked.
+         */
+        post: operations["createModel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/default-benchmark": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Default Benchmark
+         * @description The Nifty 50 index fund new models are compared with, if the fund list has it.
+         */
+        get: operations["getDefaultBenchmark"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/{model_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get */
+        get: operations["getModel"];
+        /** Update */
+        put: operations["updateModel"];
+        post?: never;
+        /**
+         * Delete
+         * @description Delete a model and its saved backtests. Its funds' NAVs stay.
+         */
+        delete: operations["deleteModel"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/{model_id}/backtests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Saved
+         * @description Saved runs of a model, newest first.
+         */
+        get: operations["listSavedBacktests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/{model_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate
+         * @description A copy named "<name> copy": same funds, weights, benchmark and rebalance; no backtests.
+         */
+        post: operations["duplicateModel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/navs/status": {
         parameters: {
             query?: never;
@@ -643,7 +643,7 @@ export interface paths {
         };
         /**
          * Read Settings
-         * @description Target bucket, emergency goal and fund, and the staggering rule.
+         * @description Target model, emergency goal and fund, and the staggering rule.
          */
         get: operations["getPlanSettings"];
         /** Change Settings */
@@ -843,8 +843,8 @@ export interface components {
         };
         /** BacktestIn */
         BacktestIn: {
-            /** Bucket Id */
-            bucket_id: number;
+            /** Model Id */
+            model_id: number;
             /** Name */
             name?: string | null;
             /** Params */
@@ -875,10 +875,6 @@ export interface components {
         };
         /** BacktestRunOut */
         BacktestRunOut: {
-            /** Bucket Id */
-            bucket_id: number;
-            /** Bucket Name */
-            bucket_name: string;
             /**
              * Created At
              * Format: date-time
@@ -886,6 +882,10 @@ export interface components {
             created_at: string;
             /** Id */
             id: number;
+            /** Model Id */
+            model_id: number;
+            /** Model Name */
+            model_name: string;
             /** Name */
             name: string | null;
             /** Params */
@@ -901,8 +901,6 @@ export interface components {
         };
         /** BacktestRunSummary */
         BacktestRunSummary: {
-            /** Bucket Id */
-            bucket_id: number;
             /**
              * Created At
              * Format: date-time
@@ -910,6 +908,8 @@ export interface components {
             created_at: string;
             /** Id */
             id: number;
+            /** Model Id */
+            model_id: number;
             /** Name */
             name: string | null;
             /** Params */
@@ -929,73 +929,6 @@ export interface components {
             /** Instrument Id */
             instrument_id: number;
             metrics: components["schemas"]["MetricsOut"];
-            /** Name */
-            name: string;
-        };
-        /** BucketFundIn */
-        BucketFundIn: {
-            /** Instrument Id */
-            instrument_id: number;
-            /** Weight */
-            weight: string;
-        };
-        /** BucketFundOut */
-        BucketFundOut: {
-            coverage: components["schemas"]["CoverageOut"];
-            fund: components["schemas"]["FundRef"];
-            /** Weight */
-            weight: string;
-        };
-        /** BucketIn */
-        BucketIn: {
-            /** Benchmark Id */
-            benchmark_id?: number | null;
-            /** Description */
-            description?: string | null;
-            /** Funds */
-            funds: components["schemas"]["BucketFundIn"][];
-            /** Name */
-            name: string;
-            /**
-             * Rebalance
-             * @default none
-             * @enum {string}
-             */
-            rebalance: "none" | "monthly" | "quarterly" | "yearly";
-        };
-        /** BucketOut */
-        BucketOut: {
-            benchmark: components["schemas"]["FundWithCoverage"] | null;
-            /** Common Start */
-            common_start: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Description */
-            description: string | null;
-            /** Funds */
-            funds: components["schemas"]["BucketFundOut"][];
-            /** Id */
-            id: number;
-            /** Name */
-            name: string;
-            /**
-             * Rebalance
-             * @enum {string}
-             */
-            rebalance: "none" | "monthly" | "quarterly" | "yearly";
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /** BucketRef */
-        BucketRef: {
-            /** Id */
-            id: number;
             /** Name */
             name: string;
         };
@@ -1123,7 +1056,7 @@ export interface components {
         };
         /**
          * CustomParams
-         * @description My own timeline over the bucket's funds; weights don't apply.
+         * @description My own timeline over the model's funds; weights don't apply.
          */
         CustomParams: {
             /** End */
@@ -1726,6 +1659,73 @@ export interface components {
             /** Years */
             years: string;
         };
+        /** ModelFundIn */
+        ModelFundIn: {
+            /** Instrument Id */
+            instrument_id: number;
+            /** Weight */
+            weight: string;
+        };
+        /** ModelFundOut */
+        ModelFundOut: {
+            coverage: components["schemas"]["CoverageOut"];
+            fund: components["schemas"]["FundRef"];
+            /** Weight */
+            weight: string;
+        };
+        /** ModelIn */
+        ModelIn: {
+            /** Benchmark Id */
+            benchmark_id?: number | null;
+            /** Description */
+            description?: string | null;
+            /** Funds */
+            funds: components["schemas"]["ModelFundIn"][];
+            /** Name */
+            name: string;
+            /**
+             * Rebalance
+             * @default none
+             * @enum {string}
+             */
+            rebalance: "none" | "monthly" | "quarterly" | "yearly";
+        };
+        /** ModelOut */
+        ModelOut: {
+            benchmark: components["schemas"]["FundWithCoverage"] | null;
+            /** Common Start */
+            common_start: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string | null;
+            /** Funds */
+            funds: components["schemas"]["ModelFundOut"][];
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /**
+             * Rebalance
+             * @enum {string}
+             */
+            rebalance: "none" | "monthly" | "quarterly" | "yearly";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ModelRef */
+        ModelRef: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+        };
         /** Money */
         Money: {
             /** Amount */
@@ -1784,8 +1784,6 @@ export interface components {
         };
         /** OptimiseIn */
         OptimiseIn: {
-            /** Bucket Id */
-            bucket_id: number;
             /**
              * Goal
              * @default xirr
@@ -1806,6 +1804,8 @@ export interface components {
             min_weight: number;
             /** Min Xirr Pct */
             min_xirr_pct?: string | null;
+            /** Model Id */
+            model_id: number;
             /** Params */
             params: components["schemas"]["RegularParams"] | components["schemas"]["SipParams"];
             /**
@@ -1916,7 +1916,6 @@ export interface components {
         PlanOut: {
             /** Amount */
             amount: string;
-            bucket: components["schemas"]["BucketRef"];
             emergency: components["schemas"]["EmergencyOut"];
             /** Emergency Topup */
             emergency_topup: string;
@@ -1930,6 +1929,7 @@ export interface components {
             left: string;
             /** Min Per Fund */
             min_per_fund: string;
+            model: components["schemas"]["ModelRef"];
             /** Months */
             months: components["schemas"]["PlanMonthOut"][];
             stagger_fund: components["schemas"]["FundRef"] | null;
@@ -2044,7 +2044,7 @@ export interface components {
         };
         /**
          * RegularParams
-         * @description A lump sum, optionally rebalanced to the bucket's weights.
+         * @description A lump sum, optionally rebalanced to the model's weights.
          */
         RegularParams: {
             /** Capital */
@@ -2160,8 +2160,8 @@ export interface components {
             stagger_months: number;
             /** Stagger Threshold */
             stagger_threshold?: string | null;
-            /** Target Bucket Id */
-            target_bucket_id?: number | null;
+            /** Target Model Id */
+            target_model_id?: number | null;
         };
         /** SettingsOut */
         SettingsOut: {
@@ -2175,7 +2175,7 @@ export interface components {
             stagger_months: number;
             /** Stagger Threshold */
             stagger_threshold: string | null;
-            target_bucket: components["schemas"]["BucketRef"] | null;
+            target_model: components["schemas"]["ModelRef"] | null;
             /**
              * Updated At
              * Format: date-time
@@ -2185,10 +2185,10 @@ export interface components {
         /** Share */
         Share: {
             /**
-             * Bucket
+             * Asset
              * @enum {string}
              */
-            bucket: "equity" | "debt" | "gold" | "silver" | "other";
+            asset: "equity" | "debt" | "gold" | "silver" | "other";
             /** Percent */
             percent: string;
         };
@@ -2659,254 +2659,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IntervalOut"];
-                };
-            };
-            /** @description Problem details (RFC 9457) */
-            "4XX": {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    listBuckets: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BucketOut"][];
-                };
-            };
-            /** @description Problem details (RFC 9457) */
-            "4XX": {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    createBucket: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BucketIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BucketOut"];
-                };
-            };
-            /** @description Problem details (RFC 9457) */
-            "4XX": {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    getDefaultBenchmark: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FundRef"] | null;
-                };
-            };
-            /** @description Problem details (RFC 9457) */
-            "4XX": {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    getBucket: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bucket_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BucketOut"];
-                };
-            };
-            /** @description Problem details (RFC 9457) */
-            "4XX": {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    updateBucket: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bucket_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BucketIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BucketOut"];
-                };
-            };
-            /** @description Problem details (RFC 9457) */
-            "4XX": {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    deleteBucket: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bucket_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Problem details (RFC 9457) */
-            "4XX": {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    listSavedBacktests: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bucket_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BacktestRunSummary"][];
-                };
-            };
-            /** @description Problem details (RFC 9457) */
-            "4XX": {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProblemDetails"];
-                };
-            };
-        };
-    };
-    duplicateBucket: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                bucket_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BucketOut"];
                 };
             };
             /** @description Problem details (RFC 9457) */
@@ -3604,6 +3356,254 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    listModels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelOut"][];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    createModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getDefaultBenchmark: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FundRef"] | null;
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    getModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    updateModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    deleteModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    listSavedBacktests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BacktestRunSummary"][];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    duplicateModel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelOut"];
+                };
             };
             /** @description Problem details (RFC 9457) */
             "4XX": {

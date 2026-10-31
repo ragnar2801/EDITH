@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 
 import { routes } from '@/app/routes'
-import { bucket, fakeApi, fundRef, nifty, parag, problem, syncRun } from '@/test/fake-api'
+import { model, fakeApi, fundRef, nifty, parag, problem, syncRun } from '@/test/fake-api'
 
 function renderAt(path: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -25,19 +25,19 @@ async function addFund(name: RegExp) {
 }
 
 test('create a model: exact weights, default benchmark, NAVs downloaded, then backtest it', async () => {
-  let saved: ReturnType<typeof bucket>[] = []
-  const created = bucket({
-    funds: bucket().funds.map((member) => ({
+  let saved: ReturnType<typeof model>[] = []
+  const created = model({
+    funds: model().funds.map((member) => ({
       ...member,
       coverage: { first: null, last: null, count: 0 },
     })),
   })
   const calls = fakeApi({
-    'GET /api/v1/buckets': () => saved,
-    'GET /api/v1/buckets/default-benchmark': () => fundRef(nifty),
+    'GET /api/v1/models': () => saved,
+    'GET /api/v1/models/default-benchmark': () => fundRef(nifty),
     'GET /api/v1/instruments/search': () => [parag, nifty],
-    'POST /api/v1/buckets': () => {
-      saved = [bucket()]
+    'POST /api/v1/models': () => {
+      saved = [model()]
       return Response.json(created, { status: 201 })
     },
     'POST /api/v1/navs/sync': () => syncRun(),
@@ -63,7 +63,7 @@ test('create a model: exact weights, default benchmark, NAVs downloaded, then ba
   // A new model lands on its backtest.
   expect(await screen.findByRole('heading', { name: 'Core' })).toBeInTheDocument()
   expect(screen.getByRole('tab', { name: 'Backtest' })).toHaveAttribute('aria-selected', 'true')
-  const post = calls.find((call) => call.method === 'POST' && call.url.endsWith('/buckets'))
+  const post = calls.find((call) => call.method === 'POST' && call.url.endsWith('/models'))
   expect(await post?.json()).toEqual({
     name: 'Core',
     description: null,
@@ -80,8 +80,8 @@ test('create a model: exact weights, default benchmark, NAVs downloaded, then ba
 
 test('equal weights split 100 exactly', async () => {
   fakeApi({
-    'GET /api/v1/buckets': () => [],
-    'GET /api/v1/buckets/default-benchmark': () => null,
+    'GET /api/v1/models': () => [],
+    'GET /api/v1/models/default-benchmark': () => null,
     'GET /api/v1/instruments/search': () => [parag, nifty, { ...nifty, id: 10, name: 'Third' }],
   })
   renderAt('/models')
@@ -100,9 +100,9 @@ test('equal weights split 100 exactly', async () => {
 
 test('a refused model shows the reason', async () => {
   fakeApi({
-    'GET /api/v1/buckets': () => [bucket()],
-    'GET /api/v1/buckets/default-benchmark': () => fundRef(nifty),
-    'PUT /api/v1/buckets/1': () => problem(422, 'Weights must add up to 100, not 99.99.'),
+    'GET /api/v1/models': () => [model()],
+    'GET /api/v1/models/default-benchmark': () => fundRef(nifty),
+    'PUT /api/v1/models/1': () => problem(422, 'Weights must add up to 100, not 99.99.'),
   })
   renderAt('/models')
 
@@ -115,7 +115,7 @@ test('a refused model shows the reason', async () => {
 
 test('the target model wears a badge; another can be made the target', async () => {
   const settings = {
-    target_bucket: { id: 1, name: 'Core' },
+    target_model: { id: 1, name: 'Core' },
     emergency_goal: '150000.00',
     emergency_fund: { ...fundRef(nifty) },
     stagger_fund: null,
@@ -125,11 +125,11 @@ test('the target model wears a badge; another can be made the target', async () 
     updated_at: '2026-10-25T05:00:00Z',
   }
   const calls = fakeApi({
-    'GET /api/v1/buckets': () => [bucket(), bucket({ id: 2, name: 'Index only' })],
+    'GET /api/v1/models': () => [model(), model({ id: 2, name: 'Index only' })],
     'GET /api/v1/plan/settings': () => settings,
     'PUT /api/v1/plan/settings': () => ({
       ...settings,
-      target_bucket: { id: 2, name: 'Index only' },
+      target_model: { id: 2, name: 'Index only' },
     }),
   })
   renderAt('/models')
@@ -142,7 +142,7 @@ test('the target model wears a badge; another can be made the target', async () 
   expect(await screen.findByText('Index only is your target')).toBeInTheDocument()
   const put = calls.find((call) => call.method === 'PUT')
   expect(await put?.json()).toEqual({
-    target_bucket_id: 2,
+    target_model_id: 2,
     emergency_goal: '150000.00',
     emergency_fund_id: nifty.id,
     stagger_fund_id: null,
@@ -153,7 +153,7 @@ test('the target model wears a badge; another can be made the target', async () 
 })
 
 test('a model page shows its funds and links each to its fund page', async () => {
-  fakeApi({ 'GET /api/v1/buckets': () => [bucket()] })
+  fakeApi({ 'GET /api/v1/models': () => [model()] })
   renderAt('/models/1')
 
   const funds = await screen.findByRole('table', { name: 'Funds' })
@@ -163,13 +163,13 @@ test('a model page shows its funds and links each to its fund page', async () =>
 })
 
 test('duplicate a model: the copy opens in the editor', async () => {
-  const copy = bucket({ id: 2, name: 'Core copy' })
-  let saved = [bucket()]
+  const copy = model({ id: 2, name: 'Core copy' })
+  let saved = [model()]
   const calls = fakeApi({
-    'GET /api/v1/buckets': () => saved,
-    'GET /api/v1/buckets/default-benchmark': () => fundRef(nifty),
-    'POST /api/v1/buckets/1/duplicate': () => {
-      saved = [bucket(), copy]
+    'GET /api/v1/models': () => saved,
+    'GET /api/v1/models/default-benchmark': () => fundRef(nifty),
+    'POST /api/v1/models/1/duplicate': () => {
+      saved = [model(), copy]
       return Response.json(copy, { status: 201 })
     },
   })

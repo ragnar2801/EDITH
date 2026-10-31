@@ -11,7 +11,6 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
-from friday.core.buckets.service import BucketInput, create_bucket
 from friday.core.cash.service import AccountInput, SettingsInput, create_account, update_settings
 from friday.core.db import session_scope
 from friday.core.holdings.service import (
@@ -25,6 +24,7 @@ from friday.core.holdings.service import (
 from friday.core.instruments.download import Fetcher
 from friday.core.instruments.models import Instrument
 from friday.core.instruments.refresh import refresh_instruments
+from friday.core.models.service import ModelInput, create_model
 from friday.core.navs.download import NavFetcher
 from friday.core.navs.models import FundNav
 from friday.core.navs.service import sync_navs, track
@@ -108,9 +108,9 @@ def make_demo(
         sale_day = _nav_day(session, ids[NIFTY], today - timedelta(days=200))
         sell(session, SaleInput(sale_day, [(nifty, Decimal(1500))]))
 
-        long_term = create_bucket(
+        long_term = create_model(
             session,
-            BucketInput(
+            ModelInput(
                 name="Long term",
                 funds=[
                     (ids[FLEXI], Decimal(40)),
@@ -122,9 +122,9 @@ def make_demo(
                 rebalance="yearly",
             ),
         )
-        create_bucket(
+        create_model(
             session,
-            BucketInput(
+            ModelInput(
                 name="Steady",
                 funds=[(ids[NIFTY], Decimal(50)), (ids[SHORT], Decimal(50))],
             ),
@@ -136,7 +136,7 @@ def make_demo(
         update_settings(
             session,
             SettingsInput(
-                target_bucket_id=long_term.id,
+                target_model_id=long_term.id,
                 emergency_goal=Decimal(600_000),
                 emergency_fund_id=ids[LIQUID],
                 stagger_fund_id=ids[LIQUID],

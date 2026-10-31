@@ -1,1 +1,1 @@
-"""Backtests of a bucket: lump sum, SIP, SWP and custom timelines."""
+"""Backtests of a model: lump sum, SIP, SWP and custom timelines."""

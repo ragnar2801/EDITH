@@ -1,6 +1,6 @@
 import type { Schemas } from '@/api/client'
 import type { BacktestForm, Frequency, Rebalance } from '@/lib/backtest'
-import type { Bucket } from '@/lib/buckets'
+import type { Model } from '@/lib/models'
 
 export type Goal = Schemas['OptimiseIn']['goal'] & string
 export type Candidate = Schemas['Candidate']
@@ -56,14 +56,14 @@ const whole = (value: string, fallback: number) => {
   return Number.isInteger(number) && value.trim() !== '' ? number : fallback
 }
 
-export function toRequest(form: OptimiseForm, bucket: Bucket): Schemas['OptimiseIn'] {
+export function toRequest(form: OptimiseForm, model: Model): Schemas['OptimiseIn'] {
   const common = {
     start: optional(form.start),
     end: optional(form.end),
     risk_free_pct: form.riskFree.trim() || '0',
   }
   return {
-    bucket_id: bucket.id,
+    model_id: model.id,
     params:
       form.strategy === 'regular'
         ? {
@@ -88,10 +88,10 @@ export type BacktestHandoff = { form: Partial<BacktestForm> }
 export function handoff(
   form: OptimiseForm,
   candidate: Candidate,
-  bucket: Bucket,
+  model: Model,
   start: string,
 ): BacktestHandoff {
-  const funds = new Map(bucket.funds.map((member) => [member.fund.id, member.fund]))
+  const funds = new Map(model.funds.map((member) => [member.fund.id, member.fund]))
   return {
     form: {
       strategy: form.strategy,

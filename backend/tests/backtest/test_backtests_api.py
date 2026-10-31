@@ -16,9 +16,9 @@ def api(client: TestClient, funds: dict[str, int], fetcher: FakeNavFetcher) -> T
 
 
 @pytest.fixture
-def bucket(api: TestClient, funds) -> dict:
+def model(api: TestClient, funds) -> dict:
     created = api.post(
-        "/api/v1/buckets",
+        "/api/v1/models",
         json={
             "name": "Core",
             "benchmark_id": funds[NIFTY],
@@ -32,19 +32,17 @@ def bucket(api: TestClient, funds) -> dict:
     return created
 
 
-def run(api: TestClient, bucket: dict, params: dict, **extra):
-    return api.post(
-        "/api/v1/backtests", json={"bucket_id": bucket["id"], "params": params, **extra}
-    )
+def run(api: TestClient, model: dict, params: dict, **extra):
+    return api.post("/api/v1/backtests", json={"model_id": model["id"], "params": params, **extra})
 
 
-def test_sip_run_with_the_same_sip_in_the_benchmark(api: TestClient, bucket) -> None:
-    response = run(api, bucket, {"strategy": "sip", "amount": "10000", "start": "2026-10-01"})
+def test_sip_run_with_the_same_sip_in_the_benchmark(api: TestClient, model) -> None:
+    response = run(api, model, {"strategy": "sip", "amount": "10000", "start": "2026-10-01"})
 
     assert response.status_code == 200, response.text
     body = response.json()
     result = body["result"]
-    assert (body["bucket_name"], body["saved"], body["strategy"]) == ("Core", False, "sip")
+    assert (body["model_name"], body["saved"], body["strategy"]) == ("Core", False, "sip")
     assert result["metrics"]["start_date"] == "2026-10-09"  # first NAV date both funds share
     assert result["metrics"]["total_invested"] == "10000.00"  # one October instalment
     assert result["benchmark"]["metrics"]["total_invested"] == "10000.00"
@@ -56,8 +54,8 @@ def test_sip_run_with_the_same_sip_in_the_benchmark(api: TestClient, bucket) -> 
     assert all(isinstance(v, str) for v in result["metrics"].values() if v is not None)
 
 
-def test_a_requested_start_before_the_data_is_reported(api: TestClient, bucket) -> None:
-    result = run(api, bucket, {"strategy": "regular", "capital": "100000", "start": "2013-01-01"})
+def test_a_requested_start_before_the_data_is_reported(api: TestClient, model) -> None:
+    result = run(api, model, {"strategy": "regular", "capital": "100000", "start": "2013-01-01"})
 
     warnings = result.json()["result"]["warnings"]
     assert warnings == [
@@ -66,13 +64,13 @@ def test_a_requested_start_before_the_data_is_reported(api: TestClient, bucket) 
     ]
 
 
-def test_save_list_load_and_delete(api: TestClient, bucket) -> None:
-    first = run(api, bucket, {"strategy": "regular", "capital": "100000"}).json()
-    run(api, bucket, {"strategy": "swp", "corpus": "500000", "amount": "4000"})
+def test_save_list_load_and_delete(api: TestClient, model) -> None:
+    first = run(api, model, {"strategy": "regular", "capital": "100000"}).json()
+    run(api, model, {"strategy": "swp", "corpus": "500000", "amount": "4000"})
 
     saved = api.patch(f"/api/v1/backtests/{first['id']}", json={"saved": True, "name": " Lump "})
     assert saved.json()["name"] == "Lump"
-    listed = api.get(f"/api/v1/buckets/{bucket['id']}/backtests").json()
+    listed = api.get(f"/api/v1/models/{model['id']}/backtests").json()
     assert [(r["id"], r["name"], r["params"]["capital"]) for r in listed] == [
         (first["id"], "Lump", "100000")
     ]
@@ -83,24 +81,24 @@ def test_save_list_load_and_delete(api: TestClient, bucket) -> None:
     assert api.get(f"/api/v1/backtests/{first['id']}").status_code == 404
 
 
-def test_run_and_save_in_one_go(api: TestClient, bucket) -> None:
-    body = run(api, bucket, {"strategy": "regular", "capital": "1000"}, save=True, name="x").json()
+def test_run_and_save_in_one_go(api: TestClient, model) -> None:
+    body = run(api, model, {"strategy": "regular", "capital": "1000"}, save=True, name="x").json()
 
     assert (body["saved"], body["name"]) == (True, "x")
 
 
-def test_only_the_latest_unsaved_runs_are_kept(api: TestClient, bucket, monkeypatch) -> None:
+def test_only_the_latest_unsaved_runs_are_kept(api: TestClient, model, monkeypatch) -> None:
     monkeypatch.setattr(service, "KEEP_UNSAVED", 2)
-    kept = run(api, bucket, {"strategy": "regular", "capital": "1"}, save=True).json()
-    ids = [run(api, bucket, {"strategy": "regular", "capital": "1"}).json()["id"] for _ in range(3)]
+    kept = run(api, model, {"strategy": "regular", "capital": "1"}, save=True).json()
+    ids = [run(api, model, {"strategy": "regular", "capital": "1"}).json()["id"] for _ in range(3)]
 
     assert api.get(f"/api/v1/backtests/{ids[0]}").status_code == 404
     assert all(api.get(f"/api/v1/backtests/{i}").status_code == 200 for i in [*ids[1:], kept["id"]])
 
 
-def test_interval_of_a_stored_run(api: TestClient, bucket) -> None:
+def test_interval_of_a_stored_run(api: TestClient, model) -> None:
     body = run(
-        api, bucket, {"strategy": "regular", "capital": "100000", "start": "2026-10-01"}
+        api, model, {"strategy": "regular", "capital": "100000", "start": "2026-10-01"}
     ).json()
     curve = body["result"]["curve"]
 
@@ -120,7 +118,7 @@ def test_interval_of_a_stored_run(api: TestClient, bucket) -> None:
     assert too_small.status_code == 422
 
 
-def test_custom_positions_and_trades(api: TestClient, bucket, funds) -> None:
+def test_custom_positions_and_trades(api: TestClient, model, funds) -> None:
     params = {
         "strategy": "custom",
         "positions": [
@@ -136,7 +134,7 @@ def test_custom_positions_and_trades(api: TestClient, bucket, funds) -> None:
         ],
     }
 
-    result = run(api, bucket, params).json()["result"]
+    result = run(api, model, params).json()["result"]
 
     assert [(t["side"], t["name"], t["date"]) for t in result["trades"]] == [
         ("buy", "Parag Parikh Flexi Cap Fund", "2026-10-09"),
@@ -163,11 +161,11 @@ def test_custom_positions_and_trades(api: TestClient, bucket, funds) -> None:
         {"strategy": "lump"},
     ],
 )
-def test_bad_parameters_are_refused(api: TestClient, bucket, params) -> None:
-    assert run(api, bucket, params).status_code == 422
+def test_bad_parameters_are_refused(api: TestClient, model, params) -> None:
+    assert run(api, model, params).status_code == 422
 
 
-def test_a_fund_outside_the_bucket_is_refused(api: TestClient, bucket, funds) -> None:
+def test_a_fund_outside_the_model_is_refused(api: TestClient, model, funds) -> None:
     params = {
         "strategy": "custom",
         "trades": [
@@ -175,28 +173,28 @@ def test_a_fund_outside_the_bucket_is_refused(api: TestClient, bucket, funds) ->
         ],
     }
 
-    response = run(api, bucket, params)
+    response = run(api, model, params)
 
     assert response.status_code == 422
-    assert response.json()["detail"] == "Trade 1: that fund isn't in this bucket."
+    assert response.json()["detail"] == "Trade 1: that fund isn't in this model."
 
 
 def test_no_navs_yet_is_explained(api: TestClient, funds) -> None:
-    bucket = api.post(
-        "/api/v1/buckets",
+    model = api.post(
+        "/api/v1/models",
         json={"name": "Empty", "funds": [{"instrument_id": funds[PARAG], "weight": "100"}]},
     ).json()
 
-    response = run(api, bucket, {"strategy": "regular", "capital": "1000"})
+    response = run(api, model, {"strategy": "regular", "capital": "1000"})
 
     assert response.status_code == 422
     assert "No NAVs yet for Parag Parikh Flexi Cap Fund" in response.json()["detail"]
 
 
-def test_deleting_a_bucket_deletes_its_runs(api: TestClient, bucket) -> None:
-    body = run(api, bucket, {"strategy": "regular", "capital": "1000"}, save=True).json()
+def test_deleting_a_model_deletes_its_runs(api: TestClient, model) -> None:
+    body = run(api, model, {"strategy": "regular", "capital": "1000"}, save=True).json()
 
-    api.delete(f"/api/v1/buckets/{bucket['id']}")
+    api.delete(f"/api/v1/models/{model['id']}")
 
     assert api.get(f"/api/v1/backtests/{body['id']}").status_code == 404
 
@@ -205,14 +203,14 @@ def split(funds, **weights) -> list[dict]:
     return [{"instrument_id": funds[code], "weight": w} for code, w in weights.items()]
 
 
-def test_a_split_is_run_and_kept_without_changing_the_bucket(api: TestClient, bucket, funds):
+def test_a_split_is_run_and_kept_without_changing_the_model(api: TestClient, model, funds):
     params = {
         "strategy": "regular",
         "capital": "100000",
         "start": "2026-10-01",
         "split": [{"instrument_id": funds[PARAG], "weight": "100"}],
     }
-    body = run(api, bucket, params).json()
+    body = run(api, model, params).json()
 
     assert [(f["name"], f["weight"]) for f in body["result"]["funds"]] == [
         ("Parag Parikh Flexi Cap Fund", "100")
@@ -221,7 +219,7 @@ def test_a_split_is_run_and_kept_without_changing_the_bucket(api: TestClient, bu
     assert api.get(f"/api/v1/backtests/{body['id']}").json()["params"]["split"] == [
         {"instrument_id": funds[PARAG], "weight": "100"}
     ]
-    model = api.get(f"/api/v1/buckets/{bucket['id']}").json()
+    model = api.get(f"/api/v1/models/{model['id']}").json()
     assert [f["weight"] for f in model["funds"]] == ["60", "40"]
 
 
@@ -232,19 +230,19 @@ def test_a_split_is_run_and_kept_without_changing_the_bucket(api: TestClient, bu
         ({PARAG: "0", NIFTY: "100"}, "weight must be more than 0 and at most 100"),
     ],
 )
-def test_a_split_a_bucket_couldnt_have_is_refused(api, bucket, funds, weights, reason) -> None:
+def test_a_split_a_model_couldnt_have_is_refused(api, model, funds, weights, reason) -> None:
     params = {"strategy": "sip", "amount": "1000", "split": split(funds, **weights)}
 
-    response = run(api, bucket, params)
+    response = run(api, model, params)
 
     assert response.status_code == 422
     assert reason in response.json()["detail"]
 
 
-def test_comparing_a_tweaked_split_with_the_run_before(api: TestClient, bucket, funds) -> None:
+def test_comparing_a_tweaked_split_with_the_run_before(api: TestClient, model, funds) -> None:
     common = {"strategy": "regular", "capital": "100000", "start": "2026-10-01"}
-    before = run(api, bucket, common).json()
-    after = run(api, bucket, {**common, "split": split(funds, **{PARAG: "90", NIFTY: "10"})})
+    before = run(api, model, common).json()
+    after = run(api, model, {**common, "split": split(funds, **{PARAG: "90", NIFTY: "10"})})
     after = after.json()
 
     response = api.get(f"/api/v1/backtests/{after['id']}/compare", params={"against": before["id"]})
@@ -263,10 +261,10 @@ def test_comparing_a_tweaked_split_with_the_run_before(api: TestClient, bucket, 
     assert [(w["before"], w["after"]) for w in got["weights"]] == [("60", "90"), ("40", "10")]
 
 
-def test_comparing_runs_with_other_settings_or_dropped_funds(api, bucket, funds) -> None:
-    before = run(api, bucket, {"strategy": "sip", "amount": "1000"}).json()
+def test_comparing_runs_with_other_settings_or_dropped_funds(api, model, funds) -> None:
+    before = run(api, model, {"strategy": "sip", "amount": "1000"}).json()
     after = run(
-        api, bucket, {"strategy": "sip", "amount": "2000", "split": split(funds, **{PARAG: "100"})}
+        api, model, {"strategy": "sip", "amount": "2000", "split": split(funds, **{PARAG: "100"})}
     ).json()
 
     got = api.get(f"/api/v1/backtests/{after['id']}/compare", params={"against": before["id"]})
@@ -281,18 +279,18 @@ def test_comparing_runs_with_other_settings_or_dropped_funds(api, bucket, funds)
     assert missing.status_code == 404
 
 
-def optimise(api: TestClient, bucket: dict, params: dict, **settings):
+def optimise(api: TestClient, model: dict, params: dict, **settings):
     return api.post(
         "/api/v1/backtests/optimise",
-        json={"bucket_id": bucket["id"], "params": params, **settings},
+        json={"model_id": model["id"], "params": params, **settings},
     )
 
 
 LUMP = {"strategy": "regular", "capital": "100000", "start": "2026-10-01"}
 
 
-def test_optimise_tries_every_split_and_reruns_the_best(api: TestClient, bucket) -> None:
-    response = optimise(api, bucket, LUMP, step=10)
+def test_optimise_tries_every_split_and_reruns_the_best(api: TestClient, model) -> None:
+    response = optimise(api, model, LUMP, step=10)
 
     assert response.status_code == 200, response.text
     body = response.json()
@@ -311,17 +309,17 @@ def test_optimise_tries_every_split_and_reruns_the_best(api: TestClient, bucket)
     split = [{"instrument_id": f["instrument_id"], "weight": f["weight"]} for f in top[0]["funds"]]
     if len(split) == 1:
         split[0]["weight"] = "100"
-    exact = run(api, bucket, {**LUMP, "split": split}).json()["result"]["metrics"]
+    exact = run(api, model, {**LUMP, "split": split}).json()["result"]["metrics"]
     assert top[0]["metrics"] == exact
 
 
-def test_optimise_keeps_to_the_limits(api: TestClient, bucket) -> None:
-    every = optimise(api, bucket, LUMP, step=10, goal="drawdown").json()
+def test_optimise_keeps_to_the_limits(api: TestClient, model) -> None:
+    every = optimise(api, model, LUMP, step=10, goal="drawdown").json()
     least = Decimal(every["top"][0]["metrics"]["max_drawdown_pct"])
     assert all(Decimal(p["max_drawdown_pct"]) >= least for p in every["points"])
 
     capped = optimise(
-        api, bucket, LUMP, step=10, min_weight=20, max_weight=80, max_drawdown_pct=str(least)
+        api, model, LUMP, step=10, min_weight=20, max_weight=80, max_drawdown_pct=str(least)
     ).json()
     assert capped["tried"] == 7
     assert all(Decimal(c["metrics"]["max_drawdown_pct"]) <= least for c in capped["top"])
@@ -336,17 +334,17 @@ def test_optimise_keeps_to_the_limits(api: TestClient, bucket) -> None:
         ({"min_weight": 55}, 422, "No split with these weights adds up to 100."),
     ],
 )
-def test_optimise_refuses_a_grid_it_cant_use(api, bucket, grid, status, reason) -> None:
-    response = optimise(api, bucket, LUMP, **grid)
+def test_optimise_refuses_a_grid_it_cant_use(api, model, grid, status, reason) -> None:
+    response = optimise(api, model, LUMP, **grid)
 
     assert response.status_code == status
     assert reason in response.text
 
 
-def test_optimise_refuses_too_many_funds_or_splits(api, bucket, monkeypatch) -> None:
+def test_optimise_refuses_too_many_funds_or_splits(api, model, monkeypatch) -> None:
     from friday.core.backtest import search
 
     monkeypatch.setattr(search, "MAX_SPLITS", 5)
-    assert "That is 21 splits and the most is 5" in optimise(api, bucket, LUMP).text
+    assert "That is 21 splits and the most is 5" in optimise(api, model, LUMP).text
     monkeypatch.setattr(search, "MAX_FUNDS", 1)
-    assert "up to 1 funds" in optimise(api, bucket, LUMP).text
+    assert "up to 1 funds" in optimise(api, model, LUMP).text

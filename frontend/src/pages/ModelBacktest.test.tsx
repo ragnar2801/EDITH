@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 
 import { routes } from '@/app/routes'
-import { backtestRun, bucket, fakeApi, parag, problem } from '@/test/fake-api'
+import { backtestRun, model, fakeApi, parag, problem } from '@/test/fake-api'
 
 function renderAt(path: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -25,8 +25,8 @@ const tile = (label: string) => screen.getByText(label).closest('div') as HTMLEl
 
 test('run a SIP and see it next to the benchmark', async () => {
   const calls = fakeApi({
-    'GET /api/v1/buckets': () => [bucket()],
-    'GET /api/v1/buckets/1/backtests': () => [],
+    'GET /api/v1/models': () => [model()],
+    'GET /api/v1/models/1/backtests': () => [],
     'POST /api/v1/backtests': () => backtestRun(),
   })
   renderAt('/models/1/backtest')
@@ -47,7 +47,7 @@ test('run a SIP and see it next to the benchmark', async () => {
   expect(screen.getByText('1690.12345678')).toBeInTheDocument()
   const post = calls.find((call) => call.method === 'POST')
   expect(await post?.json()).toEqual({
-    bucket_id: 1,
+    model_id: 1,
     save: false,
     params: {
       strategy: 'sip',
@@ -62,8 +62,8 @@ test('run a SIP and see it next to the benchmark', async () => {
 
 test('a zoom preset asks the backend for the window figures', async () => {
   const calls = fakeApi({
-    'GET /api/v1/buckets': () => [bucket()],
-    'GET /api/v1/buckets/1/backtests': () => [],
+    'GET /api/v1/models': () => [model()],
+    'GET /api/v1/models/1/backtests': () => [],
     'POST /api/v1/backtests': () => backtestRun(),
     'GET /api/v1/backtests/41/interval': () => ({
       start_date: '2025-10-23',
@@ -132,8 +132,8 @@ test('save a run, then load a saved custom run into the form', async () => {
     ],
   }
   const calls = fakeApi({
-    'GET /api/v1/buckets': () => [bucket()],
-    'GET /api/v1/buckets/1/backtests': () => saved,
+    'GET /api/v1/models': () => [model()],
+    'GET /api/v1/models/1/backtests': () => saved,
     'POST /api/v1/backtests': () => backtestRun(),
     'PATCH /api/v1/backtests/41': () => {
       saved = [custom]
@@ -159,8 +159,8 @@ test('save a run, then load a saved custom run into the form', async () => {
 
 test('a refused run shows the reason', async () => {
   fakeApi({
-    'GET /api/v1/buckets': () => [bucket()],
-    'GET /api/v1/buckets/1/backtests': () => [],
+    'GET /api/v1/models': () => [model()],
+    'GET /api/v1/models/1/backtests': () => [],
     'POST /api/v1/backtests': () =>
       problem(422, 'No NAVs yet for UTI Nifty 50 Index Fund; sync NAVs first.'),
   })
@@ -173,8 +173,8 @@ test('a refused run shows the reason', async () => {
 
 test('the Backtest tab is part of the model page', async () => {
   fakeApi({
-    'GET /api/v1/buckets': () => [bucket()],
-    'GET /api/v1/buckets/1/backtests': () => [],
+    'GET /api/v1/models': () => [model()],
+    'GET /api/v1/models/1/backtests': () => [],
   })
   const router = renderAt('/models/1')
 
@@ -188,8 +188,8 @@ test('the Backtest tab is part of the model page', async () => {
 test('try another split, compare it with the run before, and keep the model as it is', async () => {
   let id = 41
   const calls = fakeApi({
-    'GET /api/v1/buckets': () => [bucket()],
-    'GET /api/v1/buckets/1/backtests': () => [],
+    'GET /api/v1/models': () => [model()],
+    'GET /api/v1/models/1/backtests': () => [],
     'POST /api/v1/backtests': () => backtestRun({ id: id++ }),
     'GET /api/v1/backtests/42/compare': () => ({
       against: 41,
@@ -231,7 +231,7 @@ test('try another split, compare it with the run before, and keep the model as i
   expect((await posts[0].json()).params.split).toBeUndefined()
   expect((await posts[1].json()).params.split).toEqual([
     { instrument_id: parag.id, weight: '90' },
-    { instrument_id: bucket().funds[1].fund.id, weight: '10' },
+    { instrument_id: model().funds[1].fund.id, weight: '10' },
   ])
   expect(calls.some((call) => call.method === 'PUT')).toBe(false)
 

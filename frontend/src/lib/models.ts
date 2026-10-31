@@ -1,9 +1,18 @@
 import type { Schemas } from '@/api/client'
-import type { Bucket, Rebalance } from '@/lib/buckets'
 
 type FundRef = Schemas['FundRef']
 
-/** Where models (buckets) live in the app. */
+export type Model = Schemas['ModelOut']
+export type Rebalance = Model['rebalance']
+
+export const REBALANCE_LABELS: Record<Rebalance, string> = {
+  none: 'No rebalancing',
+  monthly: 'Rebalance monthly',
+  quarterly: 'Rebalance quarterly',
+  yearly: 'Rebalance yearly',
+}
+
+/** Where models live in the app. */
 export const MODELS_PATH = '/models'
 
 export function modelPath(id: number, tab?: 'backtest' | 'optimise' | 'edit'): string {
@@ -27,13 +36,13 @@ export function newDraft(benchmark: FundRef | null): ModelDraft {
   return { name: '', description: '', rebalance: 'none', benchmark, funds: [] }
 }
 
-export function draftOf(bucket: Bucket): ModelDraft {
+export function draftOf(model: Model): ModelDraft {
   return {
-    id: bucket.id,
-    name: bucket.name,
-    description: bucket.description ?? '',
-    rebalance: bucket.rebalance,
-    benchmark: bucket.benchmark?.fund ?? null,
-    funds: bucket.funds.map((member) => ({ fund: member.fund, weight: member.weight })),
+    id: model.id,
+    name: model.name,
+    description: model.description ?? '',
+    rebalance: model.rebalance,
+    benchmark: model.benchmark?.fund ?? null,
+    funds: model.funds.map((member) => ({ fund: member.fund, weight: member.weight })),
   }
 }

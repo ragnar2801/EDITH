@@ -18,13 +18,13 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import {
-  BUCKET_LABELS,
-  BUCKETS,
+  ASSET_LABELS,
+  ASSETS,
   EXPOSURE_LABELS,
   exchangeLabel,
   fundPath,
   planLabel,
-  type Bucket,
+  type Asset,
   type Exposure,
   type InstrumentDetail,
 } from '@/lib/instruments'
@@ -33,12 +33,12 @@ import { cn } from '@/lib/utils'
 
 type Classification = Schemas['ClassificationOut']
 
-const BUCKET_COLOURS: Record<Bucket, string> = {
-  equity: 'bg-bucket-equity',
-  debt: 'bg-bucket-debt',
-  gold: 'bg-bucket-gold',
-  silver: 'bg-bucket-silver',
-  other: 'bg-bucket-other',
+const ASSET_COLOURS: Record<Asset, string> = {
+  equity: 'bg-asset-equity',
+  debt: 'bg-asset-debt',
+  gold: 'bg-asset-gold',
+  silver: 'bg-asset-silver',
+  other: 'bg-asset-other',
 }
 
 /** Everything about a fund that isn't money: classification, identifiers, other plans. */
@@ -180,17 +180,17 @@ function AllocationBar({ classification }: { classification: Classification }) {
       <div className="bg-muted flex h-2.5 overflow-hidden rounded-full" aria-hidden>
         {classification.allocation.map((share) => (
           <div
-            key={share.bucket}
-            className={BUCKET_COLOURS[share.bucket]}
+            key={share.asset}
+            className={ASSET_COLOURS[share.asset]}
             style={{ width: `${share.percent}%` }}
           />
         ))}
       </div>
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
         {classification.allocation.map((share) => (
-          <li key={share.bucket} className="flex items-center gap-1.5">
-            <span aria-hidden className={cn('size-2.5 rounded-sm', BUCKET_COLOURS[share.bucket])} />
-            {BUCKET_LABELS[share.bucket]} {share.percent}%
+          <li key={share.asset} className="flex items-center gap-1.5">
+            <span aria-hidden className={cn('size-2.5 rounded-sm', ASSET_COLOURS[share.asset])} />
+            {ASSET_LABELS[share.asset]} {share.percent}%
           </li>
         ))}
         <li className="text-muted-foreground">
@@ -209,14 +209,14 @@ function OverrideForm({
   onDone: () => void
 }) {
   const current = instrument.override ?? instrument.rule
-  const [percents, setPercents] = useState<Record<Bucket, string>>(
+  const [percents, setPercents] = useState<Record<Asset, string>>(
     () =>
       Object.fromEntries(
-        BUCKETS.map((bucket) => [
-          bucket,
-          current.allocation.find((share) => share.bucket === bucket)?.percent ?? '',
+        ASSETS.map((asset) => [
+          asset,
+          current.allocation.find((share) => share.asset === asset)?.percent ?? '',
         ]),
-      ) as Record<Bucket, string>,
+      ) as Record<Asset, string>,
   )
   const [exposure, setExposure] = useState<Exposure>(current.exposure)
   const [note, setNote] = useState(instrument.override?.note ?? '')
@@ -224,9 +224,9 @@ function OverrideForm({
 
   function submit(event: FormEvent) {
     event.preventDefault()
-    const allocation = BUCKETS.filter((bucket) => percents[bucket].trim() !== '').map((bucket) => ({
-      bucket,
-      percent: percents[bucket].trim(),
+    const allocation = ASSETS.filter((asset) => percents[asset].trim() !== '').map((asset) => ({
+      asset,
+      percent: percents[asset].trim(),
     }))
     save.mutate(
       { allocation, exposure, note: note.trim() || null },
@@ -247,15 +247,15 @@ function OverrideForm({
           <InfoTip label="Split">Must add up to 100.</InfoTip>
         </legend>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-          {BUCKETS.map((bucket) => (
-            <label key={bucket} className="flex flex-col gap-1 text-sm">
-              {BUCKET_LABELS[bucket]}
+          {ASSETS.map((asset) => (
+            <label key={asset} className="flex flex-col gap-1 text-sm">
+              {ASSET_LABELS[asset]}
               <Input
                 inputMode="decimal"
                 placeholder="0"
-                value={percents[bucket]}
+                value={percents[asset]}
                 onChange={(event) =>
-                  setPercents((previous) => ({ ...previous, [bucket]: event.target.value }))
+                  setPercents((previous) => ({ ...previous, [asset]: event.target.value }))
                 }
               />
             </label>

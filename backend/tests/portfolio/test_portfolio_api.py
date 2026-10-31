@@ -53,7 +53,7 @@ def lump_sum(api: TestClient, fund_id: int, day: str, amount: str, **extra) -> d
 def held(api: TestClient, funds: dict[str, int]) -> TestClient:
     """Parag Parikh: ₹10,000 at 100 (100 units) and ₹5,000 at 125 (40 units); 50 units of
     the first lot sold at 150 (₹7,500). ₹6,000 of the arbitrage fund as emergency money,
-    in a 60 / 40 target bucket of Parag Parikh and the Nifty 50 index fund."""
+    in a 60 / 40 target model of Parag Parikh and the Nifty 50 index fund."""
     lump_sum(api, funds[PARAG], "2024-01-01", "10000")
     holding = lump_sum(api, funds[PARAG], "2025-01-01", "5000")
     first = holding["lots"][0]
@@ -63,9 +63,9 @@ def held(api: TestClient, funds: dict[str, int]) -> TestClient:
         {"sale_date": "2025-07-01", "lots": [{"lot_id": first["id"], "units": "50"}]},
     )
     lump_sum(api, funds[ARBITRAGE], "2026-01-01", "6000")
-    bucket = post(
+    model = post(
         api,
-        "/api/v1/buckets",
+        "/api/v1/models",
         {
             "name": "Core",
             "funds": [
@@ -77,7 +77,7 @@ def held(api: TestClient, funds: dict[str, int]) -> TestClient:
     response = api.put(
         "/api/v1/plan/settings",
         json={
-            "target_bucket_id": bucket["id"],
+            "target_model_id": model["id"],
             "emergency_fund_id": funds[ARBITRAGE],
             "emergency_goal": "100000",
             "stagger_threshold": "500000",

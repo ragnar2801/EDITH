@@ -26,7 +26,7 @@ class FundNav(Base):
 
 
 class TrackedFund(Base):
-    """A fund I asked Friday to keep NAVs for. Funds in a bucket are tracked anyway."""
+    """A fund I asked Friday to keep NAVs for. Funds in a model are tracked anyway."""
 
     __tablename__ = "tracked_funds"
 

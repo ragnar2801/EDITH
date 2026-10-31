@@ -17,9 +17,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { FREQUENCY_LABELS, type Frequency } from '@/lib/backtest'
-import { REBALANCE_LABELS, type Bucket, type Rebalance } from '@/lib/buckets'
+import { REBALANCE_LABELS, backtestPath, type Model, type Rebalance } from '@/lib/models'
 import { inrShort } from '@/lib/money'
-import { backtestPath } from '@/lib/models'
 import {
   DEFAULT_OPTIMISE,
   GOAL_LABELS,
@@ -36,12 +35,12 @@ import { formatDate } from '@/lib/time'
 const STRATEGIES = { regular: 'Lump sum', sip: 'SIP' } as const
 
 /** Try every split of a model's funds and rank them: settings left, results right. */
-export function OptimiseWorkspace({ bucket }: { bucket: Bucket }) {
+export function OptimiseWorkspace({ model }: { model: Model }) {
   const [form, setForm] = useState(DEFAULT_OPTIMISE)
   const [asked, setAsked] = useState(DEFAULT_OPTIMISE)
   const optimise = useOptimise()
 
-  if (bucket.funds.length > MAX_FUNDS) {
+  if (model.funds.length > MAX_FUNDS) {
     return <EmptyState icon={Sparkles} title={`Optimise works with up to ${MAX_FUNDS} funds`} />
   }
   return (
@@ -49,35 +48,35 @@ export function OptimiseWorkspace({ bucket }: { bucket: Bucket }) {
       <Card className="lg:sticky lg:top-20">
         <CardContent className="flex flex-col gap-4">
           <Settings
-            bucket={bucket}
+            model={model}
             form={form}
             onForm={setForm}
             running={optimise.isPending}
             onRun={() => {
               setAsked(form)
-              optimise.mutate(toRequest(form, bucket))
+              optimise.mutate(toRequest(form, model))
             }}
           />
           <ErrorText error={optimise.error} />
         </CardContent>
       </Card>
       {optimise.data ? (
-        <Results bucket={bucket} form={asked} result={optimise.data} />
+        <Results model={model} form={asked} result={optimise.data} />
       ) : (
-        <EmptyState icon={Sparkles} title={`Find the best split of ${bucket.name}`} />
+        <EmptyState icon={Sparkles} title={`Find the best split of ${model.name}`} />
       )}
     </div>
   )
 }
 
 function Settings({
-  bucket,
+  model,
   form,
   onForm,
   running,
   onRun,
 }: {
-  bucket: Bucket
+  model: Model
   form: OptimiseForm
   onForm: (form: OptimiseForm) => void
   running: boolean
@@ -124,7 +123,7 @@ function Settings({
                 onChange={(event) => set({ rebalance: event.target.value as '' | Rebalance })}
               >
                 <option value="">
-                  Model’s own ({REBALANCE_LABELS[bucket.rebalance].toLowerCase()})
+                  Model’s own ({REBALANCE_LABELS[model.rebalance].toLowerCase()})
                 </option>
                 {(Object.keys(REBALANCE_LABELS) as Rebalance[]).map((key) => (
                   <option key={key} value={key}>
@@ -221,15 +220,7 @@ function Settings({
 
 const pct = (value: string | null | undefined) => formatPercent(value, { sign: false })
 
-function Results({
-  bucket,
-  form,
-  result,
-}: {
-  bucket: Bucket
-  form: OptimiseForm
-  result: Optimised
-}) {
+function Results({ model, form, result }: { model: Model; form: OptimiseForm; result: Optimised }) {
   const navigate = useNavigate()
   const best = result.top[0]
   const marks: ScatterMark[] = [
@@ -240,8 +231,8 @@ function Results({
     ...(best ? [point('Best', 'var(--positive)', best.metrics)] : []),
   ]
   const tryIt = (candidate: Candidate) =>
-    navigate(backtestPath(bucket.id), {
-      state: handoff(form, candidate, bucket, result.start_date),
+    navigate(backtestPath(model.id), {
+      state: handoff(form, candidate, model, result.start_date),
     })
 
   return (

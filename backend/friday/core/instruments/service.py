@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from friday.core.instruments.classify import EXPOSURES, Classification
 from friday.core.instruments.models import (
-    BUCKETS,
+    ASSETS,
     ClassificationOverride,
     Instrument,
     InstrumentImport,
@@ -39,9 +39,9 @@ def set_override(
     exposure: str,
     note: str | None = None,
 ) -> ClassificationOverride:
-    unknown = set(allocation) - set(BUCKETS)
+    unknown = set(allocation) - set(ASSETS)
     if unknown:
-        raise InvalidClassification(f"unknown buckets: {', '.join(sorted(unknown))}")
+        raise InvalidClassification(f"unknown asset classes: {', '.join(sorted(unknown))}")
     if any(pct < 0 or pct > HUNDRED for pct in allocation.values()):
         raise InvalidClassification("each share must be between 0 and 100")
     total = sum(allocation.values(), Decimal(0))
@@ -51,7 +51,7 @@ def set_override(
         raise InvalidClassification(f"exposure must be one of {', '.join(EXPOSURES)}")
 
     override = instrument.override or ClassificationOverride(instrument_id=instrument.id)
-    override.set_allocation({bucket: pct for bucket, pct in allocation.items() if pct})
+    override.set_allocation({asset: pct for asset, pct in allocation.items() if pct})
     override.exposure = exposure
     override.note = note or None
     override.updated_at = datetime.now(UTC)

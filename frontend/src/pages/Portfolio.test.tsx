@@ -6,7 +6,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import type { Schemas } from '@/api/client'
 import { routes } from '@/app/routes'
 import {
-  bucket,
+  model,
   detail,
   fakeApi,
   fundRef,
@@ -233,9 +233,9 @@ test('the fund page shows its returns next to the benchmark', async () => {
 
 test('the target model shows how far each fund is from its weight', async () => {
   fakeApi({
-    'GET /api/v1/buckets': () => [bucket()],
+    'GET /api/v1/models': () => [model()],
     'GET /api/v1/plan/settings': () => ({
-      target_bucket: { id: 1, name: 'Core' },
+      target_model: { id: 1, name: 'Core' },
       emergency_goal: '0.00',
       emergency_fund: null,
       stagger_fund: null,

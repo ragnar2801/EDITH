@@ -15,9 +15,9 @@ export function syncMessage(run: SyncRun): string {
   return `${run.added.toLocaleString('en-IN')} NAVs added for ${funds}`
 }
 
-/** Why a fund is tracked, in UI words: the API says "bucket Core", "holding". */
+/** Why a fund is tracked, in UI words: the API says "model Core", "holding". */
 export function reasonLabel(reason: string): string {
   if (reason === 'holding') return 'Holding'
-  if (reason.startsWith('bucket ')) return `Model ${reason.slice('bucket '.length)}`
+  if (reason.startsWith('model ')) return `Model ${reason.slice('model '.length)}`
   return reason.charAt(0).toUpperCase() + reason.slice(1)
 }

@@ -72,7 +72,7 @@ export function BacktestResults({
       visible ? points.filter((point) => point.date >= visible) : points
     const lines: ChartSeries[] = [
       {
-        name: run.bucket_name,
+        name: run.model_name,
         color: 'var(--chart-main)',
         points: clip(curve).map((point) => ({ date: point.date, value: point.value })),
       },
@@ -101,7 +101,7 @@ export function BacktestResults({
       })
     }
     return lines
-  }, [baseline, curve, result, run.bucket_name, visible])
+  }, [baseline, curve, result, run.model_name, visible])
 
   const markers: ChartMarker[] = result.trades
     .filter((trade) => !visible || trade.date >= visible)

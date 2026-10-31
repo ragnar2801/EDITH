@@ -1,4 +1,4 @@
-"""Buckets: exact weights, funds only, tracking, edits and deletes."""
+"""Models: exact weights, funds only, tracking, edits and deletes."""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -26,42 +26,42 @@ def core(ids: dict[str, int], **extra) -> dict:
 
 
 def test_default_benchmark_is_the_nifty_50_index_fund(api: TestClient) -> None:
-    benchmark = api.get("/api/v1/buckets/default-benchmark").json()
+    benchmark = api.get("/api/v1/models/default-benchmark").json()
 
     assert (benchmark["amfi_code"], benchmark["name"]) == ("120716", "UTI Nifty 50 Index Fund")
     assert (benchmark["plan"], benchmark["option"]) == ("direct", "Growth")
 
 
-def test_create_and_read_a_bucket(api: TestClient, funds) -> None:
-    created = api.post("/api/v1/buckets", json=core(funds))
+def test_create_and_read_a_model(api: TestClient, funds) -> None:
+    created = api.post("/api/v1/models", json=core(funds))
     assert created.status_code == 201, created.text
-    bucket = created.json()
+    model = created.json()
 
-    assert (bucket["name"], bucket["rebalance"]) == ("Core", "yearly")
-    assert [(f["fund"]["amfi_code"], f["weight"]) for f in bucket["funds"]] == [
+    assert (model["name"], model["rebalance"]) == ("Core", "yearly")
+    assert [(f["fund"]["amfi_code"], f["weight"]) for f in model["funds"]] == [
         (PARAG, "60"),
         (NIFTY, "40"),
     ]
-    assert bucket["benchmark"]["fund"]["amfi_code"] == NIFTY
-    assert bucket["common_start"] is None  # no NAVs synced yet
-    assert api.get(f"/api/v1/buckets/{bucket['id']}").json() == bucket
-    assert [b["name"] for b in api.get("/api/v1/buckets").json()] == ["Core"]
+    assert model["benchmark"]["fund"]["amfi_code"] == NIFTY
+    assert model["common_start"] is None  # no NAVs synced yet
+    assert api.get(f"/api/v1/models/{model['id']}").json() == model
+    assert [b["name"] for b in api.get("/api/v1/models").json()] == ["Core"]
 
 
-def test_bucket_funds_are_tracked_and_sync(api: TestClient, funds) -> None:
-    bucket = api.post("/api/v1/buckets", json=core(funds)).json()
+def test_model_funds_are_tracked_and_sync(api: TestClient, funds) -> None:
+    model = api.post("/api/v1/models", json=core(funds)).json()
 
     api.post("/api/v1/navs/sync")
 
     status = api.get("/api/v1/navs/status").json()
     reasons = {row["fund"]["amfi_code"]: row["used_by"] for row in status["funds"]}
-    assert reasons == {PARAG: ["bucket Core"], NIFTY: ["bucket Core", "benchmark of Core"]}
-    refreshed = api.get(f"/api/v1/buckets/{bucket['id']}").json()
+    assert reasons == {PARAG: ["model Core"], NIFTY: ["model Core", "benchmark of Core"]}
+    refreshed = api.get(f"/api/v1/models/{model['id']}").json()
     assert refreshed["common_start"] == "2013-05-28"  # Parag Parikh's first NAV is the later one
     assert refreshed["funds"][0]["coverage"]["count"] == 13
     untrack = api.delete(f"/api/v1/instruments/{funds[PARAG]}/tracking")
     assert untrack.status_code == 409
-    assert "bucket Core" in untrack.json()["detail"]
+    assert "model Core" in untrack.json()["detail"]
 
 
 @pytest.mark.parametrize(
@@ -77,7 +77,7 @@ def test_weights_must_add_up_to_exactly_100(api: TestClient, funds, weights, mes
     for fund, weight in zip(payload["funds"], weights, strict=True):
         fund["weight"] = weight
 
-    response = api.post("/api/v1/buckets", json=payload)
+    response = api.post("/api/v1/models", json=payload)
 
     assert response.status_code == 422
     assert message in response.json()["detail"]
@@ -87,14 +87,14 @@ def test_weights_must_be_strings(api: TestClient, funds) -> None:
     payload = core(funds)
     payload["funds"][0]["weight"] = 60  # a JSON number could lose precision
 
-    assert api.post("/api/v1/buckets", json=payload).status_code == 422
+    assert api.post("/api/v1/models", json=payload).status_code == 422
 
 
 def test_only_funds(api: TestClient, funds) -> None:
     payload = core(funds)
     payload["funds"].append({"instrument_id": funds["INFY"], "weight": "0.5"})
 
-    response = api.post("/api/v1/buckets", json=payload)
+    response = api.post("/api/v1/models", json=payload)
 
     assert response.status_code == 422
     assert response.json()["detail"] == "Fund: Infosys Limited is not a mutual fund scheme."
@@ -104,22 +104,22 @@ def test_a_fund_listed_twice_is_refused(api: TestClient, funds) -> None:
     payload = core(funds)
     payload["funds"][1]["instrument_id"] = funds[PARAG]
 
-    assert api.post("/api/v1/buckets", json=payload).json()["detail"] == "A fund is listed twice."
+    assert api.post("/api/v1/models", json=payload).json()["detail"] == "A fund is listed twice."
 
 
 def test_names_are_unique(api: TestClient, funds) -> None:
-    api.post("/api/v1/buckets", json=core(funds))
+    api.post("/api/v1/models", json=core(funds))
 
-    response = api.post("/api/v1/buckets", json=core(funds, name="  Core "))
+    response = api.post("/api/v1/models", json=core(funds, name="  Core "))
 
     assert response.status_code == 409
 
 
 def test_edit_changes_weights_order_and_members(api: TestClient, funds) -> None:
-    bucket = api.post("/api/v1/buckets", json=core(funds)).json()
+    model = api.post("/api/v1/models", json=core(funds)).json()
 
     edited = api.put(
-        f"/api/v1/buckets/{bucket['id']}",
+        f"/api/v1/models/{model['id']}",
         json=core(
             funds,
             name="Core v2",
@@ -142,24 +142,24 @@ def test_edit_changes_weights_order_and_members(api: TestClient, funds) -> None:
 
 
 def test_duplicate_copies_the_split_under_a_free_name(api: TestClient, funds) -> None:
-    bucket = api.post("/api/v1/buckets", json=core(funds)).json()
+    model = api.post("/api/v1/models", json=core(funds)).json()
 
-    first = api.post(f"/api/v1/buckets/{bucket['id']}/duplicate")
-    second = api.post(f"/api/v1/buckets/{bucket['id']}/duplicate")
+    first = api.post(f"/api/v1/models/{model['id']}/duplicate")
+    second = api.post(f"/api/v1/models/{model['id']}/duplicate")
 
     assert first.status_code == 201, first.text
     copy = first.json()
-    assert copy["id"] != bucket["id"]
+    assert copy["id"] != model["id"]
     assert (copy["name"], second.json()["name"]) == ("Core copy", "Core copy 2")
     for field in ("description", "rebalance", "benchmark", "funds"):
-        assert copy[field] == bucket[field]
-    assert api.get(f"/api/v1/buckets/{copy['id']}/backtests").json() == []
-    assert api.post("/api/v1/buckets/999/duplicate").status_code == 404
+        assert copy[field] == model[field]
+    assert api.get(f"/api/v1/models/{copy['id']}/backtests").json() == []
+    assert api.post("/api/v1/models/999/duplicate").status_code == 404
 
 
 def test_delete(api: TestClient, funds) -> None:
-    bucket = api.post("/api/v1/buckets", json=core(funds)).json()
+    model = api.post("/api/v1/models", json=core(funds)).json()
 
-    assert api.delete(f"/api/v1/buckets/{bucket['id']}").status_code == 204
-    assert api.get(f"/api/v1/buckets/{bucket['id']}").status_code == 404
+    assert api.delete(f"/api/v1/models/{model['id']}").status_code == 204
+    assert api.get(f"/api/v1/models/{model['id']}").status_code == 404
     assert api.get("/api/v1/navs/status").json()["funds"] == []

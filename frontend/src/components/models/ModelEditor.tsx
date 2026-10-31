@@ -2,7 +2,7 @@ import { ChevronDown, ChevronRight, X } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 
-import { useSaveBucket } from '@/api/queries'
+import { useSaveModel } from '@/api/queries'
 import { ErrorText, Field } from '@/components/Field'
 import { InfoTip } from '@/components/InfoTip'
 import { InstrumentSearch } from '@/components/InstrumentSearch'
@@ -10,8 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
-import { REBALANCE_LABELS, type Bucket, type Rebalance } from '@/lib/buckets'
-import type { ModelDraft } from '@/lib/models'
+import { REBALANCE_LABELS, type Model, type ModelDraft, type Rebalance } from '@/lib/models'
 import { cn } from '@/lib/utils'
 import { equalWeights, fromBasisPoints, totalBasisPoints } from '@/lib/weights'
 
@@ -27,12 +26,12 @@ export function ModelEditor({
   onCancel,
 }: {
   initial: ModelDraft
-  onSaved: (bucket: Bucket) => void
+  onSaved: (model: Model) => void
   onCancel: () => void
 }) {
   const [draft, setDraft] = useState(initial)
   const [more, setMore] = useState(initial.description !== '')
-  const save = useSaveBucket()
+  const save = useSaveModel()
   const total = totalBasisPoints(draft.funds.map((member) => member.weight))
 
   function update(patch: Partial<ModelDraft>) {

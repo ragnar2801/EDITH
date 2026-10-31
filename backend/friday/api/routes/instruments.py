@@ -28,13 +28,13 @@ router = APIRouter(prefix="/instruments", tags=["instruments"])
 Kind = Literal["stock", "etf", "mutual_fund"]
 Market = Literal["IN", "US"]
 Currency = Literal["INR", "USD"]
-Bucket = Literal["equity", "debt", "gold", "silver", "other"]
+Asset = Literal["equity", "debt", "gold", "silver", "other"]
 AssetClass = Literal["equity", "debt", "gold", "silver", "other", "hybrid", "unclassified"]
 Exposure = Literal["IN", "US", "GLOBAL"]
 
 
 class Share(BaseModel):
-    bucket: Bucket
+    asset: Asset
     percent: Percent
 
 
@@ -145,7 +145,7 @@ def _classification(classification: Classification) -> ClassificationOut:
     return ClassificationOut(
         asset_class=classification.asset_class,
         allocation=[
-            Share(bucket=bucket, percent=pct) for bucket, pct in classification.allocation.items()
+            Share(asset=asset, percent=pct) for asset, pct in classification.allocation.items()
         ],
         exposure=classification.exposure,
     )
@@ -263,9 +263,9 @@ def put_classification(
     instrument = _get(session, instrument_id)
     allocation: dict[str, Decimal] = {}
     for share in payload.allocation:
-        if share.bucket in allocation:
-            raise HTTPException(422, f"{share.bucket} is listed twice.")
-        allocation[share.bucket] = share.percent
+        if share.asset in allocation:
+            raise HTTPException(422, f"{share.asset} is listed twice.")
+        allocation[share.asset] = share.percent
     try:
         set_override(session, instrument, allocation, payload.exposure, payload.note)
     except InvalidClassification as error:

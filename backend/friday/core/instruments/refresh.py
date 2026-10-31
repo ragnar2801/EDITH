@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from friday.core.db import session_scope
 from friday.core.instruments.download import Fetcher, FetchError
-from friday.core.instruments.models import BUCKETS, Instrument, InstrumentAlias, InstrumentImport
+from friday.core.instruments.models import ASSETS, Instrument, InstrumentAlias, InstrumentImport
 from friday.core.instruments.search import rebuild_search_index
 from friday.core.instruments.sources import amfi, nasdaq, nse, sec
 from friday.core.instruments.sources.common import Record, SourceFormatError
@@ -98,7 +98,7 @@ def refresh_instruments(
 
 def _classification_values(record: Record) -> dict[str, Any]:
     allocation = record.classification.allocation
-    values: dict[str, Any] = {f"{bucket}_pct": allocation.get(bucket) for bucket in BUCKETS}
+    values: dict[str, Any] = {f"{asset}_pct": allocation.get(asset) for asset in ASSETS}
     values["exposure"] = record.classification.exposure
     return values
 

@@ -11,11 +11,11 @@ from friday.api.errors import PROBLEM_RESPONSES, install_error_handlers
 from friday.api.frontend import mount_frontend
 from friday.api.routes import (
     backtests,
-    buckets,
     cash,
     fm,
     holdings,
     instruments,
+    models,
     navs,
     portfolio,
     system,
@@ -68,7 +68,7 @@ def create_app(settings: Settings | None = None, *, migrate: bool = True) -> Fas
     app.include_router(system.router, prefix=API_PREFIX, responses=PROBLEM_RESPONSES)
     app.include_router(instruments.router, prefix=API_PREFIX, responses=PROBLEM_RESPONSES)
     app.include_router(navs.router, prefix=API_PREFIX, responses=PROBLEM_RESPONSES)
-    app.include_router(buckets.router, prefix=API_PREFIX, responses=PROBLEM_RESPONSES)
+    app.include_router(models.router, prefix=API_PREFIX, responses=PROBLEM_RESPONSES)
     app.include_router(backtests.router, prefix=API_PREFIX, responses=PROBLEM_RESPONSES)
     app.include_router(holdings.router, prefix=API_PREFIX, responses=PROBLEM_RESPONSES)
     app.include_router(cash.router, prefix=API_PREFIX, responses=PROBLEM_RESPONSES)

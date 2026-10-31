@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 
-import { useBuckets, useCash, useHoldings, usePlanSettings, usePortfolio } from '@/api/queries'
+import { useModels, useCash, useHoldings, usePlanSettings, usePortfolio } from '@/api/queries'
 import { CashAccounts } from '@/components/cash/CashAccounts'
 import { CashSummary } from '@/components/cash/CashSummary'
 import { ErrorText } from '@/components/Field'
@@ -39,9 +39,9 @@ function Setup() {
   const cash = useCash()
   const holdings = useHoldings()
   const settings = usePlanSettings()
-  const buckets = useBuckets()
+  const models = useModels()
   const addTransaction = useAddTransaction()
-  if (!cash.isSuccess || !holdings.isSuccess || !settings.isSuccess || !buckets.isSuccess) {
+  if (!cash.isSuccess || !holdings.isSuccess || !settings.isSuccess || !models.isSuccess) {
     return null
   }
 
@@ -68,11 +68,11 @@ function Setup() {
         },
         {
           label: 'Choose a target model',
-          done: settings.data.target_bucket !== null,
+          done: settings.data.target_model !== null,
           action: (
             <Button asChild size="sm" variant="outline">
-              <Link to={buckets.data.length > 0 ? MODELS_PATH : `${MODELS_PATH}/new`}>
-                {buckets.data.length > 0 ? 'Choose' : 'New model'}
+              <Link to={models.data.length > 0 ? MODELS_PATH : `${MODELS_PATH}/new`}>
+                {models.data.length > 0 ? 'Choose' : 'New model'}
               </Link>
             </Button>
           ),

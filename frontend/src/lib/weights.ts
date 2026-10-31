@@ -1,7 +1,7 @@
 /**
- * Bucket weights while editing: percentages with up to 2 decimal places, handled as
+ * Model weights while editing: percentages with up to 2 decimal places, handled as
  * whole basis points so the running total is exact. The backend checks the same rule
- * (the weights add up to exactly 100) when the bucket is saved.
+ * (the weights add up to exactly 100) when the model is saved.
  */
 
 const WEIGHT = /^\d{1,3}(\.\d{1,2})?$/

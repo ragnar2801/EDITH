@@ -5,7 +5,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 
 import type { Schemas } from '@/api/client'
 import { routes } from '@/app/routes'
-import { backtestRun, bucket, fakeApi, nifty, parag } from '@/test/fake-api'
+import { backtestRun, model, fakeApi, nifty, parag } from '@/test/fake-api'
 
 function renderAt(path: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -76,8 +76,8 @@ const optimised: Schemas['OptimiseOut'] = {
 
 test('find the best splits within a drawdown limit, then try one in the backtest', async () => {
   const calls = fakeApi({
-    'GET /api/v1/buckets': () => [bucket()],
-    'GET /api/v1/buckets/1/backtests': () => [],
+    'GET /api/v1/models': () => [model()],
+    'GET /api/v1/models/1/backtests': () => [],
     'POST /api/v1/backtests/optimise': () => optimised,
   })
   const router = renderAt('/models/1/optimise')
@@ -95,7 +95,7 @@ test('find the best splits within a drawdown limit, then try one in the backtest
   expect(within(rows[2]).getByText('85%')).toBeInTheDocument()
   const post = calls.find((call) => call.url.endsWith('/optimise'))
   expect(await post?.json()).toEqual({
-    bucket_id: 1,
+    model_id: 1,
     params: {
       strategy: 'sip',
       amount: '10000',
@@ -124,12 +124,12 @@ test('find the best splits within a drawdown limit, then try one in the backtest
 
 test('a model with more than five funds can’t be optimised', async () => {
   const many = Array.from({ length: 6 }, (_, i) => ({
-    ...bucket().funds[0],
-    fund: { ...bucket().funds[0].fund, id: 100 + i },
+    ...model().funds[0],
+    fund: { ...model().funds[0].fund, id: 100 + i },
   }))
   fakeApi({
-    'GET /api/v1/buckets': () => [bucket({ funds: many })],
-    'GET /api/v1/buckets/1/backtests': () => [],
+    'GET /api/v1/models': () => [model({ funds: many })],
+    'GET /api/v1/models/1/backtests': () => [],
   })
   renderAt('/models/1/optimise')
 

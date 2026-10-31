@@ -107,7 +107,7 @@ def test_instrument_detail(loaded: TestClient) -> None:
     assert {"kind": "symbol", "value": "ZOMATO", "changed_on": "2025-04-09"} in detail["aliases"]
     assert detail["rule"] == {
         "asset_class": "equity",
-        "allocation": [{"bucket": "equity", "percent": "100"}],
+        "allocation": [{"asset": "equity", "percent": "100"}],
         "exposure": "IN",
     }
     assert detail["override"] is None
@@ -129,8 +129,8 @@ def test_set_and_clear_my_classification(loaded: TestClient) -> None:
         url,
         json={
             "allocation": [
-                {"bucket": "equity", "percent": "70.50"},
-                {"bucket": "debt", "percent": "29.50"},
+                {"asset": "equity", "percent": "70.50"},
+                {"asset": "debt", "percent": "29.50"},
             ],
             "exposure": "IN",
             "note": "aggressive plan, from the factsheet",
@@ -141,8 +141,8 @@ def test_set_and_clear_my_classification(loaded: TestClient) -> None:
     detail = response.json()
     assert detail["asset_class"] == "hybrid"
     assert detail["override"]["allocation"] == [
-        {"bucket": "equity", "percent": "70.50"},
-        {"bucket": "debt", "percent": "29.50"},
+        {"asset": "equity", "percent": "70.50"},
+        {"asset": "debt", "percent": "29.50"},
     ]
     assert detail["override"]["note"] == "aggressive plan, from the factsheet"
     assert detail["rule"]["asset_class"] == "unclassified"  # the rule is still shown
@@ -156,12 +156,12 @@ def test_set_and_clear_my_classification(loaded: TestClient) -> None:
 @pytest.mark.parametrize(
     ("allocation", "message"),
     [
-        ([{"bucket": "equity", "percent": "60"}], "add up to 100"),
+        ([{"asset": "equity", "percent": "60"}], "add up to 100"),
         (
-            [{"bucket": "equity", "percent": "50"}, {"bucket": "equity", "percent": "50"}],
+            [{"asset": "equity", "percent": "50"}, {"asset": "equity", "percent": "50"}],
             "listed twice",
         ),
-        ([{"bucket": "equity", "percent": "120"}, {"bucket": "debt", "percent": "-20"}], "between"),
+        ([{"asset": "equity", "percent": "120"}, {"asset": "debt", "percent": "-20"}], "between"),
     ],
 )
 def test_invalid_classification_is_rejected(
@@ -183,7 +183,7 @@ def test_percent_must_be_a_string(loaded: TestClient) -> None:
 
     response = loaded.put(
         f"/api/v1/instruments/{fund['id']}/classification",
-        json={"allocation": [{"bucket": "equity", "percent": 100}], "exposure": "IN"},
+        json={"allocation": [{"asset": "equity", "percent": 100}], "exposure": "IN"},
     )
 
     assert response.status_code == 422

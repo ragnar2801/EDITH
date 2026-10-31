@@ -39,7 +39,7 @@ class Plan:
     emergency: Decimal
     """Topping up the emergency money, before anything else."""
     split: dict[int, Decimal]
-    """Whole rupees per fund, in the bucket's order; only funds that get money."""
+    """Whole rupees per fund, in the model's order; only funds that get money."""
     left: Decimal
     """Not invested: paise, or an amount too small for the minimum per fund."""
     months: list[Month]

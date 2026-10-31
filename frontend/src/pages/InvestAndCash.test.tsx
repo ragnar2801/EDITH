@@ -47,7 +47,7 @@ const cash: Schemas['CashOut'] = {
 }
 
 const settings: Schemas['SettingsOut'] = {
-  target_bucket: { id: 4, name: 'Core' },
+  target_model: { id: 4, name: 'Core' },
   emergency_goal: '150000.00',
   emergency_fund: null,
   stagger_fund: null,
@@ -75,7 +75,7 @@ function planRow(fund: typeof parag, extra: Partial<Schemas['PlanFundOut']>) {
 
 const plan: Schemas['PlanOut'] = {
   amount: '650000.00',
-  bucket: { id: 4, name: 'Core' },
+  model: { id: 4, name: 'Core' },
   emergency,
   emergency_topup: '50000.00',
   to_funds: '600000.00',
@@ -142,7 +142,7 @@ test('a blank amount asks for all investable cash, and errors are shown', async 
 test('without a target model, Invest asks for one', async () => {
   fakeApi({
     'GET /api/v1/cash': () => cash,
-    'GET /api/v1/plan/settings': () => ({ ...settings, target_bucket: null }),
+    'GET /api/v1/plan/settings': () => ({ ...settings, target_model: null }),
   })
   renderAt('/invest')
 
@@ -163,7 +163,7 @@ test('the Cash tab shows what cash is for', async () => {
 test('adding an account sends the balance as a string', async () => {
   const calls = fakeApi({
     'GET /api/v1/cash': () => cash,
-    'GET /api/v1/plan/settings': () => ({ ...settings, target_bucket: null }),
+    'GET /api/v1/plan/settings': () => ({ ...settings, target_model: null }),
     'POST /api/v1/cash/accounts': () => Response.json(cash.accounts[0], { status: 201 }),
   })
   renderAt('/cash')

@@ -56,10 +56,10 @@ def settings(**extra) -> dict:
 
 @pytest.fixture
 def setup(api: TestClient, funds) -> int:
-    """₹60k of Parag Parikh and ₹20k of the Nifty fund in a 60 / 40 bucket, ₹50k in the
-    arbitrage fund as emergency money, ₹10k in a fund outside the bucket, and cash."""
-    bucket = api.post(
-        "/api/v1/buckets",
+    """₹60k of Parag Parikh and ₹20k of the Nifty fund in a 60 / 40 model, ₹50k in the
+    arbitrage fund as emergency money, ₹10k in a fund outside the model, and cash."""
+    model = api.post(
+        "/api/v1/models",
         json={
             "name": "Core",
             "funds": [
@@ -77,10 +77,10 @@ def setup(api: TestClient, funds) -> int:
     account(api, "Car fund", "200000", "reserved")
     saved = api.put(
         "/api/v1/plan/settings",
-        json=settings(target_bucket_id=bucket["id"], emergency_fund_id=funds[ARBITRAGE]),
+        json=settings(target_model_id=model["id"], emergency_fund_id=funds[ARBITRAGE]),
     )
     assert saved.status_code == 200, saved.text
-    return bucket["id"]
+    return model["id"]
 
 
 def test_cash_totals_and_emergency_status(api: TestClient, setup) -> None:
@@ -126,7 +126,7 @@ def test_a_large_amount_comes_with_a_stagger_plan(api: TestClient, setup, funds)
     api.put(
         "/api/v1/plan/settings",
         json=settings(
-            target_bucket_id=setup,
+            target_model_id=setup,
             emergency_fund_id=funds[ARBITRAGE],
             stagger_fund_id=funds[ARBITRAGE],
         ),
@@ -144,7 +144,7 @@ def test_a_large_amount_comes_with_a_stagger_plan(api: TestClient, setup, funds)
 def test_settings_rules(api: TestClient, setup, funds) -> None:
     clash = api.put(
         "/api/v1/plan/settings",
-        json=settings(target_bucket_id=setup, emergency_fund_id=funds[PARAG]),
+        json=settings(target_model_id=setup, emergency_fund_id=funds[PARAG]),
     )
     assert clash.status_code == 422
     assert "emergency money can't be part of the split" in clash.json()["detail"]
@@ -152,9 +152,9 @@ def test_settings_rules(api: TestClient, setup, funds) -> None:
     stock = api.put("/api/v1/plan/settings", json=settings(stagger_fund_id=funds["INFY"]))
     assert stock.status_code == 422
 
-    # Deleting the target bucket clears it; the plan then asks for one.
-    assert api.delete(f"/api/v1/buckets/{setup}").status_code == 204
-    assert api.get("/api/v1/plan/settings").json()["target_bucket"] is None
+    # Deleting the target model clears it; the plan then asks for one.
+    assert api.delete(f"/api/v1/models/{setup}").status_code == 204
+    assert api.get("/api/v1/plan/settings").json()["target_model"] is None
     missing = api.post("/api/v1/plan", json={})
     assert missing.status_code == 422
     assert "target split" in missing.json()["detail"]

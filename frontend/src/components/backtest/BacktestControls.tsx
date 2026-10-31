@@ -19,14 +19,14 @@ import {
   type Strategy,
   type TradeRow,
 } from '@/lib/backtest'
-import { REBALANCE_LABELS } from '@/lib/buckets'
+import { REBALANCE_LABELS } from '@/lib/models'
 
 import { SplitEditor } from './SplitEditor'
 
-type Bucket = Schemas['BucketOut']
+type Model = Schemas['ModelOut']
 
 type Props = {
-  bucket: Bucket
+  model: Model
   form: BacktestForm
   onForm: (form: BacktestForm) => void
   onRun: () => void
@@ -67,9 +67,9 @@ function Money({
 }
 
 /** The left column: which strategy, its inputs, and Run (Friday's layout). */
-export function BacktestControls({ bucket, form, onForm, onRun, running }: Props) {
+export function BacktestControls({ model, form, onForm, onRun, running }: Props) {
   const set = (patch: Partial<BacktestForm>) => onForm({ ...form, ...patch })
-  const funds = bucket.funds.map((member) => member.fund)
+  const funds = model.funds.map((member) => member.fund)
 
   return (
     <form
@@ -102,7 +102,7 @@ export function BacktestControls({ bucket, form, onForm, onRun, running }: Props
               }
             >
               <option value="">
-                Model’s own ({REBALANCE_LABELS[bucket.rebalance].toLowerCase()})
+                Model’s own ({REBALANCE_LABELS[model.rebalance].toLowerCase()})
               </option>
               {(Object.keys(REBALANCE_LABELS) as (keyof typeof REBALANCE_LABELS)[]).map((key) => (
                 <option key={key} value={key}>
@@ -141,7 +141,7 @@ export function BacktestControls({ bucket, form, onForm, onRun, running }: Props
       {form.strategy === 'custom' ? (
         <CustomBuilder form={form} set={set} funds={funds} />
       ) : (
-        <SplitEditor bucket={bucket} split={form.split} onChange={(split) => set({ split })} />
+        <SplitEditor model={model} split={form.split} onChange={(split) => set({ split })} />
       )}
 
       <div className="grid gap-2">

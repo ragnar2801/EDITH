@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from friday.api.deps import SessionDep
-from friday.api.routes.buckets import _sentence
+from friday.api.routes.models import _sentence
 from friday.api.schemas import CoverageOut, FundRef
 from friday.core.holdings.models import Lot, LotSale, Sip
 from friday.core.holdings.service import (

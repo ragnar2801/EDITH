@@ -13,8 +13,6 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from friday.core.buckets.models import Bucket
-from friday.core.buckets.service import default_benchmark
 from friday.core.cash.service import cash_total, get_settings
 from friday.core.holdings.models import Lot
 from friday.core.holdings.service import (
@@ -25,8 +23,10 @@ from friday.core.holdings.service import (
     sold_cost,
     today,
 )
-from friday.core.instruments.models import BUCKETS, Instrument
+from friday.core.instruments.models import ASSETS, Instrument
 from friday.core.instruments.service import effective_classification
+from friday.core.models.models import Model
+from friday.core.models.service import default_benchmark
 from friday.core.navs.models import FundNav
 from friday.core.navs.service import nav_series
 from friday.core.portfolio.history import (
@@ -117,7 +117,7 @@ class Portfolio:
     benchmark_fund: Instrument | None
     benchmark: Returns | None
     allocation: list[AssetSlice]
-    target: Bucket | None
+    target: Model | None
     drift: list[Drift]
     cash: dict[str, Decimal]
     day: Change | None
@@ -243,16 +243,16 @@ def _allocation(funds: list[FundPosition]) -> list[AssetSlice]:
     total = sum(amounts.values(), ZERO)
     return [
         AssetSlice(asset, money(amounts[asset]), pct(amounts[asset], total))
-        for asset in (*BUCKETS, UNCLASSIFIED)
+        for asset in (*ASSETS, UNCLASSIFIED)
         if amounts.get(asset)
     ]
 
 
-def _drift(bucket: Bucket, funds: list[FundPosition]) -> list[Drift]:
+def _drift(model: Model, funds: list[FundPosition]) -> list[Drift]:
     values = {f.instrument.id: f.value or ZERO for f in funds}
-    total = sum((values.get(m.instrument_id, ZERO) for m in bucket.funds), ZERO)
+    total = sum((values.get(m.instrument_id, ZERO) for m in model.funds), ZERO)
     rows = []
-    for member in bucket.funds:
+    for member in model.funds:
         value = values.get(member.instrument_id, ZERO)
         share = pct(value, total)
         weight = money(member.weight_pct)
@@ -309,7 +309,7 @@ def _sort_key(fund: FundPosition):
 
 def portfolio(session: Session) -> Portfolio:
     settings = get_settings(session)
-    target = settings.target_bucket
+    target = settings.target_model
     in_target = {m.instrument_id for m in target.funds} if target else set()
     benchmark_fund = (target.benchmark if target else None) or default_benchmark(session)
     series = nav_series(session, benchmark_fund.id) if benchmark_fund else None
@@ -371,7 +371,7 @@ def history(session: Session, start: date | None = None) -> History:
     the last date on or before ``start``) to the latest NAV date. Funds without a
     stored NAV are left out, as in the totals."""
     settings = get_settings(session)
-    target = settings.target_bucket
+    target = settings.target_model
     benchmark_fund = (target.benchmark if target else None) or default_benchmark(session)
     held = []
     for holding in list_holdings(session):

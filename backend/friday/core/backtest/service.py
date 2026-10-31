@@ -1,4 +1,4 @@
-"""Run a backtest of a bucket on its stored NAVs, keep the run, slice it, compare two runs and
+"""Run a backtest of a model on its stored NAVs, keep the run, slice it, compare two runs and
 search every split of its funds."""
 
 import math
@@ -33,9 +33,9 @@ from friday.core.backtest.schemas import (
     WeightChange,
     WeightedParams,
 )
-from friday.core.buckets.models import Bucket
-from friday.core.buckets.service import InvalidBucket, check_split
 from friday.core.instruments.models import Instrument
+from friday.core.models.models import Model
+from friday.core.models.service import InvalidModel, check_split
 from friday.core.navs.service import nav_series
 
 KEEP_UNSAVED = 20
@@ -49,7 +49,7 @@ def _compile(params: CustomParams, members: set[int]) -> list[CustomTrade]:
     trades: list[CustomTrade] = []
     for number, position in enumerate(params.positions, 1):
         if position.instrument_id not in members:
-            raise EngineError(f"position {number}: that fund isn't in this bucket")
+            raise EngineError(f"position {number}: that fund isn't in this model")
         trades.append(
             CustomTrade(position.instrument_id, position.entry, "buy", amount=position.amount)
         )
@@ -57,7 +57,7 @@ def _compile(params: CustomParams, members: set[int]) -> list[CustomTrade]:
             trades.append(CustomTrade(position.instrument_id, position.exit, "sell", sell_all=True))
     for number, trade in enumerate(params.trades, 1):
         if trade.instrument_id not in members:
-            raise EngineError(f"trade {number}: that fund isn't in this bucket")
+            raise EngineError(f"trade {number}: that fund isn't in this model")
         trades.append(
             CustomTrade(
                 trade.instrument_id,
@@ -140,22 +140,22 @@ def _outcome(outcome: engine.FundOutcome, name: str) -> FundOutcomeOut:
 
 
 def _split(
-    session: Session, bucket: Bucket, params: BacktestParams
+    session: Session, model: Model, params: BacktestParams
 ) -> dict[int, tuple[Instrument, Decimal]]:
-    """Fund id → (fund, weight): the split ``params`` tries, else the bucket's own."""
+    """Fund id → (fund, weight): the split ``params`` tries, else the model's own."""
     if not isinstance(params, WeightedParams) or params.split is None:
-        return {m.instrument_id: (m.instrument, m.weight_pct) for m in bucket.funds}
+        return {m.instrument_id: (m.instrument, m.weight_pct) for m in model.funds}
     funds = [(fund.instrument_id, fund.weight) for fund in params.split]
     try:
         instruments = check_split(session, funds)
-    except InvalidBucket as error:
+    except InvalidModel as error:
         raise EngineError(f"split: {error}") from None
     return {fund.id: (fund, weight) for fund, (_, weight) in zip(instruments, funds, strict=True)}
 
 
-def run_backtest(session: Session, bucket: Bucket, params: BacktestParams) -> BacktestResult:
-    """Run ``params`` on the bucket's stored NAVs. Raises :class:`EngineError` when it can't."""
-    members = _split(session, bucket, params)
+def run_backtest(session: Session, model: Model, params: BacktestParams) -> BacktestResult:
+    """Run ``params`` on the model's stored NAVs. Raises :class:`EngineError` when it can't."""
+    members = _split(session, model, params)
     names = {fund_id: fund.name for fund_id, (fund, _) in members.items()}
     warnings: list[str] = []
 
@@ -177,7 +177,7 @@ def run_backtest(session: Session, bucket: Bucket, params: BacktestParams) -> Ba
         aligned = engine.align(series, params.start, params.end)
         weights = [(fund_id, members[fund_id][1]) for fund_id in fund_ids]
         if isinstance(params, RegularParams):
-            rebalance = params.rebalance or bucket.rebalance
+            rebalance = params.rebalance or model.rebalance
             run = engine.run_regular(aligned, weights, params.capital, rebalance)
         elif isinstance(params, SipParams):
             run = engine.run_sip(aligned, weights, params.amount, params.frequency)
@@ -195,18 +195,18 @@ def run_backtest(session: Session, bucket: Bucket, params: BacktestParams) -> Ba
     warnings.extend(run.warnings)
 
     benchmark = None
-    if bucket.benchmark is not None:
-        bench_series = _series(session, bucket.benchmark, warnings)
+    if model.benchmark is not None:
+        bench_series = _series(session, model.benchmark, warnings)
         bench_days = engine.replay_flows(bench_series, run.days) if bench_series else None
         if bench_days is None:
             warnings.append(
-                f"Benchmark left out: {bucket.benchmark.name} has no NAV on "
+                f"Benchmark left out: {model.benchmark.name} has no NAV on "
                 f"{run.days[0].date.isoformat()}."
             )
         else:
             benchmark = BenchmarkOut(
-                instrument_id=bucket.benchmark.id,
-                name=bucket.benchmark.name,
+                instrument_id=model.benchmark.id,
+                name=model.benchmark.name,
                 curve=_curve(bench_days),
                 metrics=_metrics(bench_days, params.risk_free_pct, None),
             )
@@ -235,7 +235,7 @@ def run_backtest(session: Session, bucket: Bucket, params: BacktestParams) -> Ba
 
 def store_run(
     session: Session,
-    bucket: Bucket,
+    model: Model,
     params: BacktestParams,
     result: BacktestResult,
     *,
@@ -243,7 +243,7 @@ def store_run(
     name: str | None = None,
 ) -> BacktestRun:
     run = BacktestRun(
-        bucket_id=bucket.id,
+        model_id=model.id,
         strategy=params.strategy,
         params=params.model_dump_json(),
         result=result.model_dump_json(),
@@ -265,11 +265,11 @@ def store_run(
     return run
 
 
-def saved_runs(session: Session, bucket_id: int) -> list[BacktestRun]:
+def saved_runs(session: Session, model_id: int) -> list[BacktestRun]:
     return list(
         session.scalars(
             select(BacktestRun)
-            .where(BacktestRun.bucket_id == bucket_id, BacktestRun.saved.is_(True))
+            .where(BacktestRun.model_id == model_id, BacktestRun.saved.is_(True))
             .order_by(BacktestRun.id.desc())
         )
     )
@@ -369,15 +369,15 @@ def _better(goal: str, candidate: Candidate) -> tuple[float, float]:
 
 def optimise(
     session: Session,
-    bucket: Bucket,
+    model: Model,
     params: RegularParams | SipParams,
     settings: SearchSettings,
 ) -> OptimiseOut:
-    """Try every split of the bucket's funds on the weight grid, rank them for the goal, and
-    re-run the best and the bucket's own split with the engine."""
+    """Try every split of the model's funds on the weight grid, rank them for the goal, and
+    re-run the best and the model's own split with the engine."""
     if params.split is not None:
         raise EngineError("the search tries the splits itself; leave the split out")
-    members = bucket.funds
+    members = model.funds
     if len(members) > search.MAX_FUNDS:
         raise EngineError(f"the search works on models of up to {search.MAX_FUNDS} funds")
     count = search.count_splits(
@@ -402,7 +402,7 @@ def optimise(
     if aligned.start >= len(aligned.dates) - 1:
         raise EngineError("the funds have no NAVs in common for these dates")
     if isinstance(params, RegularParams):
-        period = params.rebalance or bucket.rebalance
+        period = params.rebalance or model.rebalance
         plan = search.Plan("regular", float(params.capital), period)
     else:
         plan = search.Plan("sip", float(params.amount), params.frequency)
@@ -429,20 +429,20 @@ def optimise(
         metrics = _metrics(run.days, params.risk_free_pct, None)
         return Candidate(funds=funds, metrics=metrics), run.days
 
-    model, days = exact([(member.instrument_id, member.weight_pct) for member in members])
+    own, days = exact([(member.instrument_id, member.weight_pct) for member in members])
     top = sorted(
         (exact(list(zip(ids, map(Decimal, splits[k]), strict=True)))[0] for k in best),
         key=lambda candidate: _better(settings.goal, candidate),
     )
 
     benchmark = None
-    if bucket.benchmark is not None:
-        bench_series = _series(session, bucket.benchmark, warnings)
+    if model.benchmark is not None:
+        bench_series = _series(session, model.benchmark, warnings)
         bench_days = engine.replay_flows(bench_series, days) if bench_series else None
         if bench_days is not None:
             benchmark = BenchmarkOut(
-                instrument_id=bucket.benchmark.id,
-                name=bucket.benchmark.name,
+                instrument_id=model.benchmark.id,
+                name=model.benchmark.name,
                 curve=[],
                 metrics=_metrics(bench_days, params.risk_free_pct, None),
             )
@@ -469,7 +469,7 @@ def optimise(
                 measures.xirr_pct, measures.max_drawdown_pct, eligible, strict=True
             )
         ],
-        model=model,
+        model=own,
         benchmark=benchmark,
         top=top,
         warnings=warnings,

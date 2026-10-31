@@ -1,7 +1,7 @@
 import { Copy, Pencil, Target, Trash2 } from 'lucide-react'
 import { Link, useParams } from 'react-router'
 
-import { useBuckets, usePlanSettings, usePortfolio } from '@/api/queries'
+import { useModels, usePlanSettings, usePortfolio } from '@/api/queries'
 import { BacktestWorkspace } from '@/components/backtest/BacktestWorkspace'
 import { OptimiseWorkspace } from '@/components/backtest/OptimiseWorkspace'
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/DataTable'
@@ -16,30 +16,29 @@ import { RowActions } from '@/components/RowActions'
 import { Section } from '@/components/Section'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { REBALANCE_LABELS, type Bucket } from '@/lib/buckets'
+import { MODELS_PATH, REBALANCE_LABELS, modelPath, type Model } from '@/lib/models'
 import { fundPath } from '@/lib/instruments'
-import { MODELS_PATH, modelPath } from '@/lib/models'
 import { formatPercent, formatPoints } from '@/lib/percent'
 
 /** One model: what's in it, and how it would have done (J6). */
 export function ModelPage() {
   const id = Number(useParams().id)
-  const buckets = useBuckets()
+  const models = useModels()
   const settings = usePlanSettings()
   const actions = useModelActions()
-  const bucket = buckets.data?.find((b) => b.id === id)
+  const model = models.data?.find((b) => b.id === id)
   const back = { to: MODELS_PATH, label: 'Models' }
 
-  if (buckets.isPending) return <Loading />
-  if (buckets.isError) return <ErrorText error={buckets.error} />
-  if (!bucket) return <PageHeader back={back} title="Model not found" />
+  if (models.isPending) return <Loading />
+  if (models.isError) return <ErrorText error={models.error} />
+  if (!model) return <PageHeader back={back} title="Model not found" />
 
-  const isTarget = settings.data?.target_bucket?.id === bucket.id
+  const isTarget = settings.data?.target_model?.id === model.id
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         back={back}
-        title={bucket.name}
+        title={model.name}
         meta={
           <>
             {isTarget && (
@@ -48,35 +47,35 @@ export function ModelPage() {
                 <InfoTip label="Target">The model new cash moves you towards.</InfoTip>
               </span>
             )}
-            <span>{REBALANCE_LABELS[bucket.rebalance]}</span>
-            {bucket.benchmark && <span>vs {bucket.benchmark.fund.name}</span>}
+            <span>{REBALANCE_LABELS[model.rebalance]}</span>
+            {model.benchmark && <span>vs {model.benchmark.fund.name}</span>}
           </>
         }
         actions={
           <>
             {!isTarget && settings.isSuccess && (
-              <Button variant="outline" onClick={() => actions.makeTarget(bucket)}>
+              <Button variant="outline" onClick={() => actions.makeTarget(model)}>
                 <Target /> Set as target
               </Button>
             )}
             <Button asChild variant="outline">
-              <Link to={modelPath(bucket.id, 'edit')}>
+              <Link to={modelPath(model.id, 'edit')}>
                 <Pencil /> Edit
               </Link>
             </Button>
             <RowActions
-              label={`More for ${bucket.name}`}
+              label={`More for ${model.name}`}
               actions={[
                 {
                   label: 'Duplicate',
                   icon: Copy,
-                  onSelect: () => actions.duplicate(bucket),
+                  onSelect: () => actions.duplicate(model),
                 },
                 {
                   label: 'Delete',
                   icon: Trash2,
                   destructive: true,
-                  onSelect: () => void actions.remove(bucket, MODELS_PATH),
+                  onSelect: () => void actions.remove(model, MODELS_PATH),
                 },
               ]}
             />
@@ -88,19 +87,19 @@ export function ModelPage() {
         label="Model"
         tabs={[
           {
-            path: modelPath(bucket.id),
+            path: modelPath(model.id),
             label: 'Overview',
-            content: <Overview bucket={bucket} isTarget={isTarget} />,
+            content: <Overview model={model} isTarget={isTarget} />,
           },
           {
-            path: modelPath(bucket.id, 'backtest'),
+            path: modelPath(model.id, 'backtest'),
             label: 'Backtest',
-            content: <BacktestWorkspace bucket={bucket} />,
+            content: <BacktestWorkspace model={model} />,
           },
           {
-            path: modelPath(bucket.id, 'optimise'),
+            path: modelPath(model.id, 'optimise'),
             label: 'Optimise',
-            content: <OptimiseWorkspace bucket={bucket} />,
+            content: <OptimiseWorkspace model={model} />,
           },
         ]}
       />
@@ -108,13 +107,13 @@ export function ModelPage() {
   )
 }
 
-function Overview({ bucket, isTarget }: { bucket: Bucket; isTarget: boolean }) {
+function Overview({ model, isTarget }: { model: Model; isTarget: boolean }) {
   const portfolio = usePortfolio({ enabled: isTarget })
   // Drift is worked out for the target model only.
   const drift = isTarget ? new Map(portfolio.data?.drift.map((row) => [row.fund.id, row])) : null
   return (
     <>
-      {bucket.description && <p className="text-sm">{bucket.description}</p>}
+      {model.description && <p className="text-sm">{model.description}</p>}
       <Section title="Funds">
         <Table label="Funds">
           <THead>
@@ -136,7 +135,7 @@ function Overview({ bucket, isTarget }: { bucket: Bucket; isTarget: boolean }) {
             )}
           </THead>
           <TBody>
-            {bucket.funds.map((member) => (
+            {model.funds.map((member) => (
               <Tr key={member.fund.id} to={fundPath(member.fund.id)}>
                 <Td>
                   <FundName fund={member.fund} />
@@ -155,7 +154,7 @@ function Overview({ bucket, isTarget }: { bucket: Bucket; isTarget: boolean }) {
           </TBody>
         </Table>
       </Section>
-      {bucket.benchmark && (
+      {model.benchmark && (
         <Section
           title="Benchmark"
           info={
@@ -164,8 +163,8 @@ function Overview({ bucket, isTarget }: { bucket: Bucket; isTarget: boolean }) {
             </InfoTip>
           }
         >
-          <Link to={fundPath(bucket.benchmark.fund.id)} className="w-fit hover:underline">
-            <FundName fund={bucket.benchmark.fund} />
+          <Link to={fundPath(model.benchmark.fund.id)} className="w-fit hover:underline">
+            <FundName fund={model.benchmark.fund} />
           </Link>
         </Section>
       )}

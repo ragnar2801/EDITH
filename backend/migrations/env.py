@@ -5,7 +5,7 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-import friday.core.models  # noqa: F401 (registers every table on Base.metadata)
+import friday.core.tables  # noqa: F401 (registers every table on Base.metadata)
 from friday.config import Settings
 from friday.core.db import Base
 from friday.core.instruments.search import FTS_TABLE

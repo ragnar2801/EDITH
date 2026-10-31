@@ -28,11 +28,11 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-bucket-equity: var(--bucket-equity);
-  --color-bucket-debt: var(--bucket-debt);
-  --color-bucket-gold: var(--bucket-gold);
-  --color-bucket-silver: var(--bucket-silver);
-  --color-bucket-other: var(--bucket-other);
+  --color-asset-equity: var(--asset-equity);
+  --color-asset-debt: var(--asset-debt);
+  --color-asset-gold: var(--asset-gold);
+  --color-asset-silver: var(--asset-silver);
+  --color-asset-other: var(--asset-other);
   --color-chart-main: var(--chart-main);
   --color-chart-benchmark: var(--chart-benchmark);
   --color-chart-invested: var(--chart-invested);
@@ -59,13 +59,13 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  /* Allocation buckets: one colour each, the same everywhere they appear. */
-  --bucket-equity: oklch(0.55 0.15 255);
-  --bucket-debt: oklch(0.6 0.11 180);
-  --bucket-gold: oklch(0.75 0.15 80);
-  --bucket-silver: oklch(0.7 0.01 260);
-  --bucket-other: oklch(0.55 0.15 320);
-  /* Chart lines: the bucket or fund, its benchmark, money put in. */
+  /* Asset classes: one colour each, the same everywhere they appear. */
+  --asset-equity: oklch(0.55 0.15 255);
+  --asset-debt: oklch(0.6 0.11 180);
+  --asset-gold: oklch(0.75 0.15 80);
+  --asset-silver: oklch(0.7 0.01 260);
+  --asset-other: oklch(0.55 0.15 320);
+  /* Chart lines: the model or fund, its benchmark, money put in. */
   --chart-main: oklch(0.6 0.12 190);
   --chart-benchmark: oklch(0.7 0.14 70);
   --chart-invested: oklch(0.6 0.02 250);
@@ -91,11 +91,11 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --bucket-equity: oklch(0.68 0.14 255);
-  --bucket-debt: oklch(0.72 0.11 180);
-  --bucket-gold: oklch(0.8 0.14 80);
-  --bucket-silver: oklch(0.78 0.01 260);
-  --bucket-other: oklch(0.7 0.14 320);
+  --asset-equity: oklch(0.68 0.14 255);
+  --asset-debt: oklch(0.72 0.11 180);
+  --asset-gold: oklch(0.8 0.14 80);
+  --asset-silver: oklch(0.78 0.01 260);
+  --asset-other: oklch(0.7 0.14 320);
   --chart-main: oklch(0.72 0.12 190);
   --chart-benchmark: oklch(0.8 0.14 75);
   --chart-invested: oklch(0.7 0.02 250);

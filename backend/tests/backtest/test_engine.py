@@ -244,14 +244,14 @@ def test_custom_trade_after_the_last_nav_is_skipped() -> None:
 
 
 def test_benchmark_gets_the_same_money_on_the_same_dates() -> None:
-    bucket = engine.run_sip(engine.align({1: monthly(2, ["10", "10"])}), [(1, D(100))], D(1000))
+    model = engine.run_sip(engine.align({1: monthly(2, ["10", "10"])}), [(1, D(100))], D(1000))
     index_fund = monthly(2, ["10", "20"])
 
-    bench = engine.replay_flows(index_fund, bucket.days)
+    bench = engine.replay_flows(index_fund, model.days)
 
     # 100 units, then 50 more at 20: 150 units at 20 = 3000 for the same 2000 put in.
     assert [(day.value, day.invested) for day in bench] == [(D(1000), D(1000)), (D(3000), D(2000))]
-    assert engine.replay_flows(monthly(2, ["10", "20"], year=2021), bucket.days) is None
+    assert engine.replay_flows(monthly(2, ["10", "20"], year=2021), model.days) is None
 
 
 def test_benchmark_withdrawals_are_capped_at_its_holding() -> None:

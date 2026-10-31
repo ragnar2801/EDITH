@@ -1,6 +1,6 @@
 import type { Schemas } from '@/api/client'
 import type { BacktestRun } from '@/api/queries'
-import type { Bucket } from '@/lib/buckets'
+import type { Model } from '@/lib/models'
 import { toBasisPoints } from '@/lib/weights'
 
 export type BacktestParams = Schemas['BacktestIn']['params']
@@ -39,7 +39,7 @@ export type SplitRow = { fund: SplitFund; weight: string }
 export type BacktestForm = {
   strategy: Strategy
   capital: string
-  /** '' = use the bucket's own rebalance policy. */
+  /** '' = use the model's own rebalance policy. */
   rebalance: '' | Rebalance
   amount: string
   frequency: Frequency
@@ -87,17 +87,17 @@ export const DEFAULT_FORM: BacktestForm = {
 }
 
 /** The model's own funds and weights, as split rows. */
-export function modelSplit(bucket: Bucket): SplitRow[] {
-  return bucket.funds.map((member) => ({ fund: member.fund, weight: member.weight }))
+export function modelSplit(model: Model): SplitRow[] {
+  return model.funds.map((member) => ({ fund: member.fund, weight: member.weight }))
 }
 
 /** True when the split isn't the model's: other funds, or a weight that isn't the same. */
-export function splitModified(split: SplitRow[], bucket: Bucket): boolean {
-  if (split.length !== bucket.funds.length) return true
-  const model = new Map(bucket.funds.map((m) => [m.fund.id, toBasisPoints(m.weight)]))
+export function splitModified(split: SplitRow[], model: Model): boolean {
+  if (split.length !== model.funds.length) return true
+  const weights = new Map(model.funds.map((m) => [m.fund.id, toBasisPoints(m.weight)]))
   return split.some((row) => {
     const points = toBasisPoints(row.weight)
-    return points === null || model.get(row.fund.id) !== points
+    return points === null || weights.get(row.fund.id) !== points
   })
 }
 
@@ -105,13 +105,13 @@ const optional = (value: string) => value.trim() || null
 
 /** The API request for this form. Incomplete custom rows are left out; the split is sent
  * only when it isn't the model's own. */
-export function toParams(form: BacktestForm, bucket: Bucket): BacktestParams {
+export function toParams(form: BacktestForm, model: Model): BacktestParams {
   const common = {
     start: optional(form.start),
     end: optional(form.end),
     risk_free_pct: form.riskFree.trim() || '0',
   }
-  const split = splitModified(form.split, bucket)
+  const split = splitModified(form.split, model)
     ? form.split.map((row) => ({ instrument_id: row.fund.id, weight: row.weight.trim() }))
     : null
   switch (form.strategy) {
@@ -173,10 +173,10 @@ export function toParams(form: BacktestForm, bucket: Bucket): BacktestParams {
 }
 
 /** The split a stored run used, with each fund's name from the model or the run. */
-function runSplit(run: BacktestRun, bucket: Bucket): SplitRow[] {
+function runSplit(run: BacktestRun, model: Model): SplitRow[] {
   const params = run.params
-  if (params.strategy === 'custom' || !params.split) return modelSplit(bucket)
-  const known = new Map(bucket.funds.map((member) => [member.fund.id, member.fund]))
+  if (params.strategy === 'custom' || !params.split) return modelSplit(model)
+  const known = new Map(model.funds.map((member) => [member.fund.id, member.fund]))
   const named = new Map(run.result.funds.map((fund) => [fund.instrument_id, fund.name]))
   return params.split.map((row) => ({
     fund: known.get(row.instrument_id) ?? {
@@ -190,7 +190,7 @@ function runSplit(run: BacktestRun, bucket: Bucket): SplitRow[] {
 }
 
 /** Fill the form from a stored run, so a loaded run can be changed and re-run. */
-export function fromRun(run: BacktestRun, bucket: Bucket): BacktestForm {
+export function fromRun(run: BacktestRun, model: Model): BacktestForm {
   const params = run.params
   const form: BacktestForm = {
     ...DEFAULT_FORM,
@@ -198,7 +198,7 @@ export function fromRun(run: BacktestRun, bucket: Bucket): BacktestForm {
     start: params.start ?? '',
     end: params.end ?? '',
     riskFree: params.risk_free_pct ?? '0',
-    split: runSplit(run, bucket),
+    split: runSplit(run, model),
   }
   switch (params.strategy) {
     case 'regular':

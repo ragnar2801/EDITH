@@ -22,15 +22,15 @@ class Classification:
 
 
 def asset_class(allocation: dict[str, Decimal]) -> str:
-    """One label for an allocation: its bucket, ``hybrid`` if split, or ``unclassified``."""
-    shares = [bucket for bucket, pct in allocation.items() if pct]
+    """One label for an allocation: its asset, ``hybrid`` if split, or ``unclassified``."""
+    shares = [asset for asset, pct in allocation.items() if pct]
     if not shares:
         return "unclassified"
     return shares[0] if len(shares) == 1 else "hybrid"
 
 
 def _split(**shares: int) -> dict[str, Decimal]:
-    return {bucket: Decimal(pct) for bucket, pct in shares.items()}
+    return {asset: Decimal(pct) for asset, pct in shares.items()}
 
 
 EQUITY = _split(equity=100)
@@ -97,7 +97,7 @@ def us_exposure(name: str) -> str:
 
 
 def _by_name(name: str, default: dict[str, Decimal]) -> dict[str, Decimal]:
-    """Bucket from keywords in a fund or ETF name. Order matters: gold before debt, etc."""
+    """Asset class from keywords in a fund or ETF name. Order matters: gold before debt, etc."""
     if GOLD_WORDS.search(name):
         return GOLD
     if SILVER_WORDS.search(name):

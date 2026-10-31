@@ -83,8 +83,8 @@ test('setting my own classification sends exact strings and shows the result', a
     override: {
       asset_class: 'hybrid',
       allocation: [
-        { bucket: 'equity', percent: '65' },
-        { bucket: 'debt', percent: '35' },
+        { asset: 'equity', percent: '65' },
+        { asset: 'debt', percent: '35' },
       ],
       exposure: 'GLOBAL',
       note: 'holds US stocks',
@@ -112,8 +112,8 @@ test('setting my own classification sends exact strings and shows the result', a
   const put = calls.find((call) => call.method === 'PUT')
   expect(await put?.json()).toEqual({
     allocation: [
-      { bucket: 'equity', percent: '65' },
-      { bucket: 'debt', percent: '35' },
+      { asset: 'equity', percent: '65' },
+      { asset: 'debt', percent: '35' },
     ],
     exposure: 'GLOBAL',
     note: 'holds US stocks',

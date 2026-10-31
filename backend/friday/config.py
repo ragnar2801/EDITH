@@ -38,7 +38,8 @@ class Settings(BaseSettings):
     sec_user_agent: str | None = None
 
     # FM on the phone sends its lots here ("Sync to Friday"). The one listener on the Wi-Fi:
-    # its own port, a token (made in fm/token.txt in the data folder), and nothing served but the lots.
+    # its own port, a token (made in fm/token.txt in the data folder), and nothing served
+    # but the lots.
     fm_push: bool = True
     fm_push_port: int = 8090
 

@@ -14,12 +14,12 @@ from decimal import ROUND_HALF_UP, Decimal
 from sqlalchemy import func, insert, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
-from friday.core.buckets.service import bucket_reasons
 from friday.core.db import session_scope
 from friday.core.holdings.service import add_due_instalments, holding_reasons
 from friday.core.instruments.download import FetchError
 from friday.core.instruments.models import Instrument
 from friday.core.instruments.sources.common import SourceFormatError
+from friday.core.models.service import model_reasons
 from friday.core.navs.download import NavFetcher
 from friday.core.navs.models import FundNav, NavSync, TrackedFund
 from friday.core.navs.sources import NavPoint, parse_amfi_latest, parse_mfapi
@@ -40,7 +40,7 @@ class NotTracked(ValueError):
 
 
 class StillUsed(ValueError):
-    """The fund can't be untracked while a bucket uses it."""
+    """The fund can't be untracked while a model uses it."""
 
 
 def require_fund(instrument: Instrument) -> None:
@@ -49,15 +49,15 @@ def require_fund(instrument: Instrument) -> None:
 
 
 def _used_by(session: Session) -> dict[int, list[str]]:
-    """Why a fund is tracked other than my marking it: buckets and holdings."""
-    reasons = bucket_reasons(session)
+    """Why a fund is tracked other than my marking it: models and holdings."""
+    reasons = model_reasons(session)
     for instrument_id, why in holding_reasons(session).items():
         reasons.setdefault(instrument_id, []).extend(why)
     return reasons
 
 
 def tracking_reasons(session: Session) -> dict[int, list[str]]:
-    """Every tracked fund and why: ``"me"``, the buckets that use it, or ``"holding"``."""
+    """Every tracked fund and why: ``"me"``, the models that use it, or ``"holding"``."""
     reasons: dict[int, list[str]] = {
         instrument_id: [ME] for instrument_id in session.scalars(select(TrackedFund.instrument_id))
     }

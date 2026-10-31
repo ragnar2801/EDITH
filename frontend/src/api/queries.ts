@@ -230,11 +230,11 @@ export function useUntrackFund(id: number) {
   })
 }
 
-export function useBuckets() {
+export function useModels() {
   return useQuery({
-    queryKey: ['buckets'],
+    queryKey: ['models'],
     queryFn: async () => {
-      const { data, error } = await api.GET('/api/v1/buckets')
+      const { data, error } = await api.GET('/api/v1/models')
       if (error) throw failure(error)
       return data
     },
@@ -245,7 +245,7 @@ export function useDefaultBenchmark() {
   return useQuery({
     queryKey: ['default-benchmark'],
     queryFn: async () => {
-      const { data, error } = await api.GET('/api/v1/buckets/default-benchmark')
+      const { data, error } = await api.GET('/api/v1/models/default-benchmark')
       if (error) throw failure(error)
       return data ?? null
     },
@@ -253,17 +253,17 @@ export function useDefaultBenchmark() {
   })
 }
 
-/** Create a bucket (no `id`) or replace one. Then download NAVs for funds that have none. */
-export function useSaveBucket() {
+/** Create a model (no `id`) or replace one. Then download NAVs for funds that have none. */
+export function useSaveModel() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, body }: { id?: number; body: Schemas['BucketIn'] }) => {
+    mutationFn: async ({ id, body }: { id?: number; body: Schemas['ModelIn'] }) => {
       const { data, error } = id
-        ? await api.PUT('/api/v1/buckets/{bucket_id}', {
-            params: { path: { bucket_id: id } },
+        ? await api.PUT('/api/v1/models/{model_id}', {
+            params: { path: { model_id: id } },
             body,
           })
-        : await api.POST('/api/v1/buckets', { body })
+        : await api.POST('/api/v1/models', { body })
       if (error) throw failure(error)
       const missing = [...data.funds, ...(data.benchmark ? [data.benchmark] : [])]
         .filter((member) => member.coverage.count === 0)
@@ -276,43 +276,43 @@ export function useSaveBucket() {
     },
     onSettled: () =>
       Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['buckets'] }),
+        queryClient.invalidateQueries({ queryKey: ['models'] }),
         invalidateNavs(queryClient),
       ]),
   })
 }
 
-/** Copy a bucket's funds, weights, benchmark and rebalance under "<name> copy". */
-export function useDuplicateBucket() {
+/** Copy a model's funds, weights, benchmark and rebalance under "<name> copy". */
+export function useDuplicateModel() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: number) => {
-      const { data, error } = await api.POST('/api/v1/buckets/{bucket_id}/duplicate', {
-        params: { path: { bucket_id: id } },
+      const { data, error } = await api.POST('/api/v1/models/{model_id}/duplicate', {
+        params: { path: { model_id: id } },
       })
       if (error) throw failure(error)
       return data
     },
     onSettled: () =>
       Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['buckets'] }),
+        queryClient.invalidateQueries({ queryKey: ['models'] }),
         queryClient.invalidateQueries({ queryKey: ['nav-status'] }),
       ]),
   })
 }
 
-export function useDeleteBucket() {
+export function useDeleteModel() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: number) => {
-      const { error } = await api.DELETE('/api/v1/buckets/{bucket_id}', {
-        params: { path: { bucket_id: id } },
+      const { error } = await api.DELETE('/api/v1/models/{model_id}', {
+        params: { path: { model_id: id } },
       })
       if (error) throw failure(error)
     },
     onSettled: () =>
       Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['buckets'] }),
+        queryClient.invalidateQueries({ queryKey: ['models'] }),
         queryClient.invalidateQueries({ queryKey: ['nav-status'] }),
         queryClient.invalidateQueries({ queryKey: ['portfolio'] }),
       ]),
@@ -332,23 +332,23 @@ export function useRunBacktest() {
     onSuccess: (run) => {
       queryClient.setQueryData(['backtest', run.id], run)
       if (run.saved) {
-        return queryClient.invalidateQueries({ queryKey: ['saved-backtests', run.bucket_id] })
+        return queryClient.invalidateQueries({ queryKey: ['saved-backtests', run.model_id] })
       }
     },
   })
 }
 
-export function useSavedBacktests(bucketId: number | null) {
+export function useSavedBacktests(modelId: number | null) {
   return useQuery({
-    queryKey: ['saved-backtests', bucketId],
+    queryKey: ['saved-backtests', modelId],
     queryFn: async () => {
-      const { data, error } = await api.GET('/api/v1/buckets/{bucket_id}/backtests', {
-        params: { path: { bucket_id: bucketId! } },
+      const { data, error } = await api.GET('/api/v1/models/{model_id}/backtests', {
+        params: { path: { model_id: modelId! } },
       })
       if (error) throw failure(error)
       return data
     },
-    enabled: bucketId !== null,
+    enabled: modelId !== null,
   })
 }
 
@@ -382,21 +382,21 @@ export function useSaveBacktest() {
       return data
     },
     onSuccess: (run) =>
-      queryClient.invalidateQueries({ queryKey: ['saved-backtests', run.bucket_id] }),
+      queryClient.invalidateQueries({ queryKey: ['saved-backtests', run.model_id] }),
   })
 }
 
 export function useDeleteBacktest() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id }: { id: number; bucketId: number }) => {
+    mutationFn: async ({ id }: { id: number; modelId: number }) => {
       const { error } = await api.DELETE('/api/v1/backtests/{run_id}', {
         params: { path: { run_id: id } },
       })
       if (error) throw failure(error)
     },
-    onSuccess: (_, { bucketId }) =>
-      queryClient.invalidateQueries({ queryKey: ['saved-backtests', bucketId] }),
+    onSuccess: (_, { modelId }) =>
+      queryClient.invalidateQueries({ queryKey: ['saved-backtests', modelId] }),
   })
 }
 
@@ -635,13 +635,13 @@ export function usePlanSettings() {
 export function useSetTarget() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (bucketId: number | null) => {
+    mutationFn: async (modelId: number | null) => {
       const current = await api.GET('/api/v1/plan/settings')
       if (current.error) throw failure(current.error)
       const rules = current.data
       const { data, error } = await api.PUT('/api/v1/plan/settings', {
         body: {
-          target_bucket_id: bucketId,
+          target_model_id: modelId,
           emergency_goal: rules.emergency_goal,
           emergency_fund_id: rules.emergency_fund?.id ?? null,
           stagger_fund_id: rules.stagger_fund?.id ?? null,

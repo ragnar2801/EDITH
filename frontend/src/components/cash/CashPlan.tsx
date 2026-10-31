@@ -87,7 +87,7 @@ function PlanResult({ plan }: { plan: Plan }) {
               : undefined
           }
         />
-        <Stat label="Into funds" value={inr(plan.invested)} hint={plan.bucket.name} />
+        <Stat label="Into funds" value={inr(plan.invested)} hint={plan.model.name} />
         <Stat
           label="Left as cash"
           info={

@@ -123,7 +123,7 @@ test.each([
   ['/holdings', '/'],
   ['/holdings/7', '/funds/7/transactions'],
   ['/instruments/7', '/funds/7'],
-  ['/buckets', '/models'],
+  ['/models', '/models'],
   ['/backtest/1', '/models/1/backtest'],
   ['/status', '/settings/data'],
 ])('the old address %s redirects to %s', async (from, to) => {

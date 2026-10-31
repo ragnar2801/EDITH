@@ -15,7 +15,7 @@ import { MODELS_PATH, modelPath } from '@/lib/models'
 export function InvestPage() {
   const cash = useCash()
   const settings = usePlanSettings()
-  const target = settings.data?.target_bucket
+  const target = settings.data?.target_model
 
   return (
     <div className="flex flex-col gap-6">

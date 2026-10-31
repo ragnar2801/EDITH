@@ -1,5 +1,5 @@
-"""Backtests of a bucket: run, save, load, delete, figures for a window, and two runs
-compared, and every split of a bucket searched."""
+"""Backtests of a model: run, save, load, delete, figures for a window, and two runs
+compared, and every split of a model searched."""
 
 from datetime import date
 
@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, TypeAdapter
 from sqlalchemy.orm import Session
 
 from friday.api.deps import SessionDep
-from friday.api.routes.buckets import _sentence
+from friday.api.routes.models import _sentence
 from friday.core.backtest.engine import EngineError
 from friday.core.backtest.models import BacktestRun
 from friday.core.backtest.schemas import (
@@ -29,7 +29,7 @@ from friday.core.backtest.service import (
     saved_runs,
     store_run,
 )
-from friday.core.buckets.models import Bucket
+from friday.core.models.models import Model
 from friday.core.schema_types import UtcDatetime
 
 router = APIRouter(tags=["backtests"])
@@ -38,20 +38,20 @@ _params = TypeAdapter(BacktestParams)
 
 
 class BacktestIn(BaseModel):
-    bucket_id: int
+    model_id: int
     params: BacktestParams
     save: bool = False
     name: str | None = Field(default=None, max_length=120)
 
 
 class OptimiseIn(SearchSettings):
-    bucket_id: int
+    model_id: int
     params: SearchParams
 
 
 class BacktestRunSummary(BaseModel):
     id: int
-    bucket_id: int
+    model_id: int
     strategy: Strategy
     saved: bool
     name: str | None
@@ -60,7 +60,7 @@ class BacktestRunSummary(BaseModel):
 
 
 class BacktestRunOut(BacktestRunSummary):
-    bucket_name: str
+    model_name: str
     result: BacktestResult
 
 
@@ -69,11 +69,11 @@ class RunUpdate(BaseModel):
     name: str | None = Field(default=None, max_length=120)
 
 
-def _bucket(session: Session, bucket_id: int) -> Bucket:
-    bucket = session.get(Bucket, bucket_id)
-    if bucket is None:
-        raise HTTPException(404, f"No bucket with id {bucket_id}.")
-    return bucket
+def _model(session: Session, model_id: int) -> Model:
+    model = session.get(Model, model_id)
+    if model is None:
+        raise HTTPException(404, f"No model with id {model_id}.")
+    return model
 
 
 def _run(session: Session, run_id: int) -> BacktestRun:
@@ -86,7 +86,7 @@ def _run(session: Session, run_id: int) -> BacktestRun:
 def _summary(run: BacktestRun) -> BacktestRunSummary:
     return BacktestRunSummary(
         id=run.id,
-        bucket_id=run.bucket_id,
+        model_id=run.model_id,
         strategy=run.strategy,
         saved=run.saved,
         name=run.name,
@@ -98,40 +98,40 @@ def _summary(run: BacktestRun) -> BacktestRunSummary:
 def _out(session: Session, run: BacktestRun) -> BacktestRunOut:
     return BacktestRunOut(
         **_summary(run).model_dump(),
-        bucket_name=_bucket(session, run.bucket_id).name,
+        model_name=_model(session, run.model_id).name,
         result=BacktestResult.model_validate_json(run.result),
     )
 
 
 @router.post("/backtests", operation_id="runBacktest")
 def run(session: SessionDep, payload: BacktestIn) -> BacktestRunOut:
-    """Run a backtest on the bucket's stored NAVs and keep it; ``save`` keeps it for good."""
-    bucket = _bucket(session, payload.bucket_id)
+    """Run a backtest on the model's stored NAVs and keep it; ``save`` keeps it for good."""
+    model = _model(session, payload.model_id)
     try:
-        result = run_backtest(session, bucket, payload.params)
+        result = run_backtest(session, model, payload.params)
     except EngineError as error:
         raise HTTPException(422, _sentence(error)) from None
     stored = store_run(
-        session, bucket, payload.params, result, saved=payload.save, name=payload.name
+        session, model, payload.params, result, saved=payload.save, name=payload.name
     )
     return _out(session, stored)
 
 
 @router.post("/backtests/optimise", operation_id="optimiseSplit")
 def optimise_split(session: SessionDep, payload: OptimiseIn) -> OptimiseOut:
-    """Try every split of the bucket's funds and rank them; nothing is stored."""
-    bucket = _bucket(session, payload.bucket_id)
+    """Try every split of the model's funds and rank them; nothing is stored."""
+    model = _model(session, payload.model_id)
     try:
-        return optimise(session, bucket, payload.params, payload)
+        return optimise(session, model, payload.params, payload)
     except EngineError as error:
         raise HTTPException(422, _sentence(error)) from None
 
 
-@router.get("/buckets/{bucket_id}/backtests", operation_id="listSavedBacktests")
-def list_saved(session: SessionDep, bucket_id: int) -> list[BacktestRunSummary]:
-    """Saved runs of a bucket, newest first."""
-    _bucket(session, bucket_id)
-    return [_summary(run) for run in saved_runs(session, bucket_id)]
+@router.get("/models/{model_id}/backtests", operation_id="listSavedBacktests")
+def list_saved(session: SessionDep, model_id: int) -> list[BacktestRunSummary]:
+    """Saved runs of a model, newest first."""
+    _model(session, model_id)
+    return [_summary(run) for run in saved_runs(session, model_id)]
 
 
 @router.get("/backtests/{run_id}", operation_id="getBacktest")

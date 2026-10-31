@@ -1,7 +1,7 @@
 import { RotateCcw, X } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { useSaveBucket, useTrackAnyFund } from '@/api/queries'
+import { useSaveModel, useTrackAnyFund } from '@/api/queries'
 import { ErrorText } from '@/components/Field'
 import { InfoTip } from '@/components/InfoTip'
 import { InstrumentSearch } from '@/components/InstrumentSearch'
@@ -11,45 +11,45 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useConfirm } from '@/hooks/use-confirm'
 import { modelSplit, splitModified, type SplitRow } from '@/lib/backtest'
-import type { Bucket } from '@/lib/buckets'
+import type { Model } from '@/lib/models'
 import { cn } from '@/lib/utils'
 import { fromBasisPoints, totalBasisPoints } from '@/lib/weights'
 
 /** The funds and weights a backtest runs; changing them leaves the model alone. */
 export function SplitEditor({
-  bucket,
+  model,
   split,
   onChange,
 }: {
-  bucket: Bucket
+  model: Model
   split: SplitRow[]
   onChange: (split: SplitRow[]) => void
 }) {
-  const modified = splitModified(split, bucket)
+  const modified = splitModified(split, model)
   const total = totalBasisPoints(split.map((row) => row.weight))
   const track = useTrackAnyFund()
-  const save = useSaveBucket()
+  const save = useSaveModel()
   const confirm = useConfirm()
 
   async function saveToModel() {
     const yes = await confirm({
-      title: `Save this split to ${bucket.name}?`,
+      title: `Save this split to ${model.name}?`,
       description: 'Invest and drift use the new weights.',
       action: 'Save to model',
     })
     if (!yes) return
     save.mutate(
       {
-        id: bucket.id,
+        id: model.id,
         body: {
-          name: bucket.name,
-          description: bucket.description,
-          rebalance: bucket.rebalance,
-          benchmark_id: bucket.benchmark?.fund.id ?? null,
+          name: model.name,
+          description: model.description,
+          rebalance: model.rebalance,
+          benchmark_id: model.benchmark?.fund.id ?? null,
           funds: split.map((row) => ({ instrument_id: row.fund.id, weight: row.weight.trim() })),
         },
       },
-      { onSuccess: () => toast.success(`${bucket.name} saved`) },
+      { onSuccess: () => toast.success(`${model.name} saved`) },
     )
   }
 
@@ -103,7 +103,7 @@ export function SplitEditor({
         onSelect={(fund) => {
           if (split.some((row) => row.fund.id === fund.id)) return
           onChange([...split, { fund, weight: '' }])
-          if (!bucket.funds.some((member) => member.fund.id === fund.id)) {
+          if (!model.funds.some((member) => member.fund.id === fund.id)) {
             track.mutate(fund.id, {
               onError: (error) => toast.error(`${fund.name}: ${error.message}`),
             })
@@ -116,7 +116,7 @@ export function SplitEditor({
             type="button"
             size="sm"
             variant="ghost"
-            onClick={() => onChange(modelSplit(bucket))}
+            onClick={() => onChange(modelSplit(model))}
           >
             <RotateCcw />
             Reset

@@ -19,7 +19,7 @@ type Props = {
   label?: string
   placeholder?: string
   autoFocus?: boolean
-  /** Only this kind, e.g. mutual funds for buckets. */
+  /** Only this kind, e.g. mutual funds for models. */
   kind?: InstrumentSummary['kind']
 }
 

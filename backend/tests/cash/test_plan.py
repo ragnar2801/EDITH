@@ -9,7 +9,7 @@ D = Decimal
 FLEXI, MID, DEBT = 1, 2, 3
 
 
-def bucket(flexi: str, mid: str, debt: str) -> list[Target]:
+def model(flexi: str, mid: str, debt: str) -> list[Target]:
     """A 50 / 30 / 20 split with these values held now."""
     return [
         Target(FLEXI, D(50), D(flexi)),
@@ -32,7 +32,7 @@ def plan(amount: str, targets: list[Target], shortfall: str = "0", minimum: str 
 
 def test_on_target_new_cash_follows_the_weights() -> None:
     # ₹9L held exactly 50 / 30 / 20; ₹1L more keeps it there.
-    result = plan("100000", bucket("450000", "270000", "180000"))
+    result = plan("100000", model("450000", "270000", "180000"))
 
     assert result.split == {FLEXI: D(50_000), MID: D(30_000), DEBT: D(20_000)}
     assert (result.emergency, result.left, result.months) == (0, 0, [])
@@ -41,7 +41,7 @@ def test_on_target_new_cash_follows_the_weights() -> None:
 def test_one_fund_far_below_gets_everything() -> None:
     # ₹10L held 60 / 20 / 20. Value ÷ weight: flexi 12,000, mid 6,667, debt 10,000.
     # Raising mid alone to debt's level takes 0.3 × 10L − 2L = ₹1L: exactly the cash.
-    result = plan("100000", bucket("600000", "200000", "200000"))
+    result = plan("100000", model("600000", "200000", "200000"))
 
     assert result.split == {MID: D(100_000)}
 
@@ -49,7 +49,7 @@ def test_one_fund_far_below_gets_everything() -> None:
 def test_cash_beyond_the_lowest_fund_is_shared_at_one_level() -> None:
     # ₹1.5L into 60 / 20 / 20: mid's ₹1L reaches debt's level (10,000), then mid and debt
     # share ₹50,000 by weight (30 : 20) up to 11,000. Flexi stays above it.
-    result = plan("150000", bucket("600000", "200000", "200000"))
+    result = plan("150000", model("600000", "200000", "200000"))
 
     assert result.split == {MID: D(130_000), DEBT: D(20_000)}  # 3.3L ÷ 30 = 2.2L ÷ 20
 
@@ -76,7 +76,7 @@ def test_a_share_under_the_minimum_goes_to_the_others() -> None:
 
 
 def test_emergency_is_topped_up_first() -> None:
-    held = bucket("450000", "270000", "180000")
+    held = model("450000", "270000", "180000")
 
     partly = plan("100000", held, shortfall="50000")
     assert partly.emergency == D(50_000)
@@ -87,7 +87,7 @@ def test_emergency_is_topped_up_first() -> None:
 
 
 def test_a_large_amount_is_staggered_over_six_months() -> None:
-    result = plan("650000", bucket("450000", "270000", "180000"))
+    result = plan("650000", model("450000", "270000", "180000"))
 
     assert result.split == {FLEXI: D(325_000), MID: D(195_000), DEBT: D(130_000)}
     assert [m.start for m in result.months] == [
@@ -105,4 +105,4 @@ def test_a_large_amount_is_staggered_over_six_months() -> None:
 
 
 def test_below_the_threshold_goes_in_at_once() -> None:
-    assert plan("499999", bucket("450000", "270000", "180000")).months == []
+    assert plan("499999", model("450000", "270000", "180000")).months == []

@@ -2,7 +2,7 @@ import { X } from 'lucide-react'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { toast } from 'sonner'
 
-import { useBuckets, useSavePlanSettings, type PlanSettings } from '@/api/queries'
+import { useModels, useSavePlanSettings, type PlanSettings } from '@/api/queries'
 import { ErrorText, Field } from '@/components/Field'
 import { InfoTip } from '@/components/InfoTip'
 import { InstrumentSearch } from '@/components/InstrumentSearch'
@@ -33,7 +33,7 @@ export function InvestRulesSummary({ settings }: { settings: PlanSettings }) {
   return (
     <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
       <Rule label="Target model" info={RULE_INFO.target}>
-        {settings.target_bucket?.name ?? 'Not chosen'}
+        {settings.target_model?.name ?? 'Not chosen'}
       </Rule>
       <Rule label="Emergency goal" info={RULE_INFO.emergencyGoal}>
         {inr(settings.emergency_goal)}
@@ -119,10 +119,10 @@ export function InvestRulesForm({
   settings: PlanSettings
   onDone?: () => void
 }) {
-  const buckets = useBuckets()
+  const models = useModels()
   const save = useSavePlanSettings()
   const [draft, setDraft] = useState({
-    target_bucket_id: settings.target_bucket ? String(settings.target_bucket.id) : '',
+    target_model_id: settings.target_model ? String(settings.target_model.id) : '',
     emergency_goal: settings.emergency_goal,
     stagger_threshold: settings.stagger_threshold ?? '',
     stagger_months: String(settings.stagger_months),
@@ -135,7 +135,7 @@ export function InvestRulesForm({
     event.preventDefault()
     save.mutate(
       {
-        target_bucket_id: draft.target_bucket_id ? Number(draft.target_bucket_id) : null,
+        target_model_id: draft.target_model_id ? Number(draft.target_model_id) : null,
         emergency_goal: draft.emergency_goal.trim(),
         emergency_fund_id: emergencyFund?.id ?? null,
         stagger_fund_id: staggerFund?.id ?? null,
@@ -159,13 +159,13 @@ export function InvestRulesForm({
           {(id) => (
             <NativeSelect
               id={id}
-              value={draft.target_bucket_id}
-              onChange={(event) => setDraft({ ...draft, target_bucket_id: event.target.value })}
+              value={draft.target_model_id}
+              onChange={(event) => setDraft({ ...draft, target_model_id: event.target.value })}
             >
               <option value="">Not chosen</option>
-              {buckets.data?.map((bucket) => (
-                <option key={bucket.id} value={bucket.id}>
-                  {bucket.name}
+              {models.data?.map((model) => (
+                <option key={model.id} value={model.id}>
+                  {model.name}
                 </option>
               ))}
             </NativeSelect>

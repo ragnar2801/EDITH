@@ -39,16 +39,16 @@ class SplitFund(BaseModel):
 
 class WeightedParams(CommonParams):
     split: list[SplitFund] | None = None
-    """Run these funds and weights instead of the bucket's; the bucket isn't changed."""
+    """Run these funds and weights instead of the model's; the model isn't changed."""
 
 
 class RegularParams(WeightedParams):
-    """A lump sum, optionally rebalanced to the bucket's weights."""
+    """A lump sum, optionally rebalanced to the model's weights."""
 
     strategy: Literal["regular"]
     capital: PositiveAmount
     rebalance: Rebalance | None = None
-    """Leave out to use the bucket's own policy."""
+    """Leave out to use the model's own policy."""
 
 
 class SipParams(WeightedParams):
@@ -100,7 +100,7 @@ class CustomTradeIn(BaseModel):
 
 
 class CustomParams(CommonParams):
-    """My own timeline over the bucket's funds; weights don't apply."""
+    """My own timeline over the model's funds; weights don't apply."""
 
     strategy: Literal["custom"]
     positions: list[Position] = Field(default_factory=list)

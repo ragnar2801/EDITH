@@ -80,7 +80,7 @@ export function detail(
     aliases: [],
     rule: {
       asset_class: summary.asset_class,
-      allocation: [{ bucket: 'equity', percent: '100' }],
+      allocation: [{ asset: 'equity', percent: '100' }],
       exposure: summary.exposure,
     },
     override: null,
@@ -204,7 +204,7 @@ export function holding(extra: Partial<Schemas['HoldingOut']> = {}): Schemas['Ho
   }
 }
 
-export function bucket(extra: Partial<Schemas['BucketOut']> = {}): Schemas['BucketOut'] {
+export function model(extra: Partial<Schemas['ModelOut']> = {}): Schemas['ModelOut'] {
   const coverage = { first: '2013-05-28', last: '2026-10-23', count: 3298 }
   return {
     id: 1,
@@ -271,8 +271,8 @@ export function backtestRun(
 ): Schemas['BacktestRunOut'] {
   return {
     id: 41,
-    bucket_id: 1,
-    bucket_name: 'Core',
+    model_id: 1,
+    model_name: 'Core',
     strategy: 'sip',
     saved: false,
     name: null,
