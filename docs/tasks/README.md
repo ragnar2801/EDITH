@@ -1,14 +1,13 @@
 # Task tracker
 
 > How work on Friday is tracked between sessions. One board per phase.
-> Design and decisions: [`agents.md`](../../agents.md) · Phases: [`phases.md`](../phases.md)
+> Design and decisions: [`agents.md`](../../agents.md)
 
 ## Boards
 
 | Phase | Board | Status |
 |-------|-------|--------|
-| 1 — Tracker | [`phase-1.md`](phase-1.md) | Active |
-| 2 — Research on demand | _created when Phase 1 is done_ | — |
+| 1 — Tracker | removed 2026-10-31 (in git history) | Closed |
 
 ## Task shape
 
@@ -43,7 +42,7 @@ Every task has:
 
 ## Session routine
 
-1. Read `CLAUDE.md`, then `agents.md` sections 2, 3 and 5, then the active board.
+1. Read `CLAUDE.md`, then `agents.md` section 2, then the active board.
 2. Pick the task to work on: the one marked `doing`, or the first `todo` whose dependencies are `done`, or the one I name.
 3. Mark it `doing`. Work through its *Decisions* with me, then build. Write progress notes in its section.
 4. Mark it `done` when every *Done when* check passes (or `blocked` with the reason). Commit and push.

@@ -1,11 +1,11 @@
 # Friday — Architecture Overview
 
 > Plain-language overview of the **target architecture** (plan v1.2) and the user journeys it supports.
-> Decisions, detailed tables and open questions live in [`agents.md`](../agents.md). Build order: [`phases.md`](phases.md). Decision IDs (`D-###`) and component IDs (`R1`, `C1`, …) refer to that file.
+> Decisions, detailed tables and open questions live in [`agents.md`](../agents.md). Decision IDs (`D-###`) and component IDs (`R1`, `C1`, …) refer to that file.
 
 **Matches plan:** v1.2 · **Last updated:** 2026-10-25
 
-> **Build order (D-043):** this describes the full target. It is being built for **mutual funds first**, through every layer; Indian stocks and ETFs, then US holdings and LRS, come later. See [`phases.md`](phases.md).
+> **Build order (D-043):** this describes the full target. It is being built for **mutual funds first**, through every layer; Indian stocks and ETFs, then US holdings and LRS, come later.
 
 ---
 
@@ -121,8 +121,6 @@ Most flags wait for Sunday. Only urgent ones trigger a mid-week CIO run, at most
 | Tools (`get_holdings`, `xirr`, `create_suggestion`, …) | Local MCP server over the database and calculation code | `.mcp.json` → `friday/mcp_server.py` |
 | Scheduled AI runs | `friday tick` starts `claude -p "/<skill>"` with a tool allowlist | OS scheduler → `friday/orchestrator.py` |
 | Manual AI runs | Interactive `claude` in the project folder | — |
-
-Full mapping, subagent list and project layout: `agents.md` section 3.13.
 
 ---
 

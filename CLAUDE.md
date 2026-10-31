@@ -4,8 +4,8 @@ Personal stock analyst / portfolio manager for Indian and US markets, built **mu
 
 ## Start of every session
 
-1. Read `agents.md` sections 2 (decisions), 3 (current plan) and 5 (open questions).
-2. Read the active task board: `docs/tasks/phase-1.md`. Follow the routine in `docs/tasks/README.md`.
+1. Read `agents.md` section 2 (decisions).
+2. Read the active task board in `docs/tasks/`, if there is one. Follow the routine in `docs/tasks/README.md`.
 3. Work on the task marked `doing`, the one the user names, or ask which to pick.
 
 ## Rules
@@ -40,4 +40,4 @@ Conventions (decisions D-029 to D-037):
 - Errors are RFC 9457 problem details. The server binds to `127.0.0.1` only.
 - Windows is the target OS: keep commands Windows-safe (no `&&` chains in PowerShell 5, `npm.cmd` not `npm.ps1`, LF line endings via `.gitattributes`).
 
-Plain-language overview: `docs/architecture.md` · Phases: `docs/phases.md`
+Plain-language overview: `docs/architecture.md`

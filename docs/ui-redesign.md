@@ -1,6 +1,6 @@
 # UI rework: user journeys and screens
 
-> Tasks T1-21 and T1-22 (board: [`tasks/phase-1.md`](tasks/phase-1.md)). Approved 2026-10-25 as D-060 to D-067 in `agents.md`, all with the recommendations in section 9. **Built 2026-10-25**; section 1 describes the app before, section 10 lists where the build differs from this plan.
+> Tasks T1-21 and T1-22. Approved 2026-10-25 as D-060 to D-067 in `agents.md`, all with the recommendations in section 9. **Built 2026-10-25**; section 1 describes the app before, section 10 lists where the build differs from this plan.
 > Scope: what Phase 1 has built today. Later phases get their screens when they are built, not before.
 
 ---
