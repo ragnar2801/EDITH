@@ -185,6 +185,25 @@ def change(points: list[Point], start: date | None = None) -> Change | None:
     return Change(since, points[-1].date, money(gain), rate)
 
 
+INDEX_PLACES = Decimal("0.00000001")
+
+
+def index(points: list[Point]) -> list[tuple[date, Decimal]]:
+    """Time-weighted growth of 100 from the first point with money held: each step's return
+    leaves out the money put in or taken out on its date, as in :func:`change`. Works like a
+    NAV, so a bucket can be compared with funds."""
+    out: list[tuple[date, Decimal]] = []
+    level, previous = HUNDRED, None
+    for point in points:
+        if previous is None and point.value <= 0:
+            continue
+        if previous is not None and previous > 0:
+            level *= (point.value - point.flow) / previous
+        out.append((point.date, level.quantize(INDEX_PLACES)))
+        previous = point.value
+    return out
+
+
 def thin(points: list[Point], limit: int = MAX_POINTS) -> list[Point]:
     """At most about ``limit`` points to draw: the last of each week, then of each month,
     always with the first and the last."""

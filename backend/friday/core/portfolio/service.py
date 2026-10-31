@@ -40,6 +40,7 @@ from friday.core.portfolio.history import (
     change,
     combine,
     daily,
+    index,
     mirror,
     replay,
     replay_split,
@@ -396,26 +397,50 @@ class History:
     benchmark_change: Change | None
 
 
-def history(session: Session, start: date | None = None, bucket: Bucket | None = None) -> History:
-    """Value, cost and the benchmark's value on every NAV date from the first purchase (or
-    the last date on or before ``start``) to the latest NAV date, of real money or one
-    bucket. Funds without a stored NAV are left out, as in the totals."""
-    benchmark_fund = _benchmark(session, bucket.model if bucket else None)
+Held = list[tuple[list[Move], list[tuple[date, Decimal]]]]
+
+
+def _held(session: Session, bucket: Bucket | None) -> Held:
+    """Moves and NAVs of every fund held that has a stored NAV."""
     held = []
     for holding in list_holdings(session, bucket.id if bucket else None):
         series = nav_series(session, holding.instrument.id)
         moves = _moves(holding.lots)
         if series and moves:
             held.append((moves, series))
-    if not held:
-        return History([], None, benchmark_fund, None, None)
+    return held
 
+
+def _dates(held: Held) -> list[date]:
+    """Every NAV and trade date from the first purchase to the latest NAV date."""
     on = max(series[-1][0] for _, series in held)
     first = min(move.date for moves, _ in held for move in moves)
-    dates = sorted(
+    return sorted(
         {day for _, series in held for day, _ in series if first <= day <= on}
         | {move.date for moves, _ in held for move in moves if move.date <= on}
     )
+
+
+def growth(session: Session, bucket: Bucket | None = None) -> list[tuple[date, Decimal]]:
+    """Time-weighted growth of 100 on every date of :func:`history`: what the money did,
+    whenever it went in."""
+    held = _held(session, bucket)
+    if not held:
+        return []
+    dates = _dates(held)
+    return index(combine([daily(moves, series, dates) for moves, series in held]))
+
+
+def history(session: Session, start: date | None = None, bucket: Bucket | None = None) -> History:
+    """Value, cost and the benchmark's value on every NAV date from the first purchase (or
+    the last date on or before ``start``) to the latest NAV date, of real money or one
+    bucket. Funds without a stored NAV are left out, as in the totals."""
+    benchmark_fund = _benchmark(session, bucket.model if bucket else None)
+    held = _held(session, bucket)
+    if not held:
+        return History([], None, benchmark_fund, None, None)
+
+    dates = _dates(held)
     points = combine([daily(moves, series, dates) for moves, series in held])
 
     bench = None

@@ -1,4 +1,8 @@
-"""Compare funds on their stored NAVs: over the dates they share, and against a benchmark."""
+"""Compare funds, buckets or models over the dates they share, and against a benchmark.
+
+Each one becomes a series that works like a NAV: a fund's NAVs, a bucket's time-weighted
+growth, a model's lump sum split by its weights. The same figures then apply to all three.
+"""
 
 from datetime import date
 from decimal import Decimal
@@ -7,11 +11,16 @@ from sqlalchemy.orm import Session
 
 from friday.core.backtest import engine
 from friday.core.backtest.service import despiked_series
+from friday.core.buckets.models import Bucket
 from friday.core.compare import figures
 from friday.core.compare.figures import History
 from friday.core.compare.schemas import (
+    BENCHMARK,
+    BucketComparison,
+    BucketMoney,
     CalendarReturn,
-    ComparedFund,
+    Compared,
+    ComparedBucket,
     Comparison,
     Correlation,
     GrowthPoint,
@@ -23,10 +32,13 @@ from friday.core.compare.schemas import (
     WindowOut,
 )
 from friday.core.instruments.models import Instrument
+from friday.core.models.models import Model
 from friday.core.models.service import default_benchmark
 from friday.core.navs.service import require_fund
+from friday.core.portfolio.returns import Returns
+from friday.core.portfolio.service import growth, portfolio
 
-MAX_FUNDS = 20
+MAX_ITEMS = 20
 ROLLING_YEARS = (1, 3, 5, 10)
 
 
@@ -71,21 +83,21 @@ def _window_out(found: figures.WindowFigures) -> WindowFiguresOut:
     )
 
 
-def _fund(
+def _compared(
     key: int,
     history: History,
     as_of: date | None,
     window: WindowFiguresOut | None,
-) -> ComparedFund:
+) -> Compared:
     trailing = {
         f"y{years}": _pct(figures.trailing(history, as_of, years)) if as_of else None
         for years in figures.TRAILING_YEARS
     }
     calendar = figures.calendar(history, as_of) if as_of else {}
-    return ComparedFund(
-        instrument_id=key,
-        first_nav=history.first if history else None,
-        last_nav=history.last if history else None,
+    return Compared(
+        id=key,
+        first=history.first if history else None,
+        last=history.last if history else None,
         trailing=TrailingOut(**trailing),
         calendar=[
             CalendarReturn(year=year, return_pct=_pct(value)) for year, value in calendar.items()
@@ -105,42 +117,46 @@ def _instrument(session: Session, instrument_id: int) -> Instrument:
     return instrument
 
 
-def compare_funds(
-    session: Session,
-    ids: list[int],
-    *,
-    benchmark_id: int | None = None,
-    start: date | None = None,
-    end: date | None = None,
-    rolling_years: int = 3,
-) -> Comparison:
-    """Compare ``ids`` (in that order) over the dates they share, or from ``start`` for the
-    funds that go back that far. The benchmark is ``benchmark_id`` or the default one.
-    Raises :class:`LookupError` for an unknown id, :class:`CompareError` for bad inputs."""
+def _check(
+    ids: list[int], noun: str, rolling_years: int, start: date | None, end: date | None
+) -> list[int]:
     ids = list(dict.fromkeys(ids))
     if not ids:
-        raise CompareError("Pick at least one fund.")
-    if len(ids) > MAX_FUNDS:
-        raise CompareError(f"Compare at most {MAX_FUNDS} funds at a time.")
+        raise CompareError(f"Pick at least one {noun}.")
+    if len(ids) > MAX_ITEMS:
+        raise CompareError(f"Compare at most {MAX_ITEMS} {noun}s at a time.")
     if rolling_years not in ROLLING_YEARS:
         raise CompareError(f"Rolling returns cover {', '.join(map(str, ROLLING_YEARS))} years.")
     if start and end and start >= end:
         raise CompareError("The start must be before the end.")
+    return ids
 
-    warnings: list[str] = []
-    instruments = {key: _instrument(session, key) for key in ids}
-    histories = {
-        key: History(despiked_series(session, instrument, warnings))
-        for key, instrument in instruments.items()
-    }
+
+def _benchmark(
+    session: Session, benchmark_id: int | None, warnings: list[str]
+) -> tuple[Instrument | None, History | None]:
     bench = _instrument(session, benchmark_id) if benchmark_id else default_benchmark(session)
-    bench_history = History(despiked_series(session, bench, warnings)) if bench else None
-    for key, history in histories.items():
-        if not history:
-            warnings.append(f"{instruments[key].name} has no NAVs yet.")
-    if bench and not bench_history:
+    if bench is None:
+        return None, None
+    history = History(despiked_series(session, bench, warnings))
+    if not history:
         warnings.append(f"Benchmark {bench.name} has no NAVs yet.")
+    return bench, history
 
+
+def _compare(
+    histories: dict[int, History],
+    bench: Instrument | None,
+    bench_history: History | None,
+    *,
+    start: date | None,
+    end: date | None,
+    rolling_years: int,
+    warnings: list[str],
+) -> Comparison:
+    """Compare ``histories`` (in that order) over the dates they share, or from ``start``
+    for the ones that go back that far. Each history works like a NAV: only its moves count.
+    """
     found = figures.window(histories, start, end)
     windowed: dict[int, WindowFiguresOut] = {}
     bench_window = None
@@ -154,12 +170,11 @@ def compare_funds(
             )
         keys = list(found.members)
         if bench and bench_history and bench_history.first <= found.start:
-            # Drawn on the funds' dates: the benchmark mustn't change the funds' figures.
-            alone = engine.align({bench.id: bench_history.points}, found.start, found.end)
-            bench_window = _window_out(figures.over_window(alone, bench.id, rolling_years, None))
-            if bench.id not in series:
-                series[bench.id] = bench_history.points
-                keys.append(bench.id)
+            # On its own dates: the benchmark mustn't change the others' figures.
+            alone = engine.align({BENCHMARK: bench_history.points}, found.start, found.end)
+            bench_window = _window_out(figures.over_window(alone, BENCHMARK, rolling_years, None))
+            series[BENCHMARK] = bench_history.points
+            keys.append(BENCHMARK)
         elif bench and bench_history:
             warnings.append(
                 f"Benchmark {bench.name} starts on {bench_history.first.isoformat()}, after "
@@ -176,7 +191,7 @@ def compare_funds(
         lasts = [history.last for history in histories.values() if history]
         as_of = min(lasts) if lasts else None
         if lasts:
-            warnings.append("These funds have no NAV dates in common.")
+            warnings.append("They have no dates in common.")
 
     return Comparison(
         window=WindowOut(
@@ -190,11 +205,155 @@ def compare_funds(
         else None,
         as_of=as_of,
         rolling_years=rolling_years,
-        funds=[_fund(key, histories[key], as_of, windowed.get(key)) for key in ids],
-        benchmark=_fund(bench.id, bench_history, as_of, bench_window)
+        items=[
+            _compared(key, history, as_of, windowed.get(key)) for key, history in histories.items()
+        ],
+        benchmark=_compared(bench.id, bench_history, as_of, bench_window)
         if bench and bench_history is not None
         else None,
         calendar_years=figures.calendar_years(as_of) if as_of else [],
         correlation=correlation,
         warnings=warnings,
+    )
+
+
+def compare_funds(
+    session: Session,
+    ids: list[int],
+    *,
+    benchmark_id: int | None = None,
+    start: date | None = None,
+    end: date | None = None,
+    rolling_years: int = 3,
+) -> Comparison:
+    """Compare funds on their NAVs. The benchmark is ``benchmark_id`` or the default one.
+    Raises :class:`LookupError` for an unknown id, :class:`CompareError` for bad inputs."""
+    ids = _check(ids, "fund", rolling_years, start, end)
+    warnings: list[str] = []
+    instruments = {key: _instrument(session, key) for key in ids}
+    bench, bench_history = _benchmark(session, benchmark_id, warnings)
+    histories = {
+        key: History(despiked_series(session, instrument, warnings))
+        for key, instrument in instruments.items()
+    }
+    for key, history in histories.items():
+        if not history:
+            warnings.append(f"{instruments[key].name} has no NAVs yet.")
+    return _compare(
+        histories,
+        bench,
+        bench_history,
+        start=start,
+        end=end,
+        rolling_years=rolling_years,
+        warnings=warnings,
+    )
+
+
+def model_growth(session: Session, model: Model, warnings: list[str]) -> engine.Series:
+    """``CAPITAL`` split by the model's weights on the first date all its funds have a NAV,
+    rebalanced as the model says. Empty (with a warning) when that date doesn't exist."""
+    series = {
+        m.instrument_id: despiked_series(session, m.instrument, warnings) for m in model.funds
+    }
+    missing = [m.instrument.name for m in model.funds if not series[m.instrument_id]]
+    if missing:
+        warnings.append(f"{model.name}: no NAVs yet for {', '.join(missing)}.")
+        return []
+    aligned = engine.align(series)
+    if aligned.start >= len(aligned.dates):
+        warnings.append(f"{model.name}: its funds have no NAV dates in common.")
+        return []
+    weights = [(m.instrument_id, m.weight_pct) for m in model.funds]
+    run = engine.run_regular(aligned, weights, figures.CAPITAL, model.rebalance)
+    return [(day.date, day.value) for day in run.days]
+
+
+def compare_models(
+    session: Session,
+    ids: list[int],
+    *,
+    benchmark_id: int | None = None,
+    start: date | None = None,
+    end: date | None = None,
+    rolling_years: int = 3,
+) -> Comparison:
+    """Compare models as if each were one fund: a lump sum split by its weights and
+    rebalanced as it says (:func:`model_growth`)."""
+    ids = _check(ids, "model", rolling_years, start, end)
+    models = {}
+    for key in ids:
+        model = session.get(Model, key)
+        if model is None:
+            raise LookupError(f"No model with id {key}.")
+        models[key] = model
+    warnings: list[str] = []
+    bench, bench_history = _benchmark(session, benchmark_id, warnings)
+    histories = {
+        key: History(model_growth(session, model, warnings)) for key, model in models.items()
+    }
+    return _compare(
+        histories,
+        bench,
+        bench_history,
+        start=start,
+        end=end,
+        rolling_years=rolling_years,
+        warnings=warnings,
+    )
+
+
+def _money(returns: Returns | None) -> BucketMoney | None:
+    if returns is None:
+        return None
+    return BucketMoney(
+        invested=returns.invested,
+        value=returns.value,
+        gain=returns.gain,
+        return_pct=returns.return_pct,
+        xirr_pct=returns.xirr_pct,
+    )
+
+
+def compare_buckets(
+    session: Session,
+    ids: list[int],
+    *,
+    benchmark_id: int | None = None,
+    start: date | None = None,
+    end: date | None = None,
+    rolling_years: int = 3,
+) -> BucketComparison:
+    """Compare buckets on their time-weighted growth (:func:`portfolio.service.growth`), so
+    when the money went in doesn't count; what it made is in each bucket's ``money``."""
+    ids = _check(ids, "bucket", rolling_years, start, end)
+    buckets = {}
+    for key in ids:
+        bucket = session.get(Bucket, key)
+        if bucket is None:
+            raise LookupError(f"No bucket with id {key}.")
+        buckets[key] = bucket
+    warnings: list[str] = []
+    bench, bench_history = _benchmark(session, benchmark_id, warnings)
+    histories = {key: History(growth(session, bucket)) for key, bucket in buckets.items()}
+    for key, history in histories.items():
+        if not history:
+            warnings.append(f"{buckets[key].name} has no purchases with a NAV yet.")
+    found = _compare(
+        histories,
+        bench,
+        bench_history,
+        start=start,
+        end=end,
+        rolling_years=rolling_years,
+        warnings=warnings,
+    )
+    return BucketComparison(
+        **found.model_dump(exclude={"items"}),
+        items=[
+            ComparedBucket(
+                **item.model_dump(), money=_money(portfolio(session, buckets[item.id]).returns)
+            )
+            for item in found.items
+        ],
     )

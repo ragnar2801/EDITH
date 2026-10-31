@@ -3,7 +3,7 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
-from friday.core.portfolio.history import Move, Point, change, combine, daily, thin
+from friday.core.portfolio.history import Move, Point, change, combine, daily, index, thin
 
 D1, D2, D3 = date(2025, 1, 1), date(2025, 2, 1), date(2025, 3, 1)
 SERIES = [(D1, Decimal(100)), (D2, Decimal(110)), (D3, Decimal(120))]
@@ -113,3 +113,18 @@ def test_long_histories_keep_the_last_date_of_each_week_then_month() -> None:
     assert len(months) == len(set(months)) and len(monthly) <= 40
     short = points[:50]
     assert thin(short) == short
+
+
+def test_growth_of_100_leaves_out_the_money_put_in_and_taken_out() -> None:
+    bought = Move(D2, Decimal(10), Decimal(1100), Decimal(1100), Decimal(110))
+
+    found = index(daily([*MOVES, bought], SERIES, [D1, D2, D3]))
+
+    # The NAV went 100 → 110 → 120, whatever was bought or sold on the way.
+    assert found == [(D1, Decimal(100)), (D2, Decimal(110)), (D3, Decimal(120))]
+
+
+def test_growth_starts_on_the_first_date_with_money_held() -> None:
+    later = [Move(D2, Decimal(10), Decimal(1100), Decimal(1100), Decimal(110))]
+
+    assert [day for day, _ in index(daily(later, SERIES, [D1, D2, D3]))] == [D2, D3]

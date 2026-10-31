@@ -28,23 +28,27 @@ def test_two_funds_over_the_dates_they_share(api: TestClient, funds) -> None:
     assert window["end"] == "2026-10-23"
     assert window["limited_by"] == funds[PARAG]
     assert window["earliest_start"] == "2013-01-02"
-    assert [f["fund"]["name"] for f in body["funds"]][0].startswith("Parag Parikh")
-    parag = body["funds"][0]
+    assert [f["fund"]["name"] for f in body["items"]][0].startswith("Parag Parikh")
+    parag = body["items"][0]
     assert parag["window"]["growth"][0] == {"date": "2013-05-28", "value": "10000.00"}
     assert parag["window"]["sip"]["invested"].endswith(".00")
     assert parag["trailing"]["y1"] is not None
     assert body["benchmark"]["fund"]["amfi_code"] == NIFTY
     assert body["calendar_years"][-1] == 2026
-    assert [(c["a"], c["b"]) for c in body["correlation"]] == [(funds[PARAG], funds[NIFTY])]
+    assert [(c["a"], c["b"]) for c in body["correlation"]] == [
+        (funds[PARAG], funds[NIFTY]),
+        (funds[PARAG], 0),  # 0 is the benchmark
+        (funds[NIFTY], 0),
+    ]
 
 
 def test_starting_earlier_leaves_the_younger_fund_out(api: TestClient, funds) -> None:
     body = compare(api, funds[PARAG], funds[NIFTY], start="2013-01-02").json()
 
     assert body["window"]["start"] == "2013-01-02"
-    assert body["funds"][0]["window"] is None
-    assert body["funds"][0]["trailing"]["y1"] is not None  # same dates for everyone anyway
-    assert body["funds"][1]["window"] is not None
+    assert body["items"][0]["window"] is None
+    assert body["items"][0]["trailing"]["y1"] is not None  # same dates for everyone anyway
+    assert body["items"][1]["window"] is not None
 
 
 def test_a_fund_without_navs_is_shown_empty(api: TestClient, funds) -> None:
@@ -52,8 +56,8 @@ def test_a_fund_without_navs_is_shown_empty(api: TestClient, funds) -> None:
 
     body = compare(api, funds[PARAG], other).json()
 
-    assert body["funds"][1]["first_nav"] is None
-    assert body["funds"][1]["window"] is None
+    assert body["items"][1]["first"] is None
+    assert body["items"][1]["window"] is None
     assert any("has no NAVs yet" in warning for warning in body["warnings"])
 
 

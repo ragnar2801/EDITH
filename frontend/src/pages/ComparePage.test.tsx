@@ -59,10 +59,10 @@ function window(extra: Partial<Schemas['WindowFiguresOut']> = {}): Schemas['Wind
 
 function fund(summary: typeof parag, extra: Partial<Fund> = {}): Fund {
   return {
-    instrument_id: summary.id,
+    id: summary.id,
     fund: fundRef(summary),
-    first_nav: '2013-05-28',
-    last_nav: '2026-10-23',
+    first: '2013-05-28',
+    last: '2026-10-23',
     trailing: { y1: '12.00', y3: '18.00', y5: '20.00', y10: null },
     calendar: [
       { year: 2025, return_pct: '10.00' },
@@ -86,7 +86,7 @@ function comparison(): Schemas['FundComparisonOut'] {
     },
     as_of: '2026-10-23',
     rolling_years: 3,
-    funds: [
+    items: [
       fund(parag),
       fund(other, {
         trailing: { y1: '9.00', y3: '14.00', y5: '15.00', y10: null },
@@ -97,8 +97,8 @@ function comparison(): Schemas['FundComparisonOut'] {
     calendar_years: [2025, 2026],
     correlation: [
       { a: parag.id, b: other.id, value: '0.93' },
-      { a: parag.id, b: nifty.id, value: '0.88' },
-      { a: other.id, b: nifty.id, value: '0.95' },
+      { a: parag.id, b: 0, value: '0.88' },
+      { a: other.id, b: 0, value: '0.95' },
     ],
     warnings: [],
   }
@@ -147,4 +147,74 @@ test('nothing picked yet', () => {
 
   expect(screen.getByText('Add funds to compare them')).toBeInTheDocument()
   expect(screen.getByRole('combobox', { name: 'Add a fund' })).toBeInTheDocument()
+})
+
+function compared(id: number): Omit<Fund, 'fund'> {
+  const row: Partial<Fund> = fund(parag)
+  delete row.fund
+  return { ...(row as Omit<Fund, 'fund'>), id }
+}
+
+test('buckets with what their money made, and no SIP', async () => {
+  fakeApi({
+    'GET /api/v1/buckets': () => [],
+    'GET /api/v1/models': () => [],
+    'GET /api/v1/compare/buckets': () => ({
+      ...comparison(),
+      items: [
+        {
+          ...compared(1),
+          bucket: { id: 1, name: 'Retirement', paper: false },
+          model: { id: 4, name: 'Core' },
+          money: {
+            invested: '15000.00',
+            value: '14400.00',
+            gain: '6900.00',
+            return_pct: '46.00',
+            xirr_pct: null,
+          },
+        },
+        {
+          ...compared(2),
+          bucket: { id: 2, name: 'Try value', paper: true },
+          model: null,
+          money: null,
+        },
+      ],
+      correlation: [{ a: 1, b: 2, value: '0.50' }],
+    }),
+  })
+  renderAt('/compare/buckets?ids=1,2')
+
+  const money = await screen.findByRole('table', { name: 'Money' })
+  expect(within(money).getAllByRole('row')).toHaveLength(3) // no benchmark row
+  expect(within(money).getByText('₹6,900.00')).toBeInTheDocument()
+  expect(screen.getAllByText('Paper').length).toBeGreaterThan(0)
+  const returns = screen.getByRole('table', { name: 'Returns' })
+  expect(within(returns).queryByText('SIP value')).not.toBeInTheDocument()
+  expect(screen.getByRole('tab', { name: 'Buckets', selected: true })).toBeInTheDocument()
+})
+
+test('models are picked from the list', async () => {
+  const calls = fakeApi({
+    'GET /api/v1/buckets': () => [],
+    'GET /api/v1/models': () => [{ id: 4, name: 'Core' }],
+    'GET /api/v1/compare/models': () => ({
+      ...comparison(),
+      items: [{ ...compared(4), model: { id: 4, name: 'Core' }, rebalance: 'yearly' }],
+      correlation: [],
+    }),
+  })
+  const router = renderAt('/compare/models')
+
+  expect(screen.getByText('Add models to compare them')).toBeInTheDocument()
+  await userEvent.selectOptions(
+    await screen.findByRole('combobox', { name: 'Add a model' }),
+    await screen.findByRole('option', { name: 'Core' }),
+  )
+  expect(new URLSearchParams(router.state.location.search).get('ids')).toBe('4')
+  expect((await screen.findAllByText('Rebalance yearly')).length).toBeGreaterThan(0)
+  await vi.waitFor(() =>
+    expect(calls.some((call) => call.url.includes('/compare/models?ids=4'))).toBe(true),
+  )
 })

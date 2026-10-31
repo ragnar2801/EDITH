@@ -1,5 +1,5 @@
-"""What a comparison of funds returns. Figures are rounded decimal strings; curves are for
-drawing only."""
+"""What a comparison of funds, buckets or models returns. Figures are rounded decimal
+strings; curves are for drawing only."""
 
 from datetime import date
 
@@ -66,14 +66,33 @@ class WindowFiguresOut(BaseModel):
     drawdown: list[PercentPoint]
 
 
-class ComparedFund(BaseModel):
-    instrument_id: int
-    first_nav: date | None
-    last_nav: date | None
+class Compared(BaseModel):
+    """One fund, bucket or model (or the benchmark), by its id."""
+
+    id: int
+    first: date | None
+    """The first date with a value; ``None`` when there is none yet."""
+    last: date | None
     trailing: TrailingOut
     calendar: list[CalendarReturn]
     window: WindowFiguresOut | None
-    """``None`` when the fund doesn't cover the window."""
+    """``None`` when it doesn't cover the window."""
+
+
+class BucketMoney(BaseModel):
+    """What the money in a bucket did, as Portfolio shows it."""
+
+    invested: Amount
+    value: Amount
+    gain: Amount
+    return_pct: Percent | None
+    xirr_pct: Percent | None
+    """Shown once the first money has been in a year."""
+
+
+class ComparedBucket(Compared):
+    money: BucketMoney | None
+    """``None`` when nothing in the bucket has a NAV yet."""
 
 
 class WindowOut(BaseModel):
@@ -81,26 +100,37 @@ class WindowOut(BaseModel):
     end: date
     years: Figure
     limited_by: int | None
-    """The youngest fund in the window, when leaving it out would start the window earlier."""
+    """The youngest in the window, when leaving it out would start the window earlier."""
     earliest_start: date | None
     """Where the window would start without ``limited_by``."""
 
 
+BENCHMARK = 0
+"""The benchmark's id in :class:`Correlation` pairs."""
+
+
 class Correlation(BaseModel):
     a: int
+    """An id of :attr:`Comparison.items`, or :data:`BENCHMARK`."""
     b: int
     value: Figure | None
 
 
 class Comparison(BaseModel):
     window: WindowOut | None
-    """``None`` when the funds share no dates."""
+    """``None`` when they share no dates."""
     as_of: date | None
     """The date trailing and calendar-year returns run to: the window's end."""
     rolling_years: int
-    funds: list[ComparedFund]
-    benchmark: ComparedFund | None
+    items: list[Compared]
+    """In the order picked."""
+    benchmark: Compared | None
+    """A fund; its ``id`` is the instrument's."""
     calendar_years: list[int]
     correlation: list[Correlation]
-    """Each pair of funds in the window (and the benchmark, if it covers it) once."""
+    """Each pair in the window (and the benchmark, if it covers it) once."""
     warnings: list[str]
+
+
+class BucketComparison(Comparison):
+    items: list[ComparedBucket]

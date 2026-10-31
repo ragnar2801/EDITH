@@ -42,6 +42,8 @@ export const routes: RouteObject[] = [
       { path: '/funds/:id/transactions', element: <FundPage /> },
       { path: '/funds/:id/details', element: <FundPage /> },
       { path: '/compare', element: <ComparePage /> },
+      { path: '/compare/buckets', element: <ComparePage /> },
+      { path: '/compare/models', element: <ComparePage /> },
       { path: '/settings', element: <SettingsPage /> },
       { path: '/settings/data', element: <SettingsPage /> },
       ...MOVED.map(

@@ -491,6 +491,86 @@
         "title": "BenchmarkOut",
         "type": "object"
       },
+      "BucketComparisonOut": {
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "benchmark": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ComparedFundOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "calendar_years": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Calendar Years",
+            "type": "array"
+          },
+          "correlation": {
+            "items": {
+              "$ref": "#/components/schemas/Correlation"
+            },
+            "title": "Correlation",
+            "type": "array"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ComparedBucketOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "rolling_years": {
+            "title": "Rolling Years",
+            "type": "integer"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          },
+          "window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WindowOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "window",
+          "as_of",
+          "rolling_years",
+          "items",
+          "benchmark",
+          "calendar_years",
+          "correlation",
+          "warnings"
+        ],
+        "title": "BucketComparisonOut",
+        "type": "object"
+      },
       "BucketIn": {
         "properties": {
           "model_id": {
@@ -520,6 +600,59 @@
           "name"
         ],
         "title": "BucketIn",
+        "type": "object"
+      },
+      "BucketMoney": {
+        "description": "What the money in a bucket did, as Portfolio shows it.",
+        "properties": {
+          "gain": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Gain",
+            "type": "string"
+          },
+          "invested": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Invested",
+            "type": "string"
+          },
+          "return_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Pct"
+          },
+          "value": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Value",
+            "type": "string"
+          },
+          "xirr_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Xirr Pct"
+          }
+        },
+        "required": [
+          "invested",
+          "value",
+          "gain",
+          "return_pct",
+          "xirr_pct"
+        ],
+        "title": "BucketMoney",
         "type": "object"
       },
       "BucketOut": {
@@ -848,8 +981,11 @@
         "title": "ClassificationOut",
         "type": "object"
       },
-      "ComparedFundOut": {
+      "ComparedBucketOut": {
         "properties": {
+          "bucket": {
+            "$ref": "#/components/schemas/BucketRef"
+          },
           "calendar": {
             "items": {
               "$ref": "#/components/schemas/CalendarReturn"
@@ -857,7 +993,7 @@
             "title": "Calendar",
             "type": "array"
           },
-          "first_nav": {
+          "first": {
             "anyOf": [
               {
                 "format": "date",
@@ -867,16 +1003,13 @@
                 "type": "null"
               }
             ],
-            "title": "First Nav"
+            "title": "First"
           },
-          "fund": {
-            "$ref": "#/components/schemas/FundRef"
-          },
-          "instrument_id": {
-            "title": "Instrument Id",
+          "id": {
+            "title": "Id",
             "type": "integer"
           },
-          "last_nav": {
+          "last": {
             "anyOf": [
               {
                 "format": "date",
@@ -886,7 +1019,27 @@
                 "type": "null"
               }
             ],
-            "title": "Last Nav"
+            "title": "Last"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "money": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BucketMoney"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "trailing": {
             "$ref": "#/components/schemas/TrailingOut"
@@ -903,15 +1056,160 @@
           }
         },
         "required": [
-          "instrument_id",
-          "first_nav",
-          "last_nav",
+          "id",
+          "first",
+          "last",
+          "trailing",
+          "calendar",
+          "window",
+          "money",
+          "bucket",
+          "model"
+        ],
+        "title": "ComparedBucketOut",
+        "type": "object"
+      },
+      "ComparedFundOut": {
+        "properties": {
+          "calendar": {
+            "items": {
+              "$ref": "#/components/schemas/CalendarReturn"
+            },
+            "title": "Calendar",
+            "type": "array"
+          },
+          "first": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First"
+          },
+          "fund": {
+            "$ref": "#/components/schemas/FundRef"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "last": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last"
+          },
+          "trailing": {
+            "$ref": "#/components/schemas/TrailingOut"
+          },
+          "window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WindowFiguresOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "first",
+          "last",
           "trailing",
           "calendar",
           "window",
           "fund"
         ],
         "title": "ComparedFundOut",
+        "type": "object"
+      },
+      "ComparedModelOut": {
+        "properties": {
+          "calendar": {
+            "items": {
+              "$ref": "#/components/schemas/CalendarReturn"
+            },
+            "title": "Calendar",
+            "type": "array"
+          },
+          "first": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "last": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last"
+          },
+          "model": {
+            "$ref": "#/components/schemas/ModelRef"
+          },
+          "rebalance": {
+            "enum": [
+              "none",
+              "monthly",
+              "quarterly",
+              "yearly"
+            ],
+            "title": "Rebalance",
+            "type": "string"
+          },
+          "trailing": {
+            "$ref": "#/components/schemas/TrailingOut"
+          },
+          "window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WindowFiguresOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "first",
+          "last",
+          "trailing",
+          "calendar",
+          "window",
+          "model",
+          "rebalance"
+        ],
+        "title": "ComparedModelOut",
         "type": "object"
       },
       "ComparisonOut": {
@@ -1555,11 +1853,11 @@
             "title": "Correlation",
             "type": "array"
           },
-          "funds": {
+          "items": {
             "items": {
               "$ref": "#/components/schemas/ComparedFundOut"
             },
-            "title": "Funds",
+            "title": "Items",
             "type": "array"
           },
           "rolling_years": {
@@ -1588,7 +1886,7 @@
           "window",
           "as_of",
           "rolling_years",
-          "funds",
+          "items",
           "benchmark",
           "calendar_years",
           "correlation",
@@ -3269,6 +3567,86 @@
           "depletion_date"
         ],
         "title": "MetricsOut",
+        "type": "object"
+      },
+      "ModelComparisonOut": {
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "benchmark": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ComparedFundOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "calendar_years": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Calendar Years",
+            "type": "array"
+          },
+          "correlation": {
+            "items": {
+              "$ref": "#/components/schemas/Correlation"
+            },
+            "title": "Correlation",
+            "type": "array"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ComparedModelOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "rolling_years": {
+            "title": "Rolling Years",
+            "type": "integer"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          },
+          "window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WindowOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "window",
+          "as_of",
+          "rolling_years",
+          "items",
+          "benchmark",
+          "calendar_years",
+          "correlation",
+          "warnings"
+        ],
+        "title": "ModelComparisonOut",
         "type": "object"
       },
       "ModelFundIn": {
@@ -6850,6 +7228,112 @@
         ]
       }
     },
+    "/api/v1/compare/buckets": {
+      "get": {
+        "description": "Compare buckets on their time-weighted growth, with what the money in each made.",
+        "operationId": "compareBuckets",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ids",
+            "required": true,
+            "schema": {
+              "items": {
+                "type": "integer"
+              },
+              "title": "Ids",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "benchmark_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Benchmark Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          },
+          {
+            "in": "query",
+            "name": "rolling_years",
+            "required": false,
+            "schema": {
+              "default": 3,
+              "title": "Rolling Years",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BucketComparisonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Buckets",
+        "tags": [
+          "compare"
+        ]
+      }
+    },
     "/api/v1/compare/funds": {
       "get": {
         "description": "Compare funds over the dates they all have, or from ``start`` for the funds that go\nback that far, against ``benchmark_id`` or the default benchmark.",
@@ -6950,7 +7434,113 @@
             "description": "Problem details (RFC 9457)"
           }
         },
-        "summary": "Compare",
+        "summary": "Funds",
+        "tags": [
+          "compare"
+        ]
+      }
+    },
+    "/api/v1/compare/models": {
+      "get": {
+        "description": "Compare models as if each were one fund: a lump sum split by its weights and\nrebalanced as it says.",
+        "operationId": "compareModels",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ids",
+            "required": true,
+            "schema": {
+              "items": {
+                "type": "integer"
+              },
+              "title": "Ids",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "benchmark_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Benchmark Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          },
+          {
+            "in": "query",
+            "name": "rolling_years",
+            "required": false,
+            "schema": {
+              "default": 3,
+              "title": "Rolling Years",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelComparisonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Models",
         "tags": [
           "compare"
         ]

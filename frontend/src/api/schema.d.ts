@@ -207,6 +207,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/compare/buckets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Buckets
+         * @description Compare buckets on their time-weighted growth, with what the money in each made.
+         */
+        get: operations["compareBuckets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/compare/funds": {
         parameters: {
             query?: never;
@@ -215,11 +235,32 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Compare
+         * Funds
          * @description Compare funds over the dates they all have, or from ``start`` for the funds that go
          *     back that far, against ``benchmark_id`` or the default benchmark.
          */
         get: operations["compareFunds"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/compare/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Models
+         * @description Compare models as if each were one fund: a lump sum split by its weights and
+         *     rebalanced as it says.
+         */
+        get: operations["compareModels"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1026,6 +1067,23 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** BucketComparisonOut */
+        BucketComparisonOut: {
+            /** As Of */
+            as_of: string | null;
+            benchmark: components["schemas"]["ComparedFundOut"] | null;
+            /** Calendar Years */
+            calendar_years: number[];
+            /** Correlation */
+            correlation: components["schemas"]["Correlation"][];
+            /** Items */
+            items: components["schemas"]["ComparedBucketOut"][];
+            /** Rolling Years */
+            rolling_years: number;
+            /** Warnings */
+            warnings: string[];
+            window: components["schemas"]["WindowOut"] | null;
+        };
         /** BucketIn */
         BucketIn: {
             /** Model Id */
@@ -1037,6 +1095,22 @@ export interface components {
              * @default false
              */
             paper: boolean;
+        };
+        /**
+         * BucketMoney
+         * @description What the money in a bucket did, as Portfolio shows it.
+         */
+        BucketMoney: {
+            /** Gain */
+            gain: string;
+            /** Invested */
+            invested: string;
+            /** Return Pct */
+            return_pct: string | null;
+            /** Value */
+            value: string;
+            /** Xirr Pct */
+            xirr_pct: string | null;
         };
         /** BucketOut */
         BucketOut: {
@@ -1147,17 +1221,52 @@ export interface components {
              */
             exposure: "IN" | "US" | "GLOBAL";
         };
+        /** ComparedBucketOut */
+        ComparedBucketOut: {
+            bucket: components["schemas"]["BucketRef"];
+            /** Calendar */
+            calendar: components["schemas"]["CalendarReturn"][];
+            /** First */
+            first: string | null;
+            /** Id */
+            id: number;
+            /** Last */
+            last: string | null;
+            model: components["schemas"]["ModelRef"] | null;
+            money: components["schemas"]["BucketMoney"] | null;
+            trailing: components["schemas"]["TrailingOut"];
+            window: components["schemas"]["WindowFiguresOut"] | null;
+        };
         /** ComparedFundOut */
         ComparedFundOut: {
             /** Calendar */
             calendar: components["schemas"]["CalendarReturn"][];
-            /** First Nav */
-            first_nav: string | null;
+            /** First */
+            first: string | null;
             fund: components["schemas"]["FundRef"];
-            /** Instrument Id */
-            instrument_id: number;
-            /** Last Nav */
-            last_nav: string | null;
+            /** Id */
+            id: number;
+            /** Last */
+            last: string | null;
+            trailing: components["schemas"]["TrailingOut"];
+            window: components["schemas"]["WindowFiguresOut"] | null;
+        };
+        /** ComparedModelOut */
+        ComparedModelOut: {
+            /** Calendar */
+            calendar: components["schemas"]["CalendarReturn"][];
+            /** First */
+            first: string | null;
+            /** Id */
+            id: number;
+            /** Last */
+            last: string | null;
+            model: components["schemas"]["ModelRef"];
+            /**
+             * Rebalance
+             * @enum {string}
+             */
+            rebalance: "none" | "monthly" | "quarterly" | "yearly";
             trailing: components["schemas"]["TrailingOut"];
             window: components["schemas"]["WindowFiguresOut"] | null;
         };
@@ -1366,8 +1475,8 @@ export interface components {
             calendar_years: number[];
             /** Correlation */
             correlation: components["schemas"]["Correlation"][];
-            /** Funds */
-            funds: components["schemas"]["ComparedFundOut"][];
+            /** Items */
+            items: components["schemas"]["ComparedFundOut"][];
             /** Rolling Years */
             rolling_years: number;
             /** Warnings */
@@ -1857,6 +1966,23 @@ export interface components {
             xirr_pct: string | null;
             /** Years */
             years: string;
+        };
+        /** ModelComparisonOut */
+        ModelComparisonOut: {
+            /** As Of */
+            as_of: string | null;
+            benchmark: components["schemas"]["ComparedFundOut"] | null;
+            /** Calendar Years */
+            calendar_years: number[];
+            /** Correlation */
+            correlation: components["schemas"]["Correlation"][];
+            /** Items */
+            items: components["schemas"]["ComparedModelOut"][];
+            /** Rolling Years */
+            rolling_years: number;
+            /** Warnings */
+            warnings: string[];
+            window: components["schemas"]["WindowOut"] | null;
         };
         /** ModelFundIn */
         ModelFundIn: {
@@ -3236,6 +3362,41 @@ export interface operations {
             };
         };
     };
+    compareBuckets: {
+        parameters: {
+            query: {
+                ids: number[];
+                benchmark_id?: number | null;
+                start?: string | null;
+                end?: string | null;
+                rolling_years?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BucketComparisonOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     compareFunds: {
         parameters: {
             query: {
@@ -3258,6 +3419,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FundComparisonOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    compareModels: {
+        parameters: {
+            query: {
+                ids: number[];
+                benchmark_id?: number | null;
+                start?: string | null;
+                end?: string | null;
+                rolling_years?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelComparisonOut"];
                 };
             };
             /** @description Problem details (RFC 9457) */

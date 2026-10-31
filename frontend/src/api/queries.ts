@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { api, type ProblemDetails, type Schemas } from './client'
+import type { AnyComparison, CompareKind } from '@/lib/compare'
 
 /** Turn a problem-details body into an Error with its human-readable detail, and
  * which fields were wrong when the request didn't validate. */
@@ -237,26 +238,34 @@ export type CompareQuery = {
   rollingYears: number
 }
 
-/** Funds side by side over the dates they share. */
-export function useCompareFunds({ ids, benchmark, start, rollingYears }: CompareQuery) {
+/** Funds, buckets or models side by side over the dates they share. */
+export function useCompare(
+  kind: CompareKind,
+  { ids, benchmark, start, rollingYears }: CompareQuery,
+) {
   return useQuery({
-    queryKey: ['compare', 'funds', ids, benchmark ?? 'default', start ?? 'common', rollingYears],
-    queryFn: async () => {
-      const { data, error } = await api.GET('/api/v1/compare/funds', {
-        params: {
-          query: {
-            ids,
-            rolling_years: rollingYears,
-            ...(benchmark ? { benchmark_id: benchmark } : {}),
-            ...(start ? { start } : {}),
-          },
+    queryKey: ['compare', kind, ids, benchmark ?? 'default', start ?? 'common', rollingYears],
+    queryFn: async (): Promise<AnyComparison> => {
+      const params = {
+        query: {
+          ids,
+          rolling_years: rollingYears,
+          ...(benchmark ? { benchmark_id: benchmark } : {}),
+          ...(start ? { start } : {}),
         },
-      })
+      }
+      const { data, error } =
+        kind === 'buckets'
+          ? await api.GET('/api/v1/compare/buckets', { params })
+          : kind === 'models'
+            ? await api.GET('/api/v1/compare/models', { params })
+            : await api.GET('/api/v1/compare/funds', { params })
       if (error) throw failure(error)
       return data
     },
     enabled: ids.length > 0,
-    placeholderData: keepPreviousData,
+    // The last results while new ones load, but never another kind's.
+    placeholderData: (previous, query) => (query?.queryKey[1] === kind ? previous : undefined),
   })
 }
 
