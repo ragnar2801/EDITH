@@ -17,6 +17,7 @@ from friday.core.buckets.service import (
     create_bucket,
     default_benchmark,
     delete_bucket,
+    duplicate_bucket,
     list_buckets,
     update_bucket,
 )
@@ -159,6 +160,12 @@ def get(session: SessionDep, bucket_id: int) -> BucketOut:
 def update(session: SessionDep, bucket_id: int, payload: BucketIn) -> BucketOut:
     bucket = _get(session, bucket_id)
     return _out(session, _save(session, update_bucket, bucket, _input(payload)))
+
+
+@router.post("/{bucket_id}/duplicate", status_code=201, operation_id="duplicateBucket")
+def duplicate(session: SessionDep, bucket_id: int) -> BucketOut:
+    """A copy named "<name> copy": same funds, weights, benchmark and rebalance; no backtests."""
+    return _out(session, duplicate_bucket(session, _get(session, bucket_id)))
 
 
 @router.delete("/{bucket_id}", status_code=204, operation_id="deleteBucket")

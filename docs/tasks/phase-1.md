@@ -30,6 +30,7 @@
 | T1-23 | Portfolio that answers: value over time, the day, vs the benchmark, SIPs, target | Feature | Claude | done | T1-17 |
 | T1-24 | Backtest a tweaked split without changing the model, and compare runs | Feature | Claude | done | T1-14 |
 | T1-25 | Optimise: try every split of a model's funds and rank them | Feature | Claude | done | T1-24 |
+| T1-26 | Duplicate a model | Feature | Claude | done | T1-13 |
 | ~~T1-03 to T1-11~~ | Board v2 tasks for stocks, US, LRS and the watchlist | — | — | dropped | see [Dropped tasks](#dropped-tasks-board-v2) |
 
 ```
@@ -526,6 +527,29 @@ T1-14 and T1-15 can be built in parallel. T1-18 was dropped (D-068): in Phase 1 
 - Every split on the grid is tried, and the limits and goals pick the right ones (hand-checked on two funds) ✔
 - The search's figures for a split match the engine's to the rounding, for a lump sum with rebalancing and a SIP ✔
 - A 5-fund model in 5% steps on my real NAVs finishes in seconds; *Try this split* opens it in the Backtest tab ✔
+
+---
+
+## T1-26 · Duplicate a model
+`Feature` · Owner: Claude · Status: done · Depends on: T1-13
+
+**Goal:** I can copy a model and change the copy, instead of building a similar one from scratch.
+
+**Scope**
+- Found 2026-10-31 (my request: "Add option to duplicate a model")
+- Backend: `POST /buckets/{id}/duplicate`
+- UI: *Duplicate* in a model's actions on Models and on the model page
+
+**Decisions** (2026-10-31)
+- Decided: a copy has the same funds, weights (in order), benchmark, rebalance and description, named **`<name> copy`** (`copy 2`, `copy 3`, … if taken). Its backtests aren't copied and it isn't the target. It opens in the editor so I can rename it straight away (D-079)
+
+**Progress (2026-10-31)**
+- Built: `duplicate_bucket` in `friday.core.buckets.service` (goes through `create_bucket`, so the same checks apply); `POST /api/v1/buckets/{id}/duplicate`; `useDuplicateBucket` and `duplicate` in `useModelActions`; *Duplicate* in the Models row menu and the model page's menu. No new tables
+- Tests: 1 API (copied fields, `copy` then `copy 2`, no backtests, unknown model). Frontend: duplicate from the list lands in the editor with the copy's name. 324 backend, 76 frontend; `lint` passes
+
+**Done when**
+- A copy has the original's funds, weights, benchmark and rebalance under a free name ✔
+- *Duplicate* is in both menus and opens the copy in the editor ✔
 
 ---
 

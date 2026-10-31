@@ -141,6 +141,22 @@ def test_edit_changes_weights_order_and_members(api: TestClient, funds) -> None:
     ]
 
 
+def test_duplicate_copies_the_split_under_a_free_name(api: TestClient, funds) -> None:
+    bucket = api.post("/api/v1/buckets", json=core(funds)).json()
+
+    first = api.post(f"/api/v1/buckets/{bucket['id']}/duplicate")
+    second = api.post(f"/api/v1/buckets/{bucket['id']}/duplicate")
+
+    assert first.status_code == 201, first.text
+    copy = first.json()
+    assert copy["id"] != bucket["id"]
+    assert (copy["name"], second.json()["name"]) == ("Core copy", "Core copy 2")
+    for field in ("description", "rebalance", "benchmark", "funds"):
+        assert copy[field] == bucket[field]
+    assert api.get(f"/api/v1/buckets/{copy['id']}/backtests").json() == []
+    assert api.post("/api/v1/buckets/999/duplicate").status_code == 404
+
+
 def test_delete(api: TestClient, funds) -> None:
     bucket = api.post("/api/v1/buckets", json=core(funds)).json()
 

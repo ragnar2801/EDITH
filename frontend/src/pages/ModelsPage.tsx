@@ -1,4 +1,4 @@
-import { FlaskConical, Pencil, PieChart, Plus, Target, Trash2 } from 'lucide-react'
+import { Copy, FlaskConical, Pencil, PieChart, Plus, Target, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 
 import { useBuckets, usePlanSettings } from '@/api/queries'
@@ -82,6 +82,11 @@ export function ModelsPage() {
                         label: 'Edit',
                         icon: Pencil,
                         onSelect: () => navigate(modelPath(bucket.id, 'edit')),
+                      },
+                      {
+                        label: 'Duplicate',
+                        icon: Copy,
+                        onSelect: () => actions.duplicate(bucket),
                       },
                       {
                         label: 'Delete',

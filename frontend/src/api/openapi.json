@@ -5826,6 +5826,49 @@
         ]
       }
     },
+    "/api/v1/buckets/{bucket_id}/duplicate": {
+      "post": {
+        "description": "A copy named \"<name> copy\": same funds, weights, benchmark and rebalance; no backtests.",
+        "operationId": "duplicateBucket",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bucket_id",
+            "required": true,
+            "schema": {
+              "title": "Bucket Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BucketOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Duplicate",
+        "tags": [
+          "buckets"
+        ]
+      }
+    },
     "/api/v1/cash": {
       "get": {
         "description": "My cash accounts, totals per earmark, and the emergency money against its goal.",

@@ -161,3 +161,27 @@ test('a model page shows its funds and links each to its fund page', async () =>
   expect(within(row).getByText('60%')).toBeInTheDocument()
   expect(screen.getByText('vs UTI Nifty 50 Index Fund')).toBeInTheDocument()
 })
+
+test('duplicate a model: the copy opens in the editor', async () => {
+  const copy = bucket({ id: 2, name: 'Core copy' })
+  let saved = [bucket()]
+  const calls = fakeApi({
+    'GET /api/v1/buckets': () => saved,
+    'GET /api/v1/buckets/default-benchmark': () => fundRef(nifty),
+    'POST /api/v1/buckets/1/duplicate': () => {
+      saved = [bucket(), copy]
+      return Response.json(copy, { status: 201 })
+    },
+  })
+  renderAt('/models')
+
+  await userEvent.click(await screen.findByRole('button', { name: 'Actions for Core' }))
+  await userEvent.click(screen.getByRole('menuitem', { name: 'Duplicate' }))
+
+  expect(await screen.findByText('Copied Core to Core copy')).toBeInTheDocument()
+  const form = await screen.findByRole('form', { name: 'Model' })
+  expect(await within(form).findByDisplayValue('Core copy')).toBeInTheDocument()
+  expect(calls.some((call) => call.method === 'POST' && call.url.endsWith('/1/duplicate'))).toBe(
+    true,
+  )
+})

@@ -128,6 +128,24 @@ def update_bucket(session: Session, bucket: Bucket, data: BucketInput) -> Bucket
     return bucket
 
 
+def duplicate_bucket(session: Session, bucket: Bucket) -> Bucket:
+    """A copy named ``<name> copy`` (``copy 2``, … if taken), without its backtests (D-079)."""
+    taken = set(session.scalars(select(Bucket.name)))
+    name = f"{bucket.name} copy"
+    number = 2
+    while name in taken:
+        name = f"{bucket.name} copy {number}"
+        number += 1
+    data = BucketInput(
+        name=name,
+        funds=[(member.instrument_id, member.weight_pct) for member in bucket.funds],
+        rebalance=bucket.rebalance,
+        benchmark_id=bucket.benchmark_id,
+        description=bucket.description,
+    )
+    return create_bucket(session, data)
+
+
 def delete_bucket(session: Session, bucket: Bucket) -> None:
     session.delete(bucket)
     session.flush()

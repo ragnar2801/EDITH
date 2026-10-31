@@ -1,4 +1,4 @@
-import { Pencil, Target, Trash2 } from 'lucide-react'
+import { Copy, Pencil, Target, Trash2 } from 'lucide-react'
 import { Link, useParams } from 'react-router'
 
 import { useBuckets, usePlanSettings, usePortfolio } from '@/api/queries'
@@ -67,6 +67,11 @@ export function ModelPage() {
             <RowActions
               label={`More for ${bucket.name}`}
               actions={[
+                {
+                  label: 'Duplicate',
+                  icon: Copy,
+                  onSelect: () => actions.duplicate(bucket),
+                },
                 {
                   label: 'Delete',
                   icon: Trash2,

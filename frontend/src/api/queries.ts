@@ -282,6 +282,25 @@ export function useSaveBucket() {
   })
 }
 
+/** Copy a bucket's funds, weights, benchmark and rebalance under "<name> copy". */
+export function useDuplicateBucket() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data, error } = await api.POST('/api/v1/buckets/{bucket_id}/duplicate', {
+        params: { path: { bucket_id: id } },
+      })
+      if (error) throw failure(error)
+      return data
+    },
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['buckets'] }),
+        queryClient.invalidateQueries({ queryKey: ['nav-status'] }),
+      ]),
+  })
+}
+
 export function useDeleteBucket() {
   const queryClient = useQueryClient()
   return useMutation({
