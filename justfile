@@ -17,8 +17,8 @@ setup:
     uv run --project backend friday migrate
     {{ npm }} --prefix frontend run build
 
-# Run Friday for daily use at http://localhost:8000
-run:
+# Run Friday for daily use at http://localhost:8000, rebuilding the UI so it matches the API
+run: build
     uv run --project backend friday serve
 
 # Develop with hot reload on made-up data: UI at http://localhost:5173, API on :8001

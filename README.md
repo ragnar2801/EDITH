@@ -59,7 +59,7 @@ Friday keeps a read-only copy of the fund purchases and sales you record in the 
 
 | Command | What it does |
 |---------|--------------|
-| `just run` | Run Friday for daily use at <http://localhost:8000> |
+| `just run` | Rebuild the UI and run Friday for daily use at <http://localhost:8000> |
 | `just dev` | Develop with hot reload on made-up data: UI at <http://localhost:5173>, API on `:8001` |
 | `just demo` | Rebuild the made-up database `just dev` uses |
 | `just test` | Backend (pytest) and frontend (Vitest) tests |
