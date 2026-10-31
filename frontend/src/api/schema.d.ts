@@ -207,6 +207,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/compare/funds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Compare
+         * @description Compare funds over the dates they all have, or from ``start`` for the funds that go
+         *     back that far, against ``benchmark_id`` or the default benchmark.
+         */
+        get: operations["compareFunds"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/diagnostics/echo": {
         parameters: {
             query?: never;
@@ -1048,6 +1069,13 @@ export interface components {
             /** Paper */
             paper: boolean;
         };
+        /** CalendarReturn */
+        CalendarReturn: {
+            /** Return Pct */
+            return_pct: string | null;
+            /** Year */
+            year: number;
+        };
         /**
          * Candidate
          * @description A split with its figures from the exact engine.
@@ -1119,6 +1147,20 @@ export interface components {
              */
             exposure: "IN" | "US" | "GLOBAL";
         };
+        /** ComparedFundOut */
+        ComparedFundOut: {
+            /** Calendar */
+            calendar: components["schemas"]["CalendarReturn"][];
+            /** First Nav */
+            first_nav: string | null;
+            fund: components["schemas"]["FundRef"];
+            /** Instrument Id */
+            instrument_id: number;
+            /** Last Nav */
+            last_nav: string | null;
+            trailing: components["schemas"]["TrailingOut"];
+            window: components["schemas"]["WindowFiguresOut"] | null;
+        };
         /**
          * ComparisonOut
          * @description This run less an earlier one: rupees for the final value, points for ratios.
@@ -1144,6 +1186,15 @@ export interface components {
             weights: components["schemas"]["WeightChange"][];
             /** Xirr Pct */
             xirr_pct: string | null;
+        };
+        /** Correlation */
+        Correlation: {
+            /** A */
+            a: number;
+            /** B */
+            b: number;
+            /** Value */
+            value: string | null;
         };
         /** CoverageOut */
         CoverageOut: {
@@ -1306,6 +1357,23 @@ export interface components {
             last_import: components["schemas"]["FmImportOut"] | null;
             receiver: components["schemas"]["FmReceiverOut"] | null;
         };
+        /** FundComparisonOut */
+        FundComparisonOut: {
+            /** As Of */
+            as_of: string | null;
+            benchmark: components["schemas"]["ComparedFundOut"] | null;
+            /** Calendar Years */
+            calendar_years: number[];
+            /** Correlation */
+            correlation: components["schemas"]["Correlation"][];
+            /** Funds */
+            funds: components["schemas"]["ComparedFundOut"][];
+            /** Rolling Years */
+            rolling_years: number;
+            /** Warnings */
+            warnings: string[];
+            window: components["schemas"]["WindowOut"] | null;
+        };
         /** FundOutcomeOut */
         FundOutcomeOut: {
             /** End Value */
@@ -1410,6 +1478,16 @@ export interface components {
         FundWithCoverage: {
             coverage: components["schemas"]["CoverageOut"];
             fund: components["schemas"]["FundRef"];
+        };
+        /** GrowthPoint */
+        GrowthPoint: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Value */
+            value: string;
         };
         /** Health */
         Health: {
@@ -2009,6 +2087,16 @@ export interface components {
             /** Purchases */
             purchases: number;
         };
+        /** PercentPoint */
+        PercentPoint: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Value */
+            value: string;
+        };
         /** PlanFundOut */
         PlanFundOut: {
             fund: components["schemas"]["FundRef"];
@@ -2233,6 +2321,23 @@ export interface components {
             /** Xirr Pct */
             xirr_pct: string | null;
         };
+        /** RollingOut */
+        RollingOut: {
+            /** Beat Benchmark Pct */
+            beat_benchmark_pct: string | null;
+            /** Best Pct */
+            best_pct: string;
+            /** Curve */
+            curve: components["schemas"]["PercentPoint"][];
+            /** Median Pct */
+            median_pct: string;
+            /** Periods */
+            periods: number;
+            /** Worst Pct */
+            worst_pct: string;
+            /** Years */
+            years: number;
+        };
         /** RunUpdate */
         RunUpdate: {
             /** Name */
@@ -2420,6 +2525,15 @@ export interface components {
              */
             strategy: "sip";
         };
+        /** SipResult */
+        SipResult: {
+            /** Invested */
+            invested: string;
+            /** Value */
+            value: string;
+            /** Xirr Pct */
+            xirr_pct: string | null;
+        };
         /** SipsOut */
         SipsOut: {
             /** Count */
@@ -2547,6 +2661,20 @@ export interface components {
             units: string;
         };
         /**
+         * TrailingOut
+         * @description CAGR over the years up to the comparison's ``as_of`` date.
+         */
+        TrailingOut: {
+            /** Y1 */
+            y1: string | null;
+            /** Y10 */
+            y10: string | null;
+            /** Y3 */
+            y3: string | null;
+            /** Y5 */
+            y5: string | null;
+        };
+        /**
          * Variant
          * @description Another plan or option of the same mutual fund scheme.
          */
@@ -2572,6 +2700,52 @@ export interface components {
             instrument_id: number;
             /** Name */
             name: string;
+        };
+        /** WindowFiguresOut */
+        WindowFiguresOut: {
+            /** Cagr Pct */
+            cagr_pct: string | null;
+            /** Calmar */
+            calmar: string | null;
+            /** Downside Capture Pct */
+            downside_capture_pct: string | null;
+            /** Drawdown */
+            drawdown: components["schemas"]["PercentPoint"][];
+            /** Growth */
+            growth: components["schemas"]["GrowthPoint"][];
+            /** Max Drawdown Pct */
+            max_drawdown_pct: string;
+            /** Recovered */
+            recovered: boolean | null;
+            /** Recovery Days */
+            recovery_days: number | null;
+            /** Return Pct */
+            return_pct: string | null;
+            rolling: components["schemas"]["RollingOut"] | null;
+            sip: components["schemas"]["SipResult"];
+            /** Upside Capture Pct */
+            upside_capture_pct: string | null;
+            /** Volatility Pct */
+            volatility_pct: string;
+        };
+        /** WindowOut */
+        WindowOut: {
+            /** Earliest Start */
+            earliest_start: string | null;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Limited By */
+            limited_by: number | null;
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /** Years */
+            years: string;
         };
     };
     responses: never;
@@ -3050,6 +3224,41 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    compareFunds: {
+        parameters: {
+            query: {
+                ids: number[];
+                benchmark_id?: number | null;
+                start?: string | null;
+                end?: string | null;
+                rolling_years?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FundComparisonOut"];
+                };
             };
             /** @description Problem details (RFC 9457) */
             "4XX": {

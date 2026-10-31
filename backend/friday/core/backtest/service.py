@@ -71,7 +71,7 @@ def _compile(params: CustomParams, members: set[int]) -> list[CustomTrade]:
     return sorted(trades, key=lambda trade: (trade.date, trade.side != "sell"))
 
 
-def _series(session: Session, instrument: Instrument, warnings: list[str]) -> engine.Series:
+def despiked_series(session: Session, instrument: Instrument, warnings: list[str]) -> engine.Series:
     points, replaced = engine.despike(nav_series(session, instrument.id))
     if replaced:
         warnings.append(
@@ -165,7 +165,9 @@ def run_backtest(session: Session, model: Model, params: BacktestParams) -> Back
     else:
         trades = []
         fund_ids = list(members)
-    series = {fund_id: _series(session, members[fund_id][0], warnings) for fund_id in fund_ids}
+    series = {
+        fund_id: despiked_series(session, members[fund_id][0], warnings) for fund_id in fund_ids
+    }
     missing = [names[fund_id] for fund_id, points in series.items() if not points]
     if missing:
         raise EngineError(f"no NAVs yet for {', '.join(missing)}; sync NAVs first")
@@ -196,7 +198,7 @@ def run_backtest(session: Session, model: Model, params: BacktestParams) -> Back
 
     benchmark = None
     if model.benchmark is not None:
-        bench_series = _series(session, model.benchmark, warnings)
+        bench_series = despiked_series(session, model.benchmark, warnings)
         bench_days = engine.replay_flows(bench_series, run.days) if bench_series else None
         if bench_days is None:
             warnings.append(
@@ -394,7 +396,7 @@ def optimise(
     warnings: list[str] = []
     ids = [member.instrument_id for member in members]
     names = {member.instrument_id: member.instrument.name for member in members}
-    series = {m.instrument_id: _series(session, m.instrument, warnings) for m in members}
+    series = {m.instrument_id: despiked_series(session, m.instrument, warnings) for m in members}
     missing = [names[fund_id] for fund_id, points in series.items() if not points]
     if missing:
         raise EngineError(f"no NAVs yet for {', '.join(missing)}; sync NAVs first")
@@ -437,7 +439,7 @@ def optimise(
 
     benchmark = None
     if model.benchmark is not None:
-        bench_series = _series(session, model.benchmark, warnings)
+        bench_series = despiked_series(session, model.benchmark, warnings)
         bench_days = engine.replay_flows(bench_series, days) if bench_series else None
         if bench_days is not None:
             benchmark = BenchmarkOut(

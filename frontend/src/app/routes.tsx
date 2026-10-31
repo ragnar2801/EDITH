@@ -1,6 +1,7 @@
 import { redirect, type RouteObject } from 'react-router'
 
 import { AppShell } from '@/components/layout/AppShell'
+import { ComparePage } from '@/pages/ComparePage'
 import { FundPage } from '@/pages/FundPage'
 import { FundsPage } from '@/pages/FundsPage'
 import { InvestPage } from '@/pages/InvestPage'
@@ -40,6 +41,7 @@ export const routes: RouteObject[] = [
       { path: '/funds/:id', element: <FundPage /> },
       { path: '/funds/:id/transactions', element: <FundPage /> },
       { path: '/funds/:id/details', element: <FundPage /> },
+      { path: '/compare', element: <ComparePage /> },
       { path: '/settings', element: <SettingsPage /> },
       { path: '/settings/data', element: <SettingsPage /> },
       ...MOVED.map(

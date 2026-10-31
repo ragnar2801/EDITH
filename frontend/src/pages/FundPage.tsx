@@ -1,6 +1,6 @@
-import { Plus, Repeat, Wallet } from 'lucide-react'
+import { GitCompareArrows, Plus, Repeat, Wallet } from 'lucide-react'
 import { useState } from 'react'
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 
 import {
   useHolding,
@@ -24,6 +24,7 @@ import { Stat, StatGrid } from '@/components/Stat'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
+import { comparePath } from '@/lib/compare'
 import { hasUnits } from '@/lib/holdings'
 import {
   ASSET_CLASS_LABELS,
@@ -60,6 +61,7 @@ export function FundPage() {
 function Fund({ fund }: { fund: InstrumentDetail }) {
   const holding = useHolding(fund.id)
   const [mode, setMode] = useState<TransactionMode | null>(null)
+  const navigate = useNavigate()
   const held = holding.data?.lots.some(hasUnits) ?? false
   const addLumpSum = (
     <Button onClick={() => setMode({ kind: 'lump-sum' })} disabled={!holding.isSuccess}>
@@ -89,6 +91,11 @@ function Fund({ fund }: { fund: InstrumentDetail }) {
                   icon: Repeat,
                   disabled: !holding.isSuccess,
                   onSelect: () => setMode({ kind: 'sip' }),
+                },
+                {
+                  label: 'Compare',
+                  icon: GitCompareArrows,
+                  onSelect: () => navigate(comparePath([fund.id])),
                 },
               ]}
             />

@@ -71,7 +71,7 @@ function Layout() {
         <Outlet />
       </main>
 
-      {/* Phones: the same four jobs as a bottom tab bar, and a floating Add. */}
+      {/* Phones: the same five jobs as a bottom tab bar, and a floating Add. */}
       <Button
         size="icon"
         className="fixed right-4 bottom-20 z-40 size-12 rounded-full shadow-lg md:hidden"
@@ -82,7 +82,7 @@ function Layout() {
       </Button>
       <nav
         aria-label="Sections"
-        className="bg-background fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t md:hidden"
+        className="bg-background fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t md:hidden"
       >
         {SECTIONS.map((section) => (
           <NavLink

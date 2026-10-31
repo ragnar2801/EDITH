@@ -45,7 +45,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-test('the top bar has the four jobs, Add and Settings', async () => {
+test('the top bar has the five jobs, Add and Settings', async () => {
   fakeApi({ 'GET /api/v1/health': () => health })
   renderApp()
 
@@ -54,7 +54,7 @@ test('the top bar has the four jobs, Add and Settings', async () => {
     within(nav)
       .getAllByRole('link')
       .map((link) => link.textContent),
-  ).toEqual(['Portfolio', 'Invest', 'Models', 'Funds'])
+  ).toEqual(['Portfolio', 'Invest', 'Models', 'Funds', 'Compare'])
   expect(within(nav).getByRole('link', { name: 'Portfolio' })).toHaveClass('font-medium')
   expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument()
   expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings')

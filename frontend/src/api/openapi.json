@@ -634,6 +634,32 @@
         "title": "BucketRef",
         "type": "object"
       },
+      "CalendarReturn": {
+        "properties": {
+          "return_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Pct"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "return_pct"
+        ],
+        "title": "CalendarReturn",
+        "type": "object"
+      },
       "Candidate": {
         "description": "A split with its figures from the exact engine.",
         "properties": {
@@ -822,6 +848,72 @@
         "title": "ClassificationOut",
         "type": "object"
       },
+      "ComparedFundOut": {
+        "properties": {
+          "calendar": {
+            "items": {
+              "$ref": "#/components/schemas/CalendarReturn"
+            },
+            "title": "Calendar",
+            "type": "array"
+          },
+          "first_nav": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Nav"
+          },
+          "fund": {
+            "$ref": "#/components/schemas/FundRef"
+          },
+          "instrument_id": {
+            "title": "Instrument Id",
+            "type": "integer"
+          },
+          "last_nav": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Nav"
+          },
+          "trailing": {
+            "$ref": "#/components/schemas/TrailingOut"
+          },
+          "window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WindowFiguresOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "instrument_id",
+          "first_nav",
+          "last_nav",
+          "trailing",
+          "calendar",
+          "window",
+          "fund"
+        ],
+        "title": "ComparedFundOut",
+        "type": "object"
+      },
       "ComparisonOut": {
         "description": "This run less an earlier one: rupees for the final value, points for ratios.",
         "properties": {
@@ -917,6 +1009,37 @@
           "weights"
         ],
         "title": "ComparisonOut",
+        "type": "object"
+      },
+      "Correlation": {
+        "properties": {
+          "a": {
+            "title": "A",
+            "type": "integer"
+          },
+          "b": {
+            "title": "B",
+            "type": "integer"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "a",
+          "b",
+          "value"
+        ],
+        "title": "Correlation",
         "type": "object"
       },
       "CoverageOut": {
@@ -1394,6 +1517,86 @@
         "title": "FmStatusOut",
         "type": "object"
       },
+      "FundComparisonOut": {
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "benchmark": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ComparedFundOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "calendar_years": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Calendar Years",
+            "type": "array"
+          },
+          "correlation": {
+            "items": {
+              "$ref": "#/components/schemas/Correlation"
+            },
+            "title": "Correlation",
+            "type": "array"
+          },
+          "funds": {
+            "items": {
+              "$ref": "#/components/schemas/ComparedFundOut"
+            },
+            "title": "Funds",
+            "type": "array"
+          },
+          "rolling_years": {
+            "title": "Rolling Years",
+            "type": "integer"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          },
+          "window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WindowOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "window",
+          "as_of",
+          "rolling_years",
+          "funds",
+          "benchmark",
+          "calendar_years",
+          "correlation",
+          "warnings"
+        ],
+        "title": "FundComparisonOut",
+        "type": "object"
+      },
       "FundOutcomeOut": {
         "properties": {
           "end_value": {
@@ -1837,6 +2040,26 @@
           "coverage"
         ],
         "title": "FundWithCoverage",
+        "type": "object"
+      },
+      "GrowthPoint": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "value": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "value"
+        ],
+        "title": "GrowthPoint",
         "type": "object"
       },
       "Health": {
@@ -3735,6 +3958,26 @@
         "title": "PaperBuyOut",
         "type": "object"
       },
+      "PercentPoint": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "value": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "value"
+        ],
+        "title": "PercentPoint",
+        "type": "object"
+      },
       "PlanFundOut": {
         "properties": {
           "fund": {
@@ -4551,6 +4794,63 @@
         "title": "ReturnsOut",
         "type": "object"
       },
+      "RollingOut": {
+        "properties": {
+          "beat_benchmark_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Beat Benchmark Pct"
+          },
+          "best_pct": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Best Pct",
+            "type": "string"
+          },
+          "curve": {
+            "items": {
+              "$ref": "#/components/schemas/PercentPoint"
+            },
+            "title": "Curve",
+            "type": "array"
+          },
+          "median_pct": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Median Pct",
+            "type": "string"
+          },
+          "periods": {
+            "title": "Periods",
+            "type": "integer"
+          },
+          "worst_pct": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Worst Pct",
+            "type": "string"
+          },
+          "years": {
+            "title": "Years",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "years",
+          "periods",
+          "median_pct",
+          "worst_pct",
+          "best_pct",
+          "beat_benchmark_pct",
+          "curve"
+        ],
+        "title": "RollingOut",
+        "type": "object"
+      },
       "RunUpdate": {
         "properties": {
           "name": {
@@ -5138,6 +5438,39 @@
         "title": "SipParams",
         "type": "object"
       },
+      "SipResult": {
+        "properties": {
+          "invested": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Invested",
+            "type": "string"
+          },
+          "value": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Value",
+            "type": "string"
+          },
+          "xirr_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Xirr Pct"
+          }
+        },
+        "required": [
+          "invested",
+          "value",
+          "xirr_pct"
+        ],
+        "title": "SipResult",
+        "type": "object"
+      },
       "SipsOut": {
         "properties": {
           "count": {
@@ -5499,6 +5832,67 @@
         "title": "TradeOut",
         "type": "object"
       },
+      "TrailingOut": {
+        "description": "CAGR over the years up to the comparison's ``as_of`` date.",
+        "properties": {
+          "y1": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Y1"
+          },
+          "y10": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Y10"
+          },
+          "y3": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Y3"
+          },
+          "y5": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Y5"
+          }
+        },
+        "required": [
+          "y1",
+          "y3",
+          "y5",
+          "y10"
+        ],
+        "title": "TrailingOut",
+        "type": "object"
+      },
       "Variant": {
         "description": "Another plan or option of the same mutual fund scheme.",
         "properties": {
@@ -5596,6 +5990,197 @@
           "after"
         ],
         "title": "WeightChange",
+        "type": "object"
+      },
+      "WindowFiguresOut": {
+        "properties": {
+          "cagr_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cagr Pct"
+          },
+          "calmar": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calmar"
+          },
+          "downside_capture_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Downside Capture Pct"
+          },
+          "drawdown": {
+            "items": {
+              "$ref": "#/components/schemas/PercentPoint"
+            },
+            "title": "Drawdown",
+            "type": "array"
+          },
+          "growth": {
+            "items": {
+              "$ref": "#/components/schemas/GrowthPoint"
+            },
+            "title": "Growth",
+            "type": "array"
+          },
+          "max_drawdown_pct": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Max Drawdown Pct",
+            "type": "string"
+          },
+          "recovered": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovered"
+          },
+          "recovery_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovery Days"
+          },
+          "return_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Pct"
+          },
+          "rolling": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RollingOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sip": {
+            "$ref": "#/components/schemas/SipResult"
+          },
+          "upside_capture_pct": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upside Capture Pct"
+          },
+          "volatility_pct": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Volatility Pct",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cagr_pct",
+          "return_pct",
+          "volatility_pct",
+          "max_drawdown_pct",
+          "recovery_days",
+          "recovered",
+          "calmar",
+          "upside_capture_pct",
+          "downside_capture_pct",
+          "rolling",
+          "sip",
+          "growth",
+          "drawdown"
+        ],
+        "title": "WindowFiguresOut",
+        "type": "object"
+      },
+      "WindowOut": {
+        "properties": {
+          "earliest_start": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Earliest Start"
+          },
+          "end": {
+            "format": "date",
+            "title": "End",
+            "type": "string"
+          },
+          "limited_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limited By"
+          },
+          "start": {
+            "format": "date",
+            "title": "Start",
+            "type": "string"
+          },
+          "years": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Years",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "years",
+          "limited_by",
+          "earliest_start"
+        ],
+        "title": "WindowOut",
         "type": "object"
       }
     }
@@ -6262,6 +6847,112 @@
         "summary": "Change Account",
         "tags": [
           "cash"
+        ]
+      }
+    },
+    "/api/v1/compare/funds": {
+      "get": {
+        "description": "Compare funds over the dates they all have, or from ``start`` for the funds that go\nback that far, against ``benchmark_id`` or the default benchmark.",
+        "operationId": "compareFunds",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ids",
+            "required": true,
+            "schema": {
+              "items": {
+                "type": "integer"
+              },
+              "title": "Ids",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "benchmark_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Benchmark Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End"
+            }
+          },
+          {
+            "in": "query",
+            "name": "rolling_years",
+            "required": false,
+            "schema": {
+              "default": 3,
+              "title": "Rolling Years",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FundComparisonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Compare",
+        "tags": [
+          "compare"
         ]
       }
     },

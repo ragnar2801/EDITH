@@ -36,6 +36,14 @@
   --color-chart-main: var(--chart-main);
   --color-chart-benchmark: var(--chart-benchmark);
   --color-chart-invested: var(--chart-invested);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-3: var(--series-3);
+  --color-series-4: var(--series-4);
+  --color-series-5: var(--series-5);
+  --color-series-6: var(--series-6);
+  --color-series-7: var(--series-7);
+  --color-series-8: var(--series-8);
 }
 
 :root {
@@ -69,6 +77,15 @@
   --chart-main: oklch(0.6 0.12 190);
   --chart-benchmark: oklch(0.7 0.14 70);
   --chart-invested: oklch(0.6 0.02 250);
+  /* Compared funds: one colour each, in the order they were picked. */
+  --series-1: oklch(0.55 0.15 255);
+  --series-2: oklch(0.6 0.17 30);
+  --series-3: oklch(0.56 0.13 155);
+  --series-4: oklch(0.55 0.17 310);
+  --series-5: oklch(0.6 0.11 200);
+  --series-6: oklch(0.6 0.16 355);
+  --series-7: oklch(0.5 0.08 60);
+  --series-8: oklch(0.55 0.02 260);
 }
 
 .dark {
@@ -99,6 +116,14 @@
   --chart-main: oklch(0.72 0.12 190);
   --chart-benchmark: oklch(0.8 0.14 75);
   --chart-invested: oklch(0.7 0.02 250);
+  --series-1: oklch(0.7 0.14 255);
+  --series-2: oklch(0.72 0.16 30);
+  --series-3: oklch(0.72 0.13 155);
+  --series-4: oklch(0.72 0.15 310);
+  --series-5: oklch(0.75 0.11 200);
+  --series-6: oklch(0.74 0.15 355);
+  --series-7: oklch(0.68 0.08 60);
+  --series-8: oklch(0.72 0.02 260);
 }
 
 @layer base {

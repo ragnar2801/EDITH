@@ -1,4 +1,11 @@
-import { Banknote, BriefcaseBusiness, PieChart, Search, type LucideIcon } from 'lucide-react'
+import {
+  Banknote,
+  BriefcaseBusiness,
+  GitCompareArrows,
+  PieChart,
+  Search,
+  type LucideIcon,
+} from 'lucide-react'
 
 export type Section = {
   path: string
@@ -8,10 +15,11 @@ export type Section = {
   also?: string[]
 }
 
-/** The four jobs. */
+/** The five jobs. */
 export const SECTIONS: Section[] = [
   { path: '/', label: 'Portfolio', icon: BriefcaseBusiness, also: ['/buckets', '/cash'] },
   { path: '/invest', label: 'Invest', icon: Banknote },
   { path: '/models', label: 'Models', icon: PieChart },
   { path: '/funds', label: 'Funds', icon: Search },
+  { path: '/compare', label: 'Compare', icon: GitCompareArrows },
 ]

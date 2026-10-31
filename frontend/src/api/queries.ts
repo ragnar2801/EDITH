@@ -165,7 +165,7 @@ export function useNavs(id: number, start: string | undefined, enabled = true) {
 /** NAVs changed: every NAV view and anything computed from NAVs is stale. */
 function invalidateNavs(queryClient: ReturnType<typeof useQueryClient>) {
   return Promise.all(
-    ['nav-status', 'nav-summary', 'navs', 'portfolio'].map((key) =>
+    ['nav-status', 'nav-summary', 'navs', 'portfolio', 'compare'].map((key) =>
       queryClient.invalidateQueries({ queryKey: [key] }),
     ),
   )
@@ -227,6 +227,36 @@ export function useUntrackFund(id: number) {
       return data
     },
     onSettled: () => invalidateNavs(queryClient),
+  })
+}
+
+export type CompareQuery = {
+  ids: number[]
+  benchmark?: number
+  start?: string
+  rollingYears: number
+}
+
+/** Funds side by side over the dates they share. */
+export function useCompareFunds({ ids, benchmark, start, rollingYears }: CompareQuery) {
+  return useQuery({
+    queryKey: ['compare', 'funds', ids, benchmark ?? 'default', start ?? 'common', rollingYears],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/api/v1/compare/funds', {
+        params: {
+          query: {
+            ids,
+            rolling_years: rollingYears,
+            ...(benchmark ? { benchmark_id: benchmark } : {}),
+            ...(start ? { start } : {}),
+          },
+        },
+      })
+      if (error) throw failure(error)
+      return data
+    },
+    enabled: ids.length > 0,
+    placeholderData: keepPreviousData,
   })
 }
 
