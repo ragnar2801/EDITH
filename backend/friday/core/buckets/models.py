@@ -1,4 +1,4 @@
-"""Bucket tables (D-047): a target split of funds with weights, a rebalance policy and a
+"""Bucket tables: a target split of funds with weights, a rebalance policy and a
 benchmark."""
 
 from datetime import datetime

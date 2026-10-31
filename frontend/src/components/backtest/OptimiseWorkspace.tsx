@@ -35,7 +35,7 @@ import { formatDate } from '@/lib/time'
 
 const STRATEGIES = { regular: 'Lump sum', sip: 'SIP' } as const
 
-/** Try every split of a model's funds and rank them (D-077): settings left, results right. */
+/** Try every split of a model's funds and rank them: settings left, results right. */
 export function OptimiseWorkspace({ bucket }: { bucket: Bucket }) {
   const [form, setForm] = useState(DEFAULT_OPTIMISE)
   const [asked, setAsked] = useState(DEFAULT_OPTIMISE)

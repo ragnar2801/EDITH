@@ -1,4 +1,4 @@
-"""Holding tables (D-051 to D-054): lots, SIPs and the units taken out of lots.
+"""Holding tables: lots, SIPs and the units taken out of lots.
 
 A lot is one buy: a lump sum, or one SIP instalment. Selling isn't a transaction of its
 own: it takes units out of lots I pick, and each take is kept as a ``LotSale``.
@@ -61,7 +61,7 @@ class Lot(Base):
 
 
 class LotSale(Base):
-    """Units taken out of one lot on one date (D-054)."""
+    """Units taken out of one lot on one date."""
 
     __tablename__ = "lot_sales"
 

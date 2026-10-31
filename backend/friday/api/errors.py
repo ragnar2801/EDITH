@@ -1,4 +1,4 @@
-"""Errors as RFC 9457 problem details (D-035)."""
+"""Errors as RFC 9457 problem details."""
 
 from http import HTTPStatus
 from typing import Any

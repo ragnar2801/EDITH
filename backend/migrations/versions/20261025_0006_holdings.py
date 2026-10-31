@@ -1,4 +1,4 @@
-"""Fund holdings: lots, SIP schedules and units sold from lots (T1-15, D-051 to D-054).
+"""Fund holdings: lots, SIP schedules and units sold from lots.
 
 Revision ID: 0006
 Revises: 0005

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router'
 
 import { cn } from '@/lib/utils'
 
-/** The one table style (D-060): bordered, muted header, figures right-aligned and tabular. */
+/** The one table style: bordered, muted header, figures right-aligned and tabular. */
 export function Table({
   label,
   className,

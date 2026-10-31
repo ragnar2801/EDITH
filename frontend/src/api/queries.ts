@@ -2,7 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 
 import { api, type ProblemDetails, type Schemas } from './client'
 
-/** Turn a problem-details body (D-035) into an Error with its human-readable detail, and
+/** Turn a problem-details body into an Error with its human-readable detail, and
  * which fields were wrong when the request didn't validate. */
 function failure(error: ProblemDetails): Error {
   const fields = (error.errors ?? []).map(
@@ -66,7 +66,7 @@ export function useInstrumentSources() {
   })
 }
 
-/** Download the instrument lists (D-065); blank = every list. */
+/** Download the instrument lists; blank = every list. */
 export function useRefreshInstruments() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -207,7 +207,7 @@ export function useTrackFund(id: number) {
   })
 }
 
-/** The same for any fund, e.g. one added to a backtest's split (D-075). */
+/** The same for any fund, e.g. one added to a backtest's split. */
 export function useTrackAnyFund() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -400,7 +400,7 @@ export function useDeleteBacktest() {
   })
 }
 
-/** Figures for a window of a stored run (D-049); `null` window = nothing to ask. */
+/** Figures for a window of a stored run; `null` window = nothing to ask. */
 export function useBacktestInterval(
   runId: number | undefined,
   window: { start: string; end: string } | null,
@@ -421,7 +421,7 @@ export function useBacktestInterval(
 
 export type Optimised = Schemas['OptimiseOut']
 
-/** Every split of a model's funds, ranked (D-077). Nothing is stored. */
+/** Every split of a model's funds, ranked. Nothing is stored. */
 export function useOptimise() {
   return useMutation({
     mutationFn: async (body: Schemas['OptimiseIn']) => {
@@ -432,7 +432,7 @@ export function useOptimise() {
   })
 }
 
-/** A run less an earlier one (D-076); `null` = nothing to compare with. */
+/** A run less an earlier one; `null` = nothing to compare with. */
 export function useCompareBacktests(runId: number, against: number | null) {
   return useQuery({
     queryKey: ['backtest-compare', runId, against],
@@ -690,7 +690,7 @@ export type FundPosition = Schemas['FundPositionOut']
 
 export type PortfolioHistory = Schemas['HistoryOut']
 
-/** Value, P&L, XIRR, allocation and drift (T1-17), all worked out by the backend. */
+/** Value, P&L, XIRR, allocation and drift, all worked out by the backend. */
 export function usePortfolio({ enabled = true } = {}) {
   return useQuery({
     queryKey: ['portfolio'],
@@ -703,7 +703,7 @@ export function usePortfolio({ enabled = true } = {}) {
   })
 }
 
-/** Value, invested and the benchmark over time from `start` (T1-23), with the range's gain. */
+/** Value, invested and the benchmark over time from `start`, with the range's gain. */
 export function usePortfolioHistory(start: string | undefined, enabled = true) {
   return useQuery({
     // Under 'portfolio', so every change that refreshes the portfolio refreshes this too.

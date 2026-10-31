@@ -3,7 +3,7 @@ import createClient from 'openapi-fetch'
 import type { components, paths } from './schema'
 
 /**
- * Typed API client generated from the backend's OpenAPI schema (D-035).
+ * Typed API client generated from the backend's OpenAPI schema.
  * Regenerate the types with `just api` after changing backend endpoints.
  */
 export const api = createClient<paths>({

@@ -1,4 +1,4 @@
-"""NAV tables (D-044 to D-046).
+"""NAV tables.
 
 One row per fund per NAV date, stored exactly as published. Rows are only added, or
 corrected when the source corrects a value; a re-sync never duplicates them.

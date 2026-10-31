@@ -8,7 +8,7 @@ import { ASSET_LABELS } from '@/lib/portfolio'
 import { formatDate, formatDayMonth } from '@/lib/time'
 
 /** Value, gain, the day's move and XIRR of every fund I hold, next to the same money in the
- * benchmark (D-070, D-072, D-073), and my SIPs. */
+ * benchmark, and my SIPs. */
 export function PortfolioSummary({ data }: { data: Portfolio }) {
   const total = data.returns
   const benchmark = data.benchmark

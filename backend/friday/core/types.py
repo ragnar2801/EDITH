@@ -1,4 +1,4 @@
-"""Column types that keep money and time exact in SQLite (D-032).
+"""Column types that keep money and time exact in SQLite.
 
 SQLite has no exact decimal type: a ``NUMERIC`` column silently stores floats. Money,
 prices, units and FX rates are therefore stored as plain-notation decimal text and come

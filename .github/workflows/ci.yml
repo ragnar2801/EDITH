@@ -7,7 +7,7 @@ on:
 jobs:
   check:
     name: Lint, test and smoke (Windows)
-    runs-on: windows-latest  # Friday runs on Windows (D-027, D-037)
+    runs-on: windows-latest  # Friday runs on Windows
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6

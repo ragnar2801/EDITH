@@ -26,7 +26,7 @@ test('typing searches and shows each result with its plan, asset class and other
   await userEvent.type(screen.getByRole('combobox'), 'parag parikh flexi')
 
   const option = await screen.findByRole('option', { name: /Parag Parikh Flexi Cap Fund/ })
-  expect(option).not.toHaveTextContent('122639') // identity, not identifiers (D-060)
+  expect(option).not.toHaveTextContent('122639') // identity, not identifiers
   expect(option).toHaveTextContent('Direct · Growth')
   expect(option).toHaveTextContent('Equity')
   expect(option).toHaveTextContent('1 other plan')

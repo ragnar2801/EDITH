@@ -53,7 +53,7 @@ def test_amfi_latest_navs_keep_all_published_places() -> None:
 
     assert latest[PARAG] == (date(2026, 10, 23), Decimal("88.9695"))
     assert latest[NIFTY] == (date(2026, 10, 23), Decimal("159.177"))
-    assert str(latest["108844"][1]) == "14.86269632"  # Bandhan publishes 8 places (D-045)
+    assert str(latest["108844"][1]) == "14.86269632"  # Bandhan publishes 8 places
     assert "148304" not in latest  # a 0.0000 NAV (segregated portfolio) is no NAV
 
 

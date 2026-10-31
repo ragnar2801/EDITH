@@ -11,7 +11,7 @@ import { hasUnits, KIND_LABELS, type Lot, type Sip } from '@/lib/holdings'
 import { formatUnits, inr } from '@/lib/money'
 import { formatDate, todayIst } from '@/lib/time'
 
-/** Optional fields, folded away until asked for (D-060). */
+/** Optional fields, folded away until asked for. */
 function MoreOptions({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)
   return (

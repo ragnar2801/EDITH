@@ -1,4 +1,4 @@
-"""SIP instalment dates, worked by hand (D-053)."""
+"""SIP instalment dates, worked by hand."""
 
 from datetime import date
 

@@ -1,8 +1,8 @@
-"""Creating and changing buckets (D-047).
+"""Creating and changing buckets.
 
 Weights are exact percentages that must add up to exactly 100: a split that only looks
 like 100% is refused rather than quietly normalised. Only AMFI schemes can be in a bucket
-or be its benchmark. Everything in a bucket is tracked for NAVs (D-046).
+or be its benchmark. Everything in a bucket is tracked for NAVs.
 """
 
 from dataclasses import dataclass
@@ -18,7 +18,7 @@ from friday.core.instruments.models import Instrument
 HUNDRED = Decimal(100)
 
 DEFAULT_BENCHMARK = "120716"
-"""UTI Nifty 50 Index Fund – Direct Plan – Growth: the Nifty 50, dividends included (D-043)."""
+"""UTI Nifty 50 Index Fund – Direct Plan – Growth: the Nifty 50, dividends included."""
 
 
 class InvalidBucket(ValueError):
@@ -54,7 +54,7 @@ def _fund(session: Session, instrument_id: int, role: str) -> Instrument:
 
 
 def check_split(session: Session, funds: list[tuple[int, Decimal]]) -> list[Instrument]:
-    """The funds of a split, if it's one a bucket could have (also a backtest's, D-075)."""
+    """The funds of a split, if it's one a bucket could have (also a backtest's)."""
     if not funds:
         raise InvalidBucket("add at least one fund")
     ids = [instrument_id for instrument_id, _ in funds]
@@ -129,7 +129,7 @@ def update_bucket(session: Session, bucket: Bucket, data: BucketInput) -> Bucket
 
 
 def duplicate_bucket(session: Session, bucket: Bucket) -> Bucket:
-    """A copy named ``<name> copy`` (``copy 2``, … if taken), without its backtests (D-079)."""
+    """A copy named ``<name> copy`` (``copy 2``, … if taken), without its backtests."""
     taken = set(session.scalars(select(Bucket.name)))
     name = f"{bucket.name} copy"
     number = 2

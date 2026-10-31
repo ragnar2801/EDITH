@@ -1,4 +1,4 @@
-"""Instrument tables (D-038 to D-041).
+"""Instrument tables.
 
 Every stock, ETF and mutual fund scheme Friday knows about. Rows are never deleted:
 anything that drops off its source list is marked inactive, so holdings and history
@@ -15,7 +15,7 @@ from friday.core.db import Base
 from friday.core.types import DecimalText, UtcDateTime
 
 BUCKETS = ("equity", "debt", "gold", "silver", "other")
-"""Allocation buckets (D-040). Each instrument's split over these sums to 100."""
+"""Allocation buckets. Each instrument's split over these sums to 100."""
 
 
 class AllocationColumns:
@@ -50,7 +50,7 @@ class Instrument(AllocationColumns, Base):
     source: Mapped[str] = mapped_column(String(16))
     is_active: Mapped[bool] = mapped_column(default=True)
 
-    # Listed instruments (D-038)
+    # Listed instruments
     exchange: Mapped[str | None] = mapped_column(String(16))
     symbol: Mapped[str | None] = mapped_column(String(40))
     isin: Mapped[str | None] = mapped_column(String(12), index=True)
@@ -81,7 +81,7 @@ class Instrument(AllocationColumns, Base):
 
     __table_args__ = (
         # A symbol is unique per exchange among *active* instruments only: exchanges reuse
-        # the symbols of delisted companies, and the old row must keep its own (D-041).
+        # the symbols of delisted companies, and the old row must keep its own.
         Index(
             "uq_instruments_active_listing",
             "exchange",
@@ -93,7 +93,7 @@ class Instrument(AllocationColumns, Base):
 
 
 class InstrumentAlias(Base):
-    """An older symbol or name, so searches for "Zomato" still find Eternal (D-041)."""
+    """An older symbol or name, so searches for "Zomato" still find Eternal."""
 
     __tablename__ = "instrument_aliases"
 

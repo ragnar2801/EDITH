@@ -1,5 +1,5 @@
-"""The portfolio view: value, P&L, XIRR, allocation and drift (T1-17, D-070, D-071); the
-day's move, the gap to the benchmark, SIPs and value over time (T1-23, D-072 to D-074)."""
+"""The portfolio view: value, P&L, XIRR, allocation and drift; the
+day's move, the gap to the benchmark, SIPs and value over time."""
 
 from datetime import date, datetime
 from typing import Annotated, Literal
@@ -243,7 +243,7 @@ def get_portfolio_history(
     session: SessionDep, start: Annotated[date | None, Query()] = None
 ) -> HistoryOut:
     """Value, invested and the benchmark over time, from ``start`` (or the first purchase)
-    to the latest NAV date, with the gain and return over that range (D-072)."""
+    to the latest NAV date, with the gain and return over that range."""
     view = history(session, start)
     bench: dict[date, Point] = {p.date: p for p in view.benchmark or []}
     return HistoryOut(

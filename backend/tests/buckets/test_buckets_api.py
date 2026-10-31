@@ -1,4 +1,4 @@
-"""Buckets: exact weights, funds only, tracking, edits and deletes (D-047)."""
+"""Buckets: exact weights, funds only, tracking, edits and deletes."""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -85,7 +85,7 @@ def test_weights_must_add_up_to_exactly_100(api: TestClient, funds, weights, mes
 
 def test_weights_must_be_strings(api: TestClient, funds) -> None:
     payload = core(funds)
-    payload["funds"][0]["weight"] = 60  # a JSON number could lose precision (D-032)
+    payload["funds"][0]["weight"] = 60  # a JSON number could lose precision
 
     assert api.post("/api/v1/buckets", json=payload).status_code == 422
 

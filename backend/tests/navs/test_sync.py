@@ -1,4 +1,4 @@
-"""Tracking and syncing NAVs (D-046): history once, then only what's missing."""
+"""Tracking and syncing NAVs: history once, then only what's missing."""
 
 import json
 from datetime import date

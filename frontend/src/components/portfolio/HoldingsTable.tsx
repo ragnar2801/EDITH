@@ -15,8 +15,7 @@ import { formatUnits, inr } from '@/lib/money'
 import { formatPercent, toneOf } from '@/lib/percent'
 
 /** Every fund I hold, biggest first: what's invested, and (from the portfolio view) value,
- * gain, the day's move, XIRR, the gap to the benchmark, weight and target weight (D-070,
- * D-072, D-073). */
+ * gain, the day's move, XIRR, the gap to the benchmark, weight and target weight. */
 export function HoldingsTable({ portfolio }: { portfolio?: Portfolio }) {
   const holdings = useHoldings()
   const addTransaction = useAddTransaction()

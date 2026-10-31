@@ -1,4 +1,4 @@
-"""Fetch NAVs (D-044): one fund's history from mfapi.in, or AMFI's latest-NAV file."""
+"""Fetch NAVs: one fund's history from mfapi.in, or AMFI's latest-NAV file."""
 
 from typing import Protocol
 

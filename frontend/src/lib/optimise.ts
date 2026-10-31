@@ -5,7 +5,7 @@ import type { Bucket } from '@/lib/buckets'
 export type Goal = Schemas['OptimiseIn']['goal'] & string
 export type Candidate = Schemas['Candidate']
 
-/** The search works on models of up to this many funds (D-077). */
+/** The search works on models of up to this many funds. */
 export const MAX_FUNDS = 5
 
 export const GOAL_LABELS: Record<Goal, string> = {
@@ -14,7 +14,7 @@ export const GOAL_LABELS: Record<Goal, string> = {
   sharpe: 'Best Sharpe',
 }
 
-/** Everything the Optimise form holds, as typed (amounts stay strings, D-032). */
+/** Everything the Optimise form holds, as typed (amounts stay strings). */
 export type OptimiseForm = {
   strategy: 'regular' | 'sip'
   capital: string

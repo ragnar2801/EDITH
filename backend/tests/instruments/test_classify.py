@@ -1,4 +1,4 @@
-"""Classification rules (D-040), with the expected split worked out by hand per case."""
+"""Classification rules, with the expected split worked out by hand per case."""
 
 from decimal import Decimal
 

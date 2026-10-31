@@ -1,4 +1,4 @@
-"""The portfolio view through the API, on a portfolio worked by hand (T1-17, D-070, D-071)."""
+"""The portfolio view through the API, on a portfolio worked by hand."""
 
 from datetime import date
 from decimal import Decimal

@@ -25,7 +25,7 @@ import { RunComparison } from './RunComparison'
 
 const axisMoney = (value: number) => inrShort(value.toFixed(0))
 
-/** One-line definitions for the figures (D-060). */
+/** One-line definitions for the figures. */
 const METRIC_INFO = {
   xirr: 'Annual return on your actual cash flows, money-weighted.',
   cagr: 'Annual growth of the funds themselves, time-weighted; ignores when money went in.',
@@ -38,8 +38,8 @@ const METRIC_INFO = {
 
 const tip = (label: string, text: string) => <InfoTip label={label}>{text}</InfoTip>
 
-/** Everything a run returned (T1-14): figures vs the benchmark, chart, interval, tables, and
- * what changed against `baseline`, which is drawn faded (D-076). */
+/** Everything a run returned: figures vs the benchmark, chart, interval, tables, and
+ * what changed against `baseline`, which is drawn faded. */
 export function BacktestResults({
   run,
   baseline = null,

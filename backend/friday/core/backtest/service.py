@@ -1,5 +1,5 @@
 """Run a backtest of a bucket on its stored NAVs, keep the run, slice it, compare two runs and
-search every split of its funds (D-048, D-049, D-075 to D-078)."""
+search every split of its funds."""
 
 import math
 from datetime import UTC, date, datetime
@@ -39,9 +39,9 @@ from friday.core.instruments.models import Instrument
 from friday.core.navs.service import nav_series
 
 KEEP_UNSAVED = 20
-"""Unsaved runs kept, newest first; older ones are deleted (D-049)."""
+"""Unsaved runs kept, newest first; older ones are deleted."""
 TOP = 10
-"""Splits the search shows, re-run with the engine (D-078)."""
+"""Splits the search shows, re-run with the engine."""
 
 
 def _compile(params: CustomParams, members: set[int]) -> list[CustomTrade]:
@@ -142,7 +142,7 @@ def _outcome(outcome: engine.FundOutcome, name: str) -> FundOutcomeOut:
 def _split(
     session: Session, bucket: Bucket, params: BacktestParams
 ) -> dict[int, tuple[Instrument, Decimal]]:
-    """Fund id → (fund, weight): the split ``params`` tries, else the bucket's own (D-075)."""
+    """Fund id → (fund, weight): the split ``params`` tries, else the bucket's own."""
     if not isinstance(params, WeightedParams) or params.split is None:
         return {m.instrument_id: (m.instrument, m.weight_pct) for m in bucket.funds}
     funds = [(fund.instrument_id, fund.weight) for fund in params.split]
@@ -289,7 +289,7 @@ def _days(curve: list[CurvePoint]) -> list[Day]:
 def run_interval(
     result: BacktestResult, start: date | None, end: date | None
 ) -> IntervalOut | None:
-    """Figures for a window of a stored run (D-049), with the benchmark's return over it."""
+    """Figures for a window of a stored run, with the benchmark's return over it."""
     window = engine.interval(_days(result.curve), start, end)
     if window is None:
         return None
@@ -318,7 +318,7 @@ def compare_runs(
     earlier_params: BacktestParams,
     earlier: BacktestResult,
 ) -> ComparisonOut:
-    """A run less an earlier one (D-076): what a change of split (or anything else) did."""
+    """A run less an earlier one: what a change of split (or anything else) did."""
     now, then = result.metrics, earlier.metrics
 
     def change(a: Decimal | None, b: Decimal | None) -> Decimal | None:
@@ -374,7 +374,7 @@ def optimise(
     settings: SearchSettings,
 ) -> OptimiseOut:
     """Try every split of the bucket's funds on the weight grid, rank them for the goal, and
-    re-run the best and the bucket's own split with the engine (D-077, D-078)."""
+    re-run the best and the bucket's own split with the engine."""
     if params.split is not None:
         raise EngineError("the search tries the splits itself; leave the split out")
     members = bucket.funds

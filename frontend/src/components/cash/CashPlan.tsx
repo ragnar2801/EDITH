@@ -16,7 +16,7 @@ import { formatDate, formatMonthYear } from '@/lib/time'
 
 import { positive } from './labels'
 
-/** "I have ₹X": one amount in, what to buy out (D-058, D-059). */
+/** "I have ₹X": one amount in, what to buy out. */
 export function CashPlan({
   investable,
   ready,

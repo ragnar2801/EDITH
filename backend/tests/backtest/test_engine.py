@@ -1,4 +1,4 @@
-"""The backtest engine on hand-worked examples (D-048), including Friday's own tests."""
+"""The backtest engine on hand-worked examples, including Friday's own tests."""
 
 from datetime import date, timedelta
 from decimal import Decimal as D

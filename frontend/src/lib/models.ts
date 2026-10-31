@@ -3,7 +3,7 @@ import type { Bucket, Rebalance } from '@/lib/buckets'
 
 type FundRef = Schemas['FundRef']
 
-/** Where models (buckets, D-061) live in the app (D-063). */
+/** Where models (buckets) live in the app. */
 export const MODELS_PATH = '/models'
 
 export function modelPath(id: number, tab?: 'backtest' | 'optimise' | 'edit'): string {

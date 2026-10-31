@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
 const axisMoney = (value: number) => inrShort(value.toFixed(0))
 
 /** What my funds were worth over time, against what they cost and the same money in the
- * benchmark (D-072). The range's gain and return are the API's, worked out on every date. */
+ * benchmark. The range's gain and return are the API's, worked out on every date. */
 export function ValueChart({ portfolio }: { portfolio: Portfolio }) {
   const first = portfolio.returns?.since ?? null
   const last = portfolio.returns?.on ?? null

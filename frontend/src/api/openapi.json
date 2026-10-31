@@ -694,7 +694,7 @@
         "type": "object"
       },
       "Candidate": {
-        "description": "A split with its figures from the exact engine (D-078).",
+        "description": "A split with its figures from the exact engine.",
         "properties": {
           "funds": {
             "items": {
@@ -882,7 +882,7 @@
         "type": "object"
       },
       "ComparisonOut": {
-        "description": "This run less an earlier one (D-076): rupees for the final value, points for ratios.",
+        "description": "This run less an earlier one: rupees for the final value, points for ratios.",
         "properties": {
           "absolute_return_pct": {
             "anyOf": [
@@ -5243,7 +5243,7 @@
     },
     "/api/v1/backtests/optimise": {
       "post": {
-        "description": "Try every split of the bucket's funds and rank them (D-077); nothing is stored.",
+        "description": "Try every split of the bucket's funds and rank them; nothing is stored.",
         "operationId": "optimiseSplit",
         "requestBody": {
           "content": {
@@ -5411,7 +5411,7 @@
     },
     "/api/v1/backtests/{run_id}/compare": {
       "get": {
-        "description": "This run less an earlier one: final value, ratios and the weights that changed (D-076).",
+        "description": "This run less an earlier one: final value, ratios and the weights that changed.",
         "operationId": "compareBacktests",
         "parameters": [
           {
@@ -5463,7 +5463,7 @@
     },
     "/api/v1/backtests/{run_id}/interval": {
       "get": {
-        "description": "Return, drawdown and money in and out for a window of a run (D-049).",
+        "description": "Return, drawdown and money in and out for a window of a run.",
         "operationId": "getBacktestInterval",
         "parameters": [
           {
@@ -5615,7 +5615,7 @@
     },
     "/api/v1/buckets/default-benchmark": {
       "get": {
-        "description": "The Nifty 50 index fund new buckets are compared with (D-043), if the fund list has it.",
+        "description": "The Nifty 50 index fund new buckets are compared with, if the fund list has it.",
         "operationId": "getDefaultBenchmark",
         "responses": {
           "200": {
@@ -6181,7 +6181,7 @@
     },
     "/api/v1/instruments/refresh": {
       "post": {
-        "description": "Download the lists and update instruments, as ``friday instruments refresh`` does\n(D-065). Each list is its own transaction; a failed one is reported, not raised.",
+        "description": "Download the lists and update instruments, as ``friday instruments refresh`` does\n. Each list is its own transaction; a failed one is reported, not raised.",
         "operationId": "refreshInstruments",
         "requestBody": {
           "content": {
@@ -6889,7 +6889,7 @@
     },
     "/api/v1/navs/sync": {
       "post": {
-        "description": "Download missing NAVs for every tracked fund, or only the given ones (D-046).",
+        "description": "Download missing NAVs for every tracked fund, or only the given ones.",
         "operationId": "syncNavs",
         "requestBody": {
           "content": {
@@ -6938,7 +6938,7 @@
     },
     "/api/v1/plan": {
       "post": {
-        "description": "Where new cash should go: emergency top-up first, then the funds furthest below\nthe target split, never selling (D-058). Large amounts come with a monthly stagger\nplan (D-059). Nothing is saved.",
+        "description": "Where new cash should go: emergency top-up first, then the funds furthest below\nthe target split, never selling. Large amounts come with a monthly stagger\nplan. Nothing is saved.",
         "operationId": "makeCashPlan",
         "requestBody": {
           "content": {
@@ -6980,7 +6980,7 @@
     },
     "/api/v1/plan/settings": {
       "get": {
-        "description": "Target bucket, emergency goal and fund, and the staggering rule (D-057).",
+        "description": "Target bucket, emergency goal and fund, and the staggering rule.",
         "operationId": "getPlanSettings",
         "responses": {
           "200": {
@@ -7082,7 +7082,7 @@
     },
     "/api/v1/portfolio/history": {
       "get": {
-        "description": "Value, invested and the benchmark over time, from ``start`` (or the first purchase)\nto the latest NAV date, with the gain and return over that range (D-072).",
+        "description": "Value, invested and the benchmark over time, from ``start`` (or the first purchase)\nto the latest NAV date, with the gain and return over that range.",
         "operationId": "getPortfolioHistory",
         "parameters": [
           {
@@ -7133,7 +7133,7 @@
     },
     "/api/v1/sales": {
       "post": {
-        "description": "Take units out of the lots picked, all of one fund, on one date (D-054).",
+        "description": "Take units out of the lots picked, all of one fund, on one date.",
         "operationId": "sellUnits",
         "requestBody": {
           "content": {
@@ -7211,7 +7211,7 @@
     },
     "/api/v1/sips": {
       "post": {
-        "description": "Start a SIP. Instalments are added for every month the stored NAVs cover, and after\neach NAV sync (D-053).",
+        "description": "Start a SIP. Instalments are added for every month the stored NAVs cover, and after\neach NAV sync.",
         "operationId": "addSip",
         "requestBody": {
           "content": {

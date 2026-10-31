@@ -8,7 +8,7 @@ const LOCALES: Record<Money['currency'], string> = {
 }
 
 /**
- * Format an amount for display. Amounts arrive as exact decimal strings (D-032) and are
+ * Format an amount for display. Amounts arrive as exact decimal strings and are
  * passed to Intl as strings, so no digit is lost to floating point. Never do arithmetic
  * on amounts in the frontend: the backend computes every figure.
  */
@@ -36,7 +36,7 @@ const NAV = new Intl.NumberFormat('en-IN', {
   maximumFractionDigits: 8,
 })
 
-/** A fund NAV with every place it was published with (D-045): ₹14.86269632, ₹88.9695. */
+/** A fund NAV with every place it was published with: ₹14.86269632, ₹88.9695. */
 export function formatNav(nav: string): string {
   return NAV.format(nav as Intl.StringNumericLiteral)
 }
@@ -52,7 +52,7 @@ export function inrShort(amount: string): string {
 
 const UNITS = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 })
 
-/** Fund units as AMCs allot them, to 3 places (D-051): 1,234.568. */
+/** Fund units as AMCs allot them, to 3 places: 1,234.568. */
 export function formatUnits(units: string): string {
   return UNITS.format(units as Intl.StringNumericLiteral)
 }

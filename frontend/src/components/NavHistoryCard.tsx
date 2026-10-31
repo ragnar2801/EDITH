@@ -16,7 +16,7 @@ import { formatDate } from '@/lib/time'
 
 const axisNav = (value: number) => `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
 
-/** A fund's NAV history (T1-12): track it, sync it, see its chart and headline figures. */
+/** A fund's NAV history: track it, sync it, see its chart and headline figures. */
 export function NavHistoryCard({ instrumentId }: { instrumentId: number }) {
   const summary = useNavSummary(instrumentId)
   const track = useTrackFund(instrumentId)

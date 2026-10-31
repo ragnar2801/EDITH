@@ -1,6 +1,6 @@
-"""Tracking funds, syncing their NAVs and reading them back (D-044 to D-046).
+"""Tracking funds, syncing their NAVs and reading them back.
 
-Sync is one operation (D-046): for every tracked fund, download its NAV history and store
+Sync is one operation: for every tracked fund, download its NAV history and store
 whatever is missing or was corrected. Running it twice adds nothing. When mfapi.in fails
 for a fund, the latest NAV still comes from AMFI's ``NAVAll.txt``.
 """
@@ -57,8 +57,7 @@ def _used_by(session: Session) -> dict[int, list[str]]:
 
 
 def tracking_reasons(session: Session) -> dict[int, list[str]]:
-    """Every tracked fund and why: ``"me"``, the buckets that use it, or ``"holding"``
-    (D-046)."""
+    """Every tracked fund and why: ``"me"``, the buckets that use it, or ``"holding"``."""
     reasons: dict[int, list[str]] = {
         instrument_id: [ME] for instrument_id in session.scalars(select(TrackedFund.instrument_id))
     }
@@ -218,7 +217,7 @@ def sync_navs(
         session.add(run)
         session.flush()
         run_id = run.id
-        add_due_instalments(session)  # new NAVs may cover new SIP instalments (D-053)
+        add_due_instalments(session)  # new NAVs may cover new SIP instalments
     return SyncResult(run_id, status, started, finished, results)
 
 

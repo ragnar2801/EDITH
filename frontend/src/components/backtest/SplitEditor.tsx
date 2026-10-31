@@ -15,7 +15,7 @@ import type { Bucket } from '@/lib/buckets'
 import { cn } from '@/lib/utils'
 import { fromBasisPoints, totalBasisPoints } from '@/lib/weights'
 
-/** The funds and weights a backtest runs; changing them leaves the model alone (D-075). */
+/** The funds and weights a backtest runs; changing them leaves the model alone. */
 export function SplitEditor({
   bucket,
   split,

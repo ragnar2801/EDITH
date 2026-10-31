@@ -8,7 +8,7 @@ export type Section = {
   also?: string[]
 }
 
-/** The four jobs (D-063). Phase 1 is mutual funds only (D-043). */
+/** The four jobs. */
 export const SECTIONS: Section[] = [
   { path: '/', label: 'Portfolio', icon: BriefcaseBusiness, also: ['/cash'] },
   { path: '/invest', label: 'Invest', icon: Banknote },

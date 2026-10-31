@@ -1,5 +1,5 @@
-"""Backtests of a bucket: run, save, load, delete, figures for a window (T1-14), and two runs
-compared (T1-24), and every split of a bucket searched (T1-25)."""
+"""Backtests of a bucket: run, save, load, delete, figures for a window, and two runs
+compared, and every split of a bucket searched."""
 
 from datetime import date
 
@@ -119,7 +119,7 @@ def run(session: SessionDep, payload: BacktestIn) -> BacktestRunOut:
 
 @router.post("/backtests/optimise", operation_id="optimiseSplit")
 def optimise_split(session: SessionDep, payload: OptimiseIn) -> OptimiseOut:
-    """Try every split of the bucket's funds and rank them (D-077); nothing is stored."""
+    """Try every split of the bucket's funds and rank them; nothing is stored."""
     bucket = _bucket(session, payload.bucket_id)
     try:
         return optimise(session, bucket, payload.params, payload)
@@ -159,7 +159,7 @@ def delete(session: SessionDep, run_id: int) -> Response:
 def interval(
     session: SessionDep, run_id: int, start: date | None = None, end: date | None = None
 ) -> IntervalOut:
-    """Return, drawdown and money in and out for a window of a run (D-049)."""
+    """Return, drawdown and money in and out for a window of a run."""
     result = BacktestResult.model_validate_json(_run(session, run_id).result)
     window = run_interval(result, start, end)
     if window is None:
@@ -169,7 +169,7 @@ def interval(
 
 @router.get("/backtests/{run_id}/compare", operation_id="compareBacktests")
 def compare(session: SessionDep, run_id: int, against: int) -> ComparisonOut:
-    """This run less an earlier one: final value, ratios and the weights that changed (D-076)."""
+    """This run less an earlier one: final value, ratios and the weights that changed."""
     run, earlier = _run(session, run_id), _run(session, against)
     return compare_runs(
         _params.validate_json(run.params),

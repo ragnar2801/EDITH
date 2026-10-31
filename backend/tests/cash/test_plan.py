@@ -1,4 +1,4 @@
-"""The cash plan's arithmetic, against cases worked by hand (D-058, D-059)."""
+"""The cash plan's arithmetic, against cases worked by hand."""
 
 from datetime import date
 from decimal import Decimal

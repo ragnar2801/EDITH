@@ -1,4 +1,4 @@
-"""Refresh: idempotent upserts, renames, closures and the safety check (D-038, D-041)."""
+"""Refresh: idempotent upserts, renames, closures and the safety check."""
 
 from decimal import Decimal
 

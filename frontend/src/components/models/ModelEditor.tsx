@@ -20,7 +20,7 @@ import { FundName } from './FundName'
 const BENCHMARK_INFO = 'Backtests compare the model with the same money in this fund.'
 const REBALANCE_INFO = 'How often a backtest resets the funds to their target weights.'
 
-/** A model: name, funds with weights adding up to exactly 100 (D-047), rebalance, benchmark. */
+/** A model: name, funds with weights adding up to exactly 100, rebalance, benchmark. */
 export function ModelEditor({
   initial,
   onSaved,

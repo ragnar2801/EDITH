@@ -1,7 +1,6 @@
 # Friday
 
-A personal portfolio tracker and analyst, running locally on one Windows laptop. Being built for **Indian mutual funds first** (D-043); stocks and US holdings come later.
-Design and plan: [`agents.md`](agents.md) · overview: [`docs/architecture.md`](docs/architecture.md) · tasks: [`docs/tasks/`](docs/tasks/README.md)
+A personal portfolio tracker and analyst, running locally on one Windows laptop.
 
 ## Set up on Windows (once)
 

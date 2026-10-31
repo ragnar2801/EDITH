@@ -1,4 +1,4 @@
-"""AMFI ``NAVAll.txt`` (D-039): every mutual fund scheme code with its latest NAV.
+"""AMFI ``NAVAll.txt``: every mutual fund scheme code with its latest NAV.
 
 ``https://portal.amfiindia.com/spages/NAVAll.txt``. Checked 2026-10-24. The file is
 semicolon-separated with header lines between blocks::
@@ -31,7 +31,7 @@ from friday.core.instruments.sources.common import (
 NAV_ALL = "NAVAll.txt"
 
 STALE_AFTER = timedelta(days=30)
-"""A scheme whose last NAV is this much older than the file's newest NAV is closed (D-041)."""
+"""A scheme whose last NAV is this much older than the file's newest NAV is closed."""
 
 _CATEGORY = re.compile(r"^(?P<type>.+?) Schemes?\s*\((?P<category>.*)\)$")
 _REQUIRED = {"schemecode", "schemename", "date"}
@@ -58,7 +58,7 @@ def _option_kind(option: str, name: str) -> str | None:
 
 
 def scheme_key(fund_house: str, name: str, category: str) -> str:
-    """Variants (plans and options) of one scheme share this key (D-042)."""
+    """Variants (plans and options) of one scheme share this key."""
     return "|".join(clean(part).lower() for part in (fund_house, name, category))
 
 
@@ -125,7 +125,7 @@ def parse_nav_all(text: str) -> list[Record]:
 # -- Scheme master ---------------------------------------------------------------------
 
 SCHEME_MASTER = "SchemeData.csv"
-"""AMFI's scheme master (D-069): ``portal.amfiindia.com/DownloadSchemeData_Po.aspx?mf=0``.
+"""AMFI's scheme master: ``portal.amfiindia.com/DownloadSchemeData_Po.aspx?mf=0``.
 
 Checked 2026-10-25. Comma-separated, one row per scheme code::
 
@@ -194,7 +194,7 @@ def parse_scheme_master(text: str) -> list[SchemeLabel]:
 
 
 def fill_plan_and_option(records: list[Record], labels: list[SchemeLabel]) -> int:
-    """Fill plan and option where ``NAVAll.txt`` left them blank (D-069) and return how many
+    """Fill plan and option where ``NAVAll.txt`` left them blank and return how many
     records changed. ``NAVAll.txt`` wins where both say something: its columns are explicit,
     while NAV names are loose (about 150 read as another option, e.g. "Growth Plan - Bonus")."""
     by_code = {label.amfi_code: label for label in labels}

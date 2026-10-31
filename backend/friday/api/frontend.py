@@ -1,4 +1,4 @@
-"""Serve the built React app in daily mode (D-036). Unknown non-API paths get ``index.html``."""
+"""Serve the built React app in daily mode. Unknown non-API paths get ``index.html``."""
 
 from pathlib import Path
 

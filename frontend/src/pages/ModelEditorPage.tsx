@@ -7,7 +7,7 @@ import { ModelEditor } from '@/components/models/ModelEditor'
 import { PageHeader } from '@/components/PageHeader'
 import { MODELS_PATH, backtestPath, draftOf, modelPath, newDraft } from '@/lib/models'
 
-/** New model, or edit one: a page of its own (D-060). */
+/** New model, or edit one: a page of its own. */
 export function ModelEditorPage() {
   const params = useParams()
   const id = params.id ? Number(params.id) : null

@@ -1,4 +1,4 @@
-"""Instrument search over a local SQLite FTS5 index (D-042).
+"""Instrument search over a local SQLite FTS5 index.
 
 The index ``instrument_search`` holds one row per instrument (rowid = instrument id) with
 three columns: symbols and codes, the name, and extra text (fund house, old names). It is

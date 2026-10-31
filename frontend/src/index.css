@@ -59,13 +59,13 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  /* Allocation buckets (D-040): one colour each, the same everywhere they appear. */
+  /* Allocation buckets: one colour each, the same everywhere they appear. */
   --bucket-equity: oklch(0.55 0.15 255);
   --bucket-debt: oklch(0.6 0.11 180);
   --bucket-gold: oklch(0.75 0.15 80);
   --bucket-silver: oklch(0.7 0.01 260);
   --bucket-other: oklch(0.55 0.15 320);
-  /* Chart lines (D-050): the bucket or fund, its benchmark, money put in. */
+  /* Chart lines: the bucket or fund, its benchmark, money put in. */
   --chart-main: oklch(0.6 0.12 190);
   --chart-benchmark: oklch(0.7 0.14 70);
   --chart-invested: oklch(0.6 0.02 250);

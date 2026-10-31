@@ -1,8 +1,8 @@
-"""Every split of a model's funds, measured together (D-077, D-078). Pure, no I/O.
+"""Every split of a model's funds, measured together. Pure, no I/O.
 
 Each split's value curve is the funds' own curves combined by weight, so thousands of splits
 are worked out at once with numpy, in floats. The figures here only rank splits: the ones
-shown are re-run with the exact engine (D-048) by the service. The formulas follow
+shown are re-run with the exact engine by the service. The formulas follow
 :func:`friday.core.backtest.engine.metrics` line by line, so a split comes out the same here
 as there to the rounding.
 """
@@ -145,7 +145,7 @@ def measure(
     aligned: Aligned, funds: list[int], splits: list[tuple[int, ...]], plan: Plan, rf_pct: float
 ) -> Measures:
     """XIRR, CAGR, max drawdown, volatility and Sharpe of every split, as the engine works
-    them out (D-048), from the first date every fund has a NAV."""
+    them out, from the first date every fund has a NAV."""
     if aligned.start >= len(aligned.dates) - 1:
         raise EngineError("the funds have no NAVs in common for these dates")
     dates = aligned.dates[aligned.start :]

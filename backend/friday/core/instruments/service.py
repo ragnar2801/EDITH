@@ -1,4 +1,4 @@
-"""Reading instruments and setting my own classification (D-040)."""
+"""Reading instruments and setting my own classification."""
 
 from dataclasses import dataclass
 from datetime import UTC, datetime

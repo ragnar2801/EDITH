@@ -35,7 +35,7 @@ export interface paths {
         put?: never;
         /**
          * Optimise Split
-         * @description Try every split of the bucket's funds and rank them (D-077); nothing is stored.
+         * @description Try every split of the bucket's funds and rank them; nothing is stored.
          */
         post: operations["optimiseSplit"];
         delete?: never;
@@ -75,7 +75,7 @@ export interface paths {
         };
         /**
          * Compare
-         * @description This run less an earlier one: final value, ratios and the weights that changed (D-076).
+         * @description This run less an earlier one: final value, ratios and the weights that changed.
          */
         get: operations["compareBacktests"];
         put?: never;
@@ -95,7 +95,7 @@ export interface paths {
         };
         /**
          * Interval
-         * @description Return, drawdown and money in and out for a window of a run (D-049).
+         * @description Return, drawdown and money in and out for a window of a run.
          */
         get: operations["getBacktestInterval"];
         put?: never;
@@ -136,7 +136,7 @@ export interface paths {
         };
         /**
          * Get Default Benchmark
-         * @description The Nifty 50 index fund new buckets are compared with (D-043), if the fund list has it.
+         * @description The Nifty 50 index fund new buckets are compared with, if the fund list has it.
          */
         get: operations["getDefaultBenchmark"];
         put?: never;
@@ -353,7 +353,7 @@ export interface paths {
         /**
          * Refresh
          * @description Download the lists and update instruments, as ``friday instruments refresh`` does
-         *     (D-065). Each list is its own transaction; a failed one is reported, not raised.
+         *    . Each list is its own transaction; a failed one is reported, not raised.
          */
         post: operations["refreshInstruments"];
         delete?: never;
@@ -583,7 +583,7 @@ export interface paths {
         put?: never;
         /**
          * Sync
-         * @description Download missing NAVs for every tracked fund, or only the given ones (D-046).
+         * @description Download missing NAVs for every tracked fund, or only the given ones.
          */
         post: operations["syncNavs"];
         delete?: never;
@@ -604,8 +604,8 @@ export interface paths {
         /**
          * Make
          * @description Where new cash should go: emergency top-up first, then the funds furthest below
-         *     the target split, never selling (D-058). Large amounts come with a monthly stagger
-         *     plan (D-059). Nothing is saved.
+         *     the target split, never selling. Large amounts come with a monthly stagger
+         *     plan. Nothing is saved.
          */
         post: operations["makeCashPlan"];
         delete?: never;
@@ -623,7 +623,7 @@ export interface paths {
         };
         /**
          * Read Settings
-         * @description Target bucket, emergency goal and fund, and the staggering rule (D-057).
+         * @description Target bucket, emergency goal and fund, and the staggering rule.
          */
         get: operations["getPlanSettings"];
         /** Change Settings */
@@ -662,7 +662,7 @@ export interface paths {
         /**
          * Get Portfolio History
          * @description Value, invested and the benchmark over time, from ``start`` (or the first purchase)
-         *     to the latest NAV date, with the gain and return over that range (D-072).
+         *     to the latest NAV date, with the gain and return over that range.
          */
         get: operations["getPortfolioHistory"];
         put?: never;
@@ -684,7 +684,7 @@ export interface paths {
         put?: never;
         /**
          * Add Sale
-         * @description Take units out of the lots picked, all of one fund, on one date (D-054).
+         * @description Take units out of the lots picked, all of one fund, on one date.
          */
         post: operations["sellUnits"];
         delete?: never;
@@ -725,7 +725,7 @@ export interface paths {
         /**
          * Add Sip
          * @description Start a SIP. Instalments are added for every month the stored NAVs cover, and after
-         *     each NAV sync (D-053).
+         *     each NAV sync.
          */
         post: operations["addSip"];
         delete?: never;
@@ -981,7 +981,7 @@ export interface components {
         };
         /**
          * Candidate
-         * @description A split with its figures from the exact engine (D-078).
+         * @description A split with its figures from the exact engine.
          */
         Candidate: {
             /** Funds */
@@ -1052,7 +1052,7 @@ export interface components {
         };
         /**
          * ComparisonOut
-         * @description This run less an earlier one (D-076): rupees for the final value, points for ratios.
+         * @description This run less an earlier one: rupees for the final value, points for ratios.
          */
         ComparisonOut: {
             /** Absolute Return Pct */

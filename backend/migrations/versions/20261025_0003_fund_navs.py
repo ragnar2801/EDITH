@@ -1,4 +1,4 @@
-"""Fund NAVs, tracked funds and the NAV sync log (T1-12, D-044 to D-046).
+"""Fund NAVs, tracked funds and the NAV sync log.
 
 Revision ID: 0003
 Revises: 0002

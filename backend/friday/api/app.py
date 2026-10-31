@@ -45,7 +45,7 @@ def create_app(settings: Settings | None = None, *, migrate: bool = True) -> Fas
     app.state.engine = make_engine(settings)
     app.state.session_factory = make_session_factory(app.state.engine)
     app.state.nav_fetcher = HttpNavFetcher()  # tests replace it with a fake
-    app.state.list_fetcher = HttpFetcher(  # instrument lists (D-065); tests use a folder
+    app.state.list_fetcher = HttpFetcher(  # instrument lists; tests use a folder
         settings.sources_dir, sec_user_agent=settings.sec_user_agent
     )
 

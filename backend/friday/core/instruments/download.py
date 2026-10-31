@@ -1,4 +1,4 @@
-"""Fetch the instrument list files (D-039): from the web, or from a folder of saved copies."""
+"""Fetch the instrument list files: from the web, or from a folder of saved copies."""
 
 import time
 from dataclasses import dataclass

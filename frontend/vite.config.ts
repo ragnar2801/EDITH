@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-// Dev mode (D-036): Vite serves the UI on :5173 and forwards /api to the backend on :8000.
+// Dev mode: Vite serves the UI on :5173 and forwards /api to the backend on :8000.
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {

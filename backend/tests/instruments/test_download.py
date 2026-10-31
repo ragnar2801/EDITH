@@ -1,4 +1,4 @@
-"""Downloading the lists (D-039), with a fake network."""
+"""Downloading the lists, with a fake network."""
 
 from pathlib import Path
 

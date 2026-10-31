@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import { REBALANCE_LABELS } from '@/lib/buckets'
 import { MODELS_PATH, backtestPath, modelPath } from '@/lib/models'
 
-/** Models (buckets, D-061): target splits to backtest and to invest towards. */
+/** Models (buckets): target splits to backtest and to invest towards. */
 export function ModelsPage() {
   const buckets = useBuckets()
   const settings = usePlanSettings()

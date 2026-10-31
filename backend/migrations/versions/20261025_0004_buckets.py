@@ -1,5 +1,4 @@
-"""Buckets: target splits of funds with weights, rebalance policy and benchmark
-(T1-13, D-047).
+"""Buckets: target splits of funds with weights, rebalance policy and benchmark.
 
 Revision ID: 0004
 Revises: 0003

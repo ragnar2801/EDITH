@@ -1,4 +1,4 @@
-"""Fund holdings: lump sums, SIPs and units sold from lots (T1-15, D-051 to D-054)."""
+"""Fund holdings: lump sums, SIPs and units sold from lots."""
 
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
@@ -53,7 +53,7 @@ class SaleOut(BaseModel):
     amount: Amount
     """Units × NAV, rounded to the paisa."""
     realised: Amount
-    """Amount minus what the units sold cost (D-070)."""
+    """Amount minus what the units sold cost."""
 
 
 class LotOut(BaseModel):
@@ -109,9 +109,9 @@ class LotIn(BaseModel):
     buy_date: date
     amount: Amount
     nav: Nav | None = None
-    """Blank: the fund's NAV on that date from the stored history (D-052)."""
+    """Blank: the fund's NAV on that date from the stored history."""
     units: Units | None = None
-    """Blank: amount ÷ NAV rounded to 3 places, as AMCs allot (D-052)."""
+    """Blank: amount ÷ NAV rounded to 3 places, as AMCs allot."""
     note: str | None = Field(default=None, max_length=200)
 
 
@@ -306,7 +306,7 @@ def delete(session: SessionDep, lot_id: int) -> Response:
 @router.post("/sips", status_code=201, operation_id="addSip")
 def add_sip(session: SessionDep, payload: SipIn) -> HoldingOut:
     """Start a SIP. Instalments are added for every month the stored NAVs cover, and after
-    each NAV sync (D-053)."""
+    each NAV sync."""
     instrument = _fund(session, payload.instrument_id)
     _do(create_sip, session, instrument.id, _sip_input(payload))
     return _holding_out(session, instrument)
@@ -329,7 +329,7 @@ def remove_sip(session: SessionDep, sip_id: int) -> Response:
 
 @router.post("/sales", status_code=201, operation_id="sellUnits")
 def add_sale(session: SessionDep, payload: SaleIn) -> HoldingOut:
-    """Take units out of the lots picked, all of one fund, on one date (D-054)."""
+    """Take units out of the lots picked, all of one fund, on one date."""
     data = SaleInput(
         sale_date=payload.sale_date,
         nav=payload.nav,

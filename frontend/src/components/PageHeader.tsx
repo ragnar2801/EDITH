@@ -10,7 +10,7 @@ type Props = {
   actions?: ReactNode
 }
 
-/** Every page starts with this: title and its actions, nothing to read (D-060). */
+/** Every page starts with this: title and its actions, nothing to read. */
 export function PageHeader({ title, meta, back, actions }: Props) {
   return (
     <header className="flex flex-col gap-1">

@@ -32,7 +32,7 @@ const DEFAULT_WIDTH = 820
 const PAD = { left: 60, right: 14, top: 14, bottom: 24 }
 
 /**
- * Line chart in plain SVG (D-050), ported from Friday: hover read-out, drag to select an
+ * Line chart in plain SVG, ported from Friday: hover read-out, drag to select an
  * interval, buy/sell markers. Values arrive as exact strings; they become numbers only to
  * place points on screen. Every figure shown as text is the API's own string.
  */

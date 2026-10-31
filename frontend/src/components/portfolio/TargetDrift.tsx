@@ -8,7 +8,7 @@ import { fundPath, planLabel } from '@/lib/instruments'
 import { modelPath } from '@/lib/models'
 import { formatPercent, formatPoints } from '@/lib/percent'
 
-/** How far each fund of the target model is from its weight (D-071), with the way to close
+/** How far each fund of the target model is from its weight, with the way to close
  * the gap: new cash through Invest. */
 export function TargetDrift({ data }: { data: Portfolio }) {
   if (!data.target || data.drift.length === 0) return null

@@ -62,7 +62,7 @@ export function planLabel(instrument: Pick<InstrumentSummary, 'plan' | 'option'>
   return [plan, instrument.option].filter(Boolean).join(' · ')
 }
 
-/** Where a fund (or any instrument) lives in the app (D-063). */
+/** Where a fund (or any instrument) lives in the app. */
 export function fundPath(id: number, tab?: 'transactions' | 'details'): string {
   return tab ? `/funds/${id}/${tab}` : `/funds/${id}`
 }

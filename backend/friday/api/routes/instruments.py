@@ -1,4 +1,4 @@
-"""Instrument search, detail and my classification overrides (T1-02)."""
+"""Instrument search, detail and my classification overrides."""
 
 from datetime import date
 from decimal import Decimal
@@ -222,8 +222,8 @@ def search(
 
 @router.post("/refresh", operation_id="refreshInstruments")
 def refresh(request: Request, payload: RefreshIn | None = None) -> list[RefreshResultOut]:
-    """Download the lists and update instruments, as ``friday instruments refresh`` does
-    (D-065). Each list is its own transaction; a failed one is reported, not raised."""
+    """Download the lists and update instruments, as ``friday instruments refresh`` does.
+    Each list is its own transaction; a failed one is reported, not raised."""
     wanted = set(payload.sources) if payload and payload.sources else set(SOURCES)
     results = refresh_instruments(
         request.app.state.session_factory,

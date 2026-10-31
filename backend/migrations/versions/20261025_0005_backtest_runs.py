@@ -1,4 +1,4 @@
-"""Stored backtest runs (T1-14, D-049).
+"""Stored backtest runs.
 
 Revision ID: 0005
 Revises: 0004

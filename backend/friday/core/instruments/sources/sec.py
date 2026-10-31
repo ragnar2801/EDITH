@@ -1,4 +1,4 @@
-"""SEC ``company_tickers_exchange.json`` (D-039): ticker → CIK, for SEC filings later.
+"""SEC ``company_tickers_exchange.json``: ticker → CIK, for SEC filings later.
 
 ``https://www.sec.gov/files/company_tickers_exchange.json``. SEC asks every client to send
 a User-Agent with a name and contact email, so this is only fetched when

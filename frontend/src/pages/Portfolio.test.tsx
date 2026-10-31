@@ -168,7 +168,7 @@ test('Portfolio shows value, gain, the day and XIRR exactly as the API sends the
   expect(screen.getByRole('region', { name: 'Allocation' })).toHaveTextContent('Equity')
 })
 
-test("the value chart shows the range's gain and return from the API (D-072)", async () => {
+test("the value chart shows the range's gain and return from the API", async () => {
   const calls = fakeApi({
     'GET /api/v1/portfolio': () => held,
     'GET /api/v1/portfolio/history': () => history,
@@ -231,7 +231,7 @@ test('the fund page shows its returns next to the benchmark', async () => {
   expect(within(stat('In the benchmark')).getByText('₹13,500.00')).toBeInTheDocument()
 })
 
-test('the target model shows how far each fund is from its weight (D-071)', async () => {
+test('the target model shows how far each fund is from its weight', async () => {
   fakeApi({
     'GET /api/v1/buckets': () => [bucket()],
     'GET /api/v1/plan/settings': () => ({

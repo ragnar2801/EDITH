@@ -1,4 +1,4 @@
-"""Fund NAVs: tracking, sync, history and statistics (T1-12)."""
+"""Fund NAVs: tracking, sync, history and statistics."""
 
 from datetime import date
 from typing import Literal
@@ -206,7 +206,7 @@ def status(session: SessionDep) -> NavStatusOut:
 
 @router.post("/navs/sync", operation_id="syncNavs")
 def sync(request: Request, session: SessionDep, payload: SyncIn | None = None) -> SyncRunOut:
-    """Download missing NAVs for every tracked fund, or only the given ones (D-046)."""
+    """Download missing NAVs for every tracked fund, or only the given ones."""
     ids = payload.instrument_ids if payload else None
     try:
         result = sync_navs(request.app.state.session_factory, request.app.state.nav_fetcher, ids)

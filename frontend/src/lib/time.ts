@@ -4,7 +4,7 @@ const IST = new Intl.DateTimeFormat('en-IN', {
   timeZone: 'Asia/Kolkata',
 })
 
-/** Show a UTC timestamp from the API in IST (D-032), e.g. "24 Oct 2026, 9:30 pm". */
+/** Show a UTC timestamp from the API in IST, e.g. "24 Oct 2026, 9:30 pm". */
 export function formatDateTime(utc: string): string {
   return IST.format(new Date(utc))
 }

@@ -1,4 +1,4 @@
-"""Value over time, the day's move and the gain over a range, worked by hand (D-072, D-073)."""
+"""Value over time, the day's move and the gain over a range, worked by hand."""
 
 from datetime import date, timedelta
 from decimal import Decimal

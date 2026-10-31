@@ -1,4 +1,4 @@
-"""Returns of real money, worked by hand (D-070)."""
+"""Returns of real money, worked by hand."""
 
 from datetime import date
 from decimal import Decimal

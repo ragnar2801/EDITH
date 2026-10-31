@@ -1,4 +1,4 @@
-"""Value over time (D-072): pure arithmetic over a fund's dated moves and its NAVs, no
+"""Value over time: pure arithmetic over a fund's dated moves and its NAVs, no
 database.
 
 A **move** is one change to a holding on one date: a buy (units and cost up, money in) or
@@ -102,7 +102,7 @@ def combine(lines: list[list[Point]]) -> list[Point]:
 
 
 def mirror(series: list[tuple[date, Decimal]], flows: list[Flow]) -> list[Move] | None:
-    """The same money on the same dates in one other fund (the benchmark, D-070), each
+    """The same money on the same dates in one other fund (the benchmark), each
     flow at that fund's NAV on or before its date. A sale takes out the same rupees,
     capped at what the other fund holds by then. ``None`` when the fund has no NAV on or
     before the first flow."""

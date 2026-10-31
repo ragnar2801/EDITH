@@ -1,4 +1,4 @@
-"""SQLite engine, sessions and migrations (D-031)."""
+"""SQLite engine, sessions and migrations."""
 
 from collections.abc import Iterator
 from contextlib import contextmanager

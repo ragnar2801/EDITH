@@ -110,7 +110,7 @@ export function ModelPage() {
 
 function Overview({ bucket, isTarget }: { bucket: Bucket; isTarget: boolean }) {
   const portfolio = usePortfolio({ enabled: isTarget })
-  // Drift is worked out for the target model only (D-071).
+  // Drift is worked out for the target model only.
   const drift = isTarget ? new Map(portfolio.data?.drift.map((row) => [row.fund.id, row])) : null
   return (
     <>

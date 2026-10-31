@@ -1,4 +1,4 @@
-"""Search, detail and override endpoints, including T1-02's done-when searches."""
+"""Search, detail and override endpoints, including searches by name, code and ISIN."""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -38,7 +38,7 @@ def test_parag_parikh_flexi_finds_the_direct_growth_plan(loaded: TestClient) -> 
 
 
 def test_motilal_oswal_midcap_shows_direct_growth_first(loaded: TestClient) -> None:
-    # T1-20: NAVAll.txt leaves Plan and Option blank for this fund; the scheme master names them.
+    # NAVAll.txt leaves Plan and Option blank for this fund; the scheme master names them.
     [fund] = search(loaded, "motilal oswal midcap")
 
     assert fund["amfi_code"] == "127042"

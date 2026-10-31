@@ -1,4 +1,4 @@
-"""Lump sums, SIPs and selling units from lots (D-051 to D-054).
+"""Lump sums, SIPs and selling units from lots.
 
 Every buy is a lot with a stored ``units_remaining``. A sale takes units out of the lots I
 pick and is kept per lot, so the balance can be put back if I delete it. SIP instalments
@@ -25,13 +25,13 @@ from friday.core.schema_types import IST
 ZERO = Decimal(0)
 CENT = Decimal("0.01")
 ALLOTTED = Decimal("0.001")
-"""AMCs allot units to 3 decimal places (D-052)."""
+"""AMCs allot units to 3 decimal places."""
 
 NAV_WINDOW = timedelta(days=10)
 """How far after a SIP's due date its NAV may be: long enough for any run of holidays."""
 
 HOLDING = "holding"
-"""Tracking reason for a fund I hold or have a SIP in (D-046)."""
+"""Tracking reason for a fund I hold or have a SIP in."""
 
 
 class InvalidHolding(ValueError):
@@ -106,7 +106,7 @@ def allotted_units(amount: Decimal, nav: Decimal) -> Decimal:
 
 
 def _priced(session: Session, instrument: Instrument, data: BuyInput) -> tuple[Decimal, Decimal]:
-    """The buy's NAV and units, filling blanks as D-052 says."""
+    """The buy's NAV and units, filling in whichever is blank."""
     _not_future(data.buy_date, "buy")
     if data.amount <= 0:
         raise InvalidHolding("the amount must be more than 0")
@@ -346,7 +346,7 @@ def delete_sip(session: Session, sip: Sip) -> None:
 
 
 def sell(session: Session, data: SaleInput) -> list[LotSale]:
-    """Take units out of the lots picked, all from one fund, on one date (D-054)."""
+    """Take units out of the lots picked, all from one fund, on one date."""
     if not data.takes:
         raise InvalidHolding("pick at least one lot to sell from")
     ids = [lot_id for lot_id, _ in data.takes]

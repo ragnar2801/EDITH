@@ -16,7 +16,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # Bind to this laptop only (D-036): the portfolio must not be reachable from the Wi-Fi.
+    # Bind to this laptop only: the portfolio must not be reachable from the Wi-Fi.
     host: str = "127.0.0.1"
     port: int = 8000
 
@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     @cached_property
     def sources_dir(self) -> Path:
-        """Raw copies of the downloaded instrument lists (D-039)."""
+        """Raw copies of the downloaded instrument lists."""
         return self.data_dir / "sources"
 
     @cached_property

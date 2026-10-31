@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-/** A titled part of a page: a noun and its actions, no description (D-060). */
+/** A titled part of a page: a noun and its actions, no description. */
 export function Section({
   title,
   info,

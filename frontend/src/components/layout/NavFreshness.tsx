@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 
 type Tone = 'ok' | 'stale' | 'error'
 
-/** How fresh the NAVs are, in the header; a click syncs them (D-063). Replaces the backend
+/** How fresh the NAVs are, in the header; a click syncs them. Replaces the backend
  * badge: red also means the backend or its database is down. */
 export function NavFreshness() {
   const health = useHealth()

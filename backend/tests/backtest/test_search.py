@@ -1,4 +1,4 @@
-"""The split search (D-077, D-078): the grid, agreement with the engine, and the ranking."""
+"""The split search: the grid, agreement with the engine, and the ranking."""
 
 import math
 import random

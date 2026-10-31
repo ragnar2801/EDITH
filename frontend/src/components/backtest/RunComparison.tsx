@@ -24,7 +24,7 @@ function signedInr(amount: string): string {
 
 const weight = (value: string | null) => (value === null ? '—' : `${value}%`)
 
-/** What changed against an earlier run (D-076): every figure is the API's. */
+/** What changed against an earlier run: every figure is the API's. */
 export function RunComparison({
   run,
   baseline,

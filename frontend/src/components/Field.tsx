@@ -15,7 +15,7 @@ type Props = {
 }
 
 /** A label (with an optional ⓘ) above one control. No hint line: text below the control is
- * for errors only (D-060). */
+ * for errors only. */
 export function Field({ label, info, error, size = 'default', className, children }: Props) {
   const id = useId()
   return (

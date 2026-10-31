@@ -5,7 +5,7 @@ import { useInstrumentSources, useRefreshInstruments } from '@/api/queries'
 import { ErrorText } from '@/components/Field'
 import { Button } from '@/components/ui/button'
 
-/** Search finds nothing until the fund list is downloaded: say so once, with the fix (D-065). */
+/** Search finds nothing until the fund list is downloaded: say so once, with the fix. */
 export function FundListBanner() {
   const sources = useInstrumentSources()
   const refresh = useRefreshInstruments()

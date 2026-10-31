@@ -1,4 +1,4 @@
-"""Health check and the money/time round-trip used to prove the conventions (D-032)."""
+"""Health check and the money/time round-trip used to prove the conventions."""
 
 from datetime import UTC, datetime
 from typing import Literal

@@ -1,4 +1,4 @@
-# Friday command runner (D-036). Run `just` to list the commands.
+# Friday command runner. Run `just` to list the commands.
 # On Windows each line runs in PowerShell; elsewhere in sh.
 
 set windows-shell := ["powershell.exe", "-NoLogo", "-NoProfile", "-Command"]

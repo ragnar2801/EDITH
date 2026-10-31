@@ -1,4 +1,4 @@
-"""The cash plan's arithmetic (D-058, D-059). Pure functions, no I/O.
+"""The cash plan's arithmetic. Pure functions, no I/O.
 
 New cash first tops up the emergency money, then goes to the funds of my target split that
 are furthest below it, without selling anything. "Furthest below" is measured as value ÷

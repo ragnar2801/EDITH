@@ -1,9 +1,9 @@
-"""The portfolio view (T1-17, D-070, D-071; T1-23, D-072 to D-074): what my funds are
+"""The portfolio view: what my funds are
 worth, what they made, how they did against the same money in the Nifty 50 index fund,
 how they moved on the last NAV date, how they split over asset classes, how far each is
 from my target split, and the same over time.
 
-Every figure is worked out here; the UI only shows them (D-032).
+Every figure is worked out here; the UI only shows them.
 """
 
 from dataclasses import dataclass, replace
@@ -53,7 +53,7 @@ class FundPosition:
     """``target`` (in my target split), ``emergency`` (the emergency fund) or ``outside``."""
     units: Decimal
     cost: Decimal
-    """What the units still held cost (T1-15)."""
+    """What the units still held cost."""
     realised: Decimal
     """Sale proceeds minus what the units sold cost."""
     nav: Decimal | None
@@ -63,7 +63,7 @@ class FundPosition:
     benchmark: Returns | None
     lots: list[Lot]
     day: Change | None = None
-    """The move between the fund's last two NAVs, less money put in (D-073)."""
+    """The move between the fund's last two NAVs, less money put in."""
 
     @property
     def value(self) -> Decimal | None:
@@ -121,7 +121,7 @@ class Portfolio:
     drift: list[Drift]
     cash: dict[str, Decimal]
     day: Change | None
-    """The funds' day moves added up (D-073): from the earliest of their previous NAV dates
+    """The funds' day moves added up: from the earliest of their previous NAV dates
     to the latest of their last ones."""
     sips: Sips
 
@@ -160,12 +160,12 @@ class Portfolio:
 
 
 def ahead(mine: Returns | None, benchmark: Returns | None) -> Decimal | None:
-    """Gain less the benchmark's gain on the same flows (D-072)."""
+    """Gain less the benchmark's gain on the same flows."""
     return mine.gain - benchmark.gain if mine and benchmark else None
 
 
 def _moves(lots: list[Lot]) -> list[Move]:
-    """Every buy and sale of a fund's lots as moves (D-072), with the proceeds of a sale
+    """Every buy and sale of a fund's lots as moves, with the proceeds of a sale
     rounded to the paisa as in :func:`_flows`."""
     moves = []
     for lot in lots:
@@ -232,7 +232,7 @@ def _position(
 
 
 def _allocation(funds: list[FundPosition]) -> list[AssetSlice]:
-    """Fund values split over asset classes by each fund's classification (D-040)."""
+    """Fund values split over asset classes by each fund's classification."""
     amounts: dict[str, Decimal] = {}
     for fund in funds:
         if not fund.value:
@@ -262,7 +262,7 @@ def _drift(bucket: Bucket, funds: list[FundPosition]) -> list[Drift]:
 
 
 def _day(funds: list[FundPosition], navs: dict[int, list[tuple[date, Decimal]]]):
-    """Each fund's move between its own last two NAVs, less money put in (D-073), and the
+    """Each fund's move between its own last two NAVs, less money put in, and the
     moves added up.
 
     Each fund uses its own dates because funds publish on different days: liquid funds
@@ -357,7 +357,7 @@ def portfolio(session: Session) -> Portfolio:
 @dataclass(frozen=True)
 class History:
     points: list[Point]
-    """What is drawn: value and cost of every fund with a NAV (thinned, D-072)."""
+    """What is drawn: value and cost of every fund with a NAV (thinned)."""
     benchmark: list[Point] | None
     """The same money in the benchmark, on the same dates."""
     benchmark_fund: Instrument | None
@@ -368,8 +368,8 @@ class History:
 
 def history(session: Session, start: date | None = None) -> History:
     """Value, cost and the benchmark's value on every NAV date from the first purchase (or
-    the last date on or before ``start``) to the latest NAV date (D-072). Funds without a
-    stored NAV are left out, as in the totals (D-070)."""
+    the last date on or before ``start``) to the latest NAV date. Funds without a
+    stored NAV are left out, as in the totals."""
     settings = get_settings(session)
     target = settings.target_bucket
     benchmark_fund = (target.benchmark if target else None) or default_benchmark(session)

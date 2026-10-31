@@ -1,8 +1,8 @@
-"""Returns of real money (D-070): pure arithmetic over dated cash flows, no database.
+"""Returns of real money: pure arithmetic over dated cash flows, no database.
 
 A flow is money I put in (``amount > 0``, a buy) or took out (``amount < 0``, a sale's
 proceeds). Amounts are exact ``Decimal``s; XIRR is a float rounded to 2 places like the
-backtest ratios (D-048).
+backtest ratios.
 """
 
 from dataclasses import dataclass

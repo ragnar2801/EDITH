@@ -19,13 +19,13 @@ type Props = {
   label?: string
   placeholder?: string
   autoFocus?: boolean
-  /** Only this kind, e.g. mutual funds for buckets (D-043). */
+  /** Only this kind, e.g. mutual funds for buckets. */
   kind?: InstrumentSummary['kind']
 }
 
 /**
  * Find any stock, ETF or mutual fund by part of its name, its symbol, scheme code or ISIN
- * (D-042). Reusable: holdings and the watchlist pick instruments with it.
+ *. Reusable: holdings and the watchlist pick instruments with it.
  */
 export function InstrumentSearch({
   onSelect,

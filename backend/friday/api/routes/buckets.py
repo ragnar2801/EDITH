@@ -1,4 +1,4 @@
-"""Buckets: target splits of funds (T1-13, D-047)."""
+"""Buckets: target splits of funds."""
 
 from datetime import date
 from typing import Literal
@@ -140,7 +140,7 @@ def list_all(session: SessionDep) -> list[BucketOut]:
 
 @router.get("/default-benchmark", operation_id="getDefaultBenchmark")
 def get_default_benchmark(session: SessionDep) -> FundRef | None:
-    """The Nifty 50 index fund new buckets are compared with (D-043), if the fund list has it."""
+    """The Nifty 50 index fund new buckets are compared with, if the fund list has it."""
     instrument = default_benchmark(session)
     return _ref(instrument) if instrument else None
 

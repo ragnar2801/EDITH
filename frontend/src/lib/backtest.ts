@@ -31,11 +31,11 @@ export type TradeRow = {
   quantity: string
 }
 
-/** A fund in the split being tried (D-075). Loaded runs may only know a fund's name. */
+/** A fund in the split being tried. Loaded runs may only know a fund's name. */
 export type SplitFund = Pick<Schemas['FundRef'], 'id' | 'name' | 'plan' | 'option'>
 export type SplitRow = { fund: SplitFund; weight: string }
 
-/** Everything the form holds, as typed. Amounts stay strings end to end (D-032). */
+/** Everything the form holds, as typed. Amounts stay strings end to end. */
 export type BacktestForm = {
   strategy: Strategy
   capital: string

@@ -1,4 +1,4 @@
-"""Backtest endpoints: run, store, save, list, interval, delete, and refusals (D-048, D-049)."""
+"""Backtest endpoints: run, store, save, list, interval, delete, and refusals."""
 
 from decimal import Decimal
 
@@ -151,7 +151,7 @@ def test_custom_positions_and_trades(api: TestClient, bucket, funds) -> None:
 @pytest.mark.parametrize(
     "params",
     [
-        {"strategy": "sip", "amount": 10000},  # amounts are strings (D-032)
+        {"strategy": "sip", "amount": 10000},  # amounts are strings
         {"strategy": "sip", "amount": "0"},
         {"strategy": "sip", "amount": "1", "frequency": "daily"},
         {"strategy": "sip", "amount": "1", "start": "2026-01-02", "end": "2026-01-01"},

@@ -34,7 +34,7 @@ function ticks(lo: number, hi: number, count = 5): number[] {
   return out
 }
 
-/** Dots in plain SVG (D-050's way): many points, a few named marks, hover read-out. */
+/** Dots in plain SVG, like LineChart: many points, a few named marks, hover read-out. */
 export function ScatterChart({
   label,
   points,

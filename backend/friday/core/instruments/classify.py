@@ -1,4 +1,4 @@
-"""Classification rules: allocation split and exposure region for each instrument (D-040).
+"""Classification rules: allocation split and exposure region for each instrument.
 
 Rules are deliberately simple and readable. Anything they get wrong is fixed with a
 manual override, which always wins and survives refresh.

@@ -1,4 +1,4 @@
-"""Cash accounts and the cash plan's settings (T1-16, D-056, D-057).
+"""Cash accounts and the cash plan's settings.
 
 Revision ID: 0007
 Revises: 0006

@@ -1,4 +1,4 @@
-"""Cash accounts, the plan's settings, and the cash plan for my target split (D-056 to D-059).
+"""Cash accounts, the plan's settings, and the cash plan for my target split.
 
 Emergency money is the emergency-earmarked cash plus what I hold of the emergency fund. It
 is never part of a plan: the plan only tops it up to the goal. A fund's value is its units
@@ -286,7 +286,7 @@ class CashPlan:
 
 
 def cash_plan(session: Session, amount: Decimal | None = None) -> CashPlan:
-    """Where ``amount`` should go (blank: all deployable cash), as D-058 and D-059 say."""
+    """Where ``amount`` should go (blank: all deployable cash)."""
     settings = get_settings(session)
     bucket = settings.target_bucket
     if bucket is None:

@@ -1,5 +1,5 @@
 """Instruments: tables, aliases, classification overrides, import log and the FTS5
-search index (T1-02, D-038 to D-042).
+search index.
 
 Revision ID: 0002
 Revises: 0001

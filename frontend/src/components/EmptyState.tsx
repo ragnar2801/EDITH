@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 
-/** Icon, one short line, one button (D-060). */
+/** Icon, one short line, one button. */
 export function EmptyState({
   icon: Icon,
   title,

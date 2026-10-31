@@ -2,7 +2,7 @@ import type { CashAccount } from '@/api/queries'
 
 export type Purpose = CashAccount['earmark']
 
-/** UI words for the API's earmarks (D-061). */
+/** UI words for the API's earmarks. */
 export const PURPOSE_LABELS: Record<Purpose, string> = {
   deployable: 'Investable',
   reserved: 'Reserved',

@@ -1,4 +1,4 @@
-"""NAV parsers (D-044, D-045).
+"""NAV parsers.
 
 mfapi.in, ``https://api.mfapi.in/mf/<scheme code>``, checked 2026-10-25::
 
@@ -16,7 +16,7 @@ from decimal import Decimal, InvalidOperation
 from friday.core.instruments.sources.common import SourceFormatError, header_key, parse_date
 
 MAX_PLACES = 8
-"""NAVs are kept as published, up to this many decimal places (D-045)."""
+"""NAVs are kept as published, up to this many decimal places."""
 
 NavPoint = tuple[date, Decimal]
 

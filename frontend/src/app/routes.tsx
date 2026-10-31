@@ -11,7 +11,7 @@ import { NotFoundPage } from '@/pages/NotFoundPage'
 import { PortfolioPage } from '@/pages/PortfolioPage'
 import { SettingsPage } from '@/pages/SettingsPage'
 
-/** Addresses from before the T1-22 navigation still work (D-063). */
+/** Older addresses still work. */
 const MOVED: [string, (params: Record<string, string | undefined>) => string][] = [
   ['/holdings', () => '/'],
   ['/holdings/:id', ({ id }) => `/funds/${id}/transactions`],

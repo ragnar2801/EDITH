@@ -1,4 +1,4 @@
-"""Stored backtest runs (D-049)."""
+"""Stored backtest runs."""
 
 from datetime import datetime
 

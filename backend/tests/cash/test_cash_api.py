@@ -1,4 +1,4 @@
-"""Cash accounts, plan settings and the plan through the API (D-056 to D-059)."""
+"""Cash accounts, plan settings and the plan through the API."""
 
 from datetime import date
 from decimal import Decimal

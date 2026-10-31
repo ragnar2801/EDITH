@@ -1,1 +1,1 @@
-"""INR cash accounts and the cash plan's settings (T1-16)."""
+"""INR cash accounts and the cash plan's settings."""

@@ -1,7 +1,7 @@
 import type { Schemas } from '@/api/client'
 import { planLabel } from '@/lib/instruments'
 
-/** A fund's name with its plan underneath (D-060: identity, not identifiers). */
+/** A fund's name with its plan underneath (identity, not identifiers). */
 export function FundName({ fund }: { fund: Pick<Schemas['FundRef'], 'name' | 'plan' | 'option'> }) {
   const plan = planLabel(fund)
   return (

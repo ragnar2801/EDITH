@@ -1,4 +1,4 @@
-"""API-facing types for money and time (D-032).
+"""API-facing types for money and time.
 
 Amounts travel as JSON strings such as ``"1234567.89"``. JSON numbers are rejected,
 because the JSON parser turns them into floats before validation and precision is lost.
@@ -50,7 +50,7 @@ Price = _decimal_string(4)
 """Price or NAV: 4 decimal places."""
 
 Nav = _decimal_string(8)
-"""Mutual fund NAV, exactly as published: up to 8 decimal places (D-045)."""
+"""Mutual fund NAV, exactly as published: up to 8 decimal places."""
 
 Units = _decimal_string(8)
 """Quantity or units: up to 8 decimal places (fractional US shares)."""

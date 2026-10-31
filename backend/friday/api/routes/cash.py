@@ -1,4 +1,4 @@
-"""Cash accounts, the cash plan's settings and the plan itself (T1-16, D-056 to D-059)."""
+"""Cash accounts, the cash plan's settings and the plan itself."""
 
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
@@ -298,7 +298,7 @@ def remove_account(session: SessionDep, account_id: int) -> Response:
 
 @router.get("/plan/settings", operation_id="getPlanSettings")
 def read_settings(session: SessionDep) -> SettingsOut:
-    """Target bucket, emergency goal and fund, and the staggering rule (D-057)."""
+    """Target bucket, emergency goal and fund, and the staggering rule."""
     return _settings(get_settings(session))
 
 
@@ -319,6 +319,6 @@ def change_settings(session: SessionDep, payload: SettingsIn) -> SettingsOut:
 @router.post("/plan", operation_id="makeCashPlan")
 def make(session: SessionDep, payload: PlanIn) -> PlanOut:
     """Where new cash should go: emergency top-up first, then the funds furthest below
-    the target split, never selling (D-058). Large amounts come with a monthly stagger
-    plan (D-059). Nothing is saved."""
+    the target split, never selling. Large amounts come with a monthly stagger
+    plan. Nothing is saved."""
     return _plan(_do(cash_plan, session, payload.amount))

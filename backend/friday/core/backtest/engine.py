@@ -1,4 +1,4 @@
-"""Backtest engine (D-048), ported from Friday's TypeScript engine. Pure functions, no I/O.
+"""Backtest engine, ported from Friday's TypeScript engine. Pure functions, no I/O.
 
 Money and units are exact ``Decimal``s, like a ledger: a ₹10,000 SIP instalment is exactly
 ₹10,000 invested. Ratios (XIRR, CAGR, volatility, Sharpe, Sortino, drawdown) are floats,
@@ -369,7 +369,7 @@ def run_custom(aligned: Aligned, trades: list[CustomTrade], names: dict[int, str
 
 
 def replay_flows(series: Series, days: list[Day]) -> list[Day] | None:
-    """The same money moving on the same dates, in one fund instead (the benchmark, D-048).
+    """The same money moving on the same dates, in one fund instead (the benchmark).
     Withdrawals are capped at what the fund holds. ``None`` if the fund has no NAV on the
     first date."""
     points = sorted(series)
@@ -548,7 +548,7 @@ class Interval:
 
 
 def interval(days: list[Day], start: date | None, end: date | None) -> Interval | None:
-    """Figures for a window of a run: a slice of it, not a re-run (D-049)."""
+    """Figures for a window of a run: a slice of it, not a re-run."""
     window = [
         day
         for day in days

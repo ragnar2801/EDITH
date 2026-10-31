@@ -37,7 +37,7 @@ import { formatPercent, toneOf } from '@/lib/percent'
 import { ROLE_LABELS } from '@/lib/portfolio'
 import { formatDate } from '@/lib/time'
 
-/** One page per fund, wherever it's clicked from (D-063, J7). */
+/** One page per fund, wherever it's clicked from (J7). */
 export function FundPage() {
   const id = Number(useParams().id)
   const instrument = useInstrument(id)
@@ -149,7 +149,7 @@ function FundMeta({ fund }: { fund: InstrumentDetail }) {
   )
 }
 
-/** Units and cost from the holding; value and returns from the portfolio view (D-070). */
+/** Units and cost from the holding; value and returns from the portfolio view. */
 function Position({ holding }: { holding: Holding }) {
   const portfolio = usePortfolio()
   const position = portfolio.data?.funds.find((fund) => fund.fund.id === holding.fund.id)
@@ -235,7 +235,7 @@ function Returns({
   )
 }
 
-/** Stocks and ETFs aren't part of Phase 1 (D-066), but an old link can still land here. */
+/** Only funds are tracked, but an old link to a stock or ETF can still land here. */
 function OtherInstrument({ instrument }: { instrument: InstrumentDetail }) {
   return (
     <div className="flex flex-col gap-6">

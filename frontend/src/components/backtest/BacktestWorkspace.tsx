@@ -26,9 +26,9 @@ import { formatDateTime } from '@/lib/time'
 import { BacktestControls } from './BacktestControls'
 import { BacktestResults } from './BacktestResults'
 
-/** Backtests of one model (T1-14), ported from Friday: controls on the left, results right.
- * Each run is compared with the one shown before it (D-076); a split tried from Optimise
- * arrives filled in (D-077). */
+/** Backtests of one model, ported from Friday: controls on the left, results right.
+ * Each run is compared with the one shown before it; a split tried from Optimise
+ * arrives filled in. */
 export function BacktestWorkspace({ bucket }: { bucket: Bucket }) {
   const handed = useLocation().state as BacktestHandoff | null
   const [form, setForm] = useState(() => ({

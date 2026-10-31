@@ -1,4 +1,4 @@
-"""What a backtest is asked to do, and what it returns (D-048, D-049).
+"""What a backtest is asked to do, and what it returns.
 
 These models are both the API's request and response bodies and what a stored run keeps,
 so a saved run reads back exactly as it was shown. Amounts are exact decimal strings.
@@ -39,7 +39,7 @@ class SplitFund(BaseModel):
 
 class WeightedParams(CommonParams):
     split: list[SplitFund] | None = None
-    """Run these funds and weights instead of the bucket's; the bucket isn't changed (D-075)."""
+    """Run these funds and weights instead of the bucket's; the bucket isn't changed."""
 
 
 class RegularParams(WeightedParams):
@@ -188,7 +188,7 @@ class BacktestResult(BaseModel):
     trades: list[TradeOut]
     """Custom runs only: what was executed, on which NAV date."""
     benchmark: BenchmarkOut | None
-    """The same money in and out, in the benchmark fund instead (D-048)."""
+    """The same money in and out, in the benchmark fund instead."""
     warnings: list[str]
 
 
@@ -215,7 +215,7 @@ class WeightChange(BaseModel):
 
 
 class ComparisonOut(BaseModel):
-    """This run less an earlier one (D-076): rupees for the final value, points for ratios."""
+    """This run less an earlier one: rupees for the final value, points for ratios."""
 
     against: int
     same_settings: bool
@@ -235,7 +235,7 @@ Goal = Literal["xirr", "drawdown", "sharpe"]
 
 
 class SearchSettings(BaseModel):
-    """Which splits to try and what makes one better (D-077)."""
+    """Which splits to try and what makes one better."""
 
     goal: Goal = "xirr"
     """Highest XIRR, lowest max drawdown, or best Sharpe."""
@@ -268,7 +268,7 @@ class CandidateFund(BaseModel):
 
 
 class Candidate(BaseModel):
-    """A split with its figures from the exact engine (D-078)."""
+    """A split with its figures from the exact engine."""
 
     funds: list[CandidateFund]
     """Funds with a weight above 0, in the model's order."""

@@ -1,4 +1,4 @@
-"""NSE archive files (D-039): equity list, ETF list, symbol changes and name changes.
+"""NSE archive files: equity list, ETF list, symbol changes and name changes.
 
 Files live at ``https://nsearchives.nseindia.com/content/equities/``. Checked 2026-10-24.
 """
@@ -62,7 +62,7 @@ def parse_etf_list(text: str) -> list[Record]:
     """``Symbol,Underlying Asset,SecurityName,DateofListing,...,ISINNumber,...,ETF Underlying``
 
     NSE's security names are abbreviations (``NIPINDETFNIFTYBEES``), so the name here is a
-    readable stand-in; the AMFI import replaces it with the scheme's real name (D-038).
+    readable stand-in; the AMFI import replaces it with the scheme's real name.
     """
     rows = read_rows(
         text, file=ETF_LIST, required={"symbol", "underlyingasset", "isinnumber", "etfunderlying"}

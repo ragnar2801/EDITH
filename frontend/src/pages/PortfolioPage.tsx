@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button'
 import { useAddTransaction } from '@/hooks/use-add-transaction'
 import { MODELS_PATH } from '@/lib/models'
 
-/** What I own: funds and cash (D-063, D-064). */
+/** What I own: funds and cash. */
 export function PortfolioPage() {
   return (
     <div className="flex flex-col gap-6">

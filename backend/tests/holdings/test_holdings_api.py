@@ -1,4 +1,4 @@
-"""Holdings: lump sums, SIPs, selling from lots, worked by hand (D-051 to D-054)."""
+"""Holdings: lump sums, SIPs, selling from lots, worked by hand."""
 
 from datetime import date
 from decimal import Decimal

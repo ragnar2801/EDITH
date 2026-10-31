@@ -1,4 +1,4 @@
-"""Refresh the instrument tables from the source lists (D-038, D-039, D-041).
+"""Refresh the instrument tables from the source lists.
 
 Idempotent: a field is written only when its value changed, so a second run over the
 same files changes nothing. Instruments are never deleted. One that drops off its list
@@ -8,7 +8,7 @@ Matching, per source:
 
 - NSE: ISIN → symbol (only when the ISINs share an issuer code, because a face-value split
   changes the ISIN but exchanges also reuse delisted symbols) → NSE's symbol-change chain.
-- AMFI: scheme code → ISIN of an NSE-listed ETF (one instrument for both, D-038).
+- AMFI: scheme code → ISIN of an NSE-listed ETF (one instrument for both).
 - US: symbol → SEC CIK, when exactly one old and one new instrument share it (a rename).
 """
 
@@ -34,7 +34,7 @@ _OWNER = {"nse": "nse", "amfi": "amfi", "us": "nasdaqtrader"}
 
 
 class SuspiciousListError(ValueError):
-    """A list came back much shorter than usual: probably a bad download (D-041)."""
+    """A list came back much shorter than usual: probably a bad download."""
 
 
 @dataclass
@@ -251,7 +251,7 @@ class _Refresh:
                 **_classification_values(record),
             }
             if instrument is not None and instrument.amfi_code:
-                del values["name"]  # the AMFI scheme name is the readable one (D-038)
+                del values["name"]  # the AMFI scheme name is the readable one
             pairs.append((instrument, values))
         self._apply(pairs, stale)
         self._nse_aliases(symbol_changes or [], name_changes or [])

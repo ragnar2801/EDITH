@@ -1,4 +1,4 @@
-"""Cash tables (D-056, D-057): INR accounts with an earmark, and the plan's settings.
+"""Cash tables: INR accounts with an earmark, and the plan's settings.
 
 An account holds only its current balance. The settings are one row: which bucket is my
 target split, the emergency goal and fund, and the staggering rule.

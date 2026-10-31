@@ -1,4 +1,4 @@
-"""Nasdaq Trader symbol directory (D-039): every US-listed stock and ETF.
+"""Nasdaq Trader symbol directory: every US-listed stock and ETF.
 
 ``https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt`` (Nasdaq) and
 ``otherlisted.txt`` (NYSE, NYSE Arca, NYSE American, Cboe, IEX, TXSE...). Pipe-separated,
