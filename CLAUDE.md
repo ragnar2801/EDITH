@@ -9,7 +9,7 @@ Personal portfolio tracker for Indian mutual funds, running locally on Windows.
 
 ## Development
 
-**Real data is off limits.** My portfolio lives in `%LOCALAPPDATA%\Friday` (and FM's in `%LOCALAPPDATA%\FM`): never read, query, copy or screenshot it, and never run `just run` or `friday` commands against it. Run and check the app with `just dev`, which uses the made-up database in `dev/` (`just demo` rebuilds it); `friday demo` fills an empty database for anything else.
+**Real data is off limits.** My portfolio lives in `%LOCALAPPDATA%\Friday`: never read, query, copy or screenshot it, and never run `just run` or `friday` commands against it. Run and check the app with `just dev`, which uses the made-up database in `dev/` (`just demo` rebuilds it); `friday demo` fills an empty database for anything else.
 
 Commands (all via `just`, see `README.md`): `setup`, `run`, `dev`, `test`, `lint`, `fmt`, `api`, `migrate`, `revision "msg"`, `smoke`.
 
