@@ -21,9 +21,13 @@ setup:
 run:
     uv run --project backend friday serve
 
-# Develop with hot reload: UI at http://localhost:5173, API on :8000
+# Develop with hot reload on made-up data: UI at http://localhost:5173, API on :8001
 dev:
     uv run --project backend python scripts/dev.py
+
+# Rebuild the made-up database `just dev` uses
+demo:
+    uv run --project backend python scripts/dev.py --rebuild
 
 # Build the UI that `just run` serves
 build:

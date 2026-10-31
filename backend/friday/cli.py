@@ -1,5 +1,5 @@
 """``friday`` command: serve, migrate, export the OpenAPI schema, refresh and search instruments,
-track funds and sync their NAVs, import from FM."""
+track funds and sync their NAVs, import from FM, build the demo database."""
 
 import argparse
 import json
@@ -195,6 +195,29 @@ def _import_fm(args: argparse.Namespace) -> None:
         print(f"  note: {warning}")
 
 
+def _demo(_args: argparse.Namespace) -> None:
+    from friday.core.db import make_engine, make_session_factory
+    from friday.core.demo import DemoError, make_demo
+    from friday.core.holdings.service import today
+    from friday.core.instruments.download import HttpFetcher
+    from friday.core.navs.download import HttpNavFetcher
+
+    settings = Settings()
+    upgrade_database(settings)
+    engine = make_engine(settings)
+    fetcher = HttpFetcher(settings.sources_dir)
+    nav_fetcher = HttpNavFetcher()
+    try:
+        make_demo(make_session_factory(engine), fetcher, nav_fetcher, today())
+    except DemoError as error:
+        raise SystemExit(f"Can't build the demo database in {settings.data_dir}: {error}") from None
+    finally:
+        fetcher.close()
+        nav_fetcher.close()
+        engine.dispose()
+    print(f"Demo database ready in {settings.data_dir}.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="friday")
     commands = parser.add_subparsers(required=True)
@@ -253,6 +276,9 @@ def main() -> None:
     fm_import.add_argument("path", type=Path)
     fm_import.add_argument("--dry-run", action="store_true", help="show what would change")
     fm_import.set_defaults(func=_import_fm)
+
+    demo = commands.add_parser("demo", help="fill an empty database with made-up holdings")
+    demo.set_defaults(func=_demo)
 
     args = parser.parse_args()
     args.func(args)

@@ -9,6 +9,8 @@ Personal portfolio tracker for Indian mutual funds, running locally on Windows.
 
 ## Development
 
+**Real data is off limits.** My portfolio lives in `%LOCALAPPDATA%\Friday` (and FM's in `%LOCALAPPDATA%\FM`): never read, query, copy or screenshot it, and never run `just run` or `friday` commands against it. Run and check the app with `just dev`, which uses the made-up database in `dev/` (`just demo` rebuilds it); `friday demo` fills an empty database for anything else.
+
 Commands (all via `just`, see `README.md`): `setup`, `run`, `dev`, `test`, `lint`, `fmt`, `api`, `migrate`, `revision "msg"`, `smoke`.
 
 Conventions:
@@ -26,7 +28,7 @@ Conventions:
 - **Cash plan:** arithmetic only, never sells. Emergency money is topped up first and is never in a split; the rest water-fills the target bucket in whole rupees. Logic in `friday.core.cash.plan` (pure) and `friday.core.cash.service`.
 - **Portfolio:** value at the latest stored NAV; realised + unrealised = gain to the paisa; XIRR shown after a year; the benchmark gets the same dated flows (`ahead` = gain − its gain). Day = each fund's move between its own last two NAVs. History: value, invested and benchmark per NAV date, gain and time-weighted return over a range. Logic in `friday.core.portfolio.returns` and `.history` (pure) and `friday.core.portfolio.service`; endpoints `GET /portfolio` and `GET /portfolio/history`.
 - **FM import:** the FM app (Flutter, phone; repo `../FM`) is where fund purchases and sales are recorded; Friday keeps a read-only copy. FM's "Sync to Friday" (`friday_lots_export.dart`) POSTs every investment lot as JSON (`format: fm-lots`, `version: 1`): FM's own lot row with its `security`, `account`, `currency`, `acquisition` and `sales` nested in. `friday.core.fm.feed` reads fields by name, so new FM fields are ignored; bump `version` on both sides only when a field Friday reads is renamed or removed. Each sync deletes every lot with `source = "fm"` (and its sales) and adds the feed's, in one transaction; lots entered in Friday stay, and FM lots can't be edited, sold or deleted here. The feed isn't kept. Logic in `friday.core.fm.service`.
-- Errors are RFC 9457 problem details. The server binds to `127.0.0.1` only; the FM receiver (`friday.core.fm.receiver`, port 8090, token in `data/fm/token.txt`; tests and smoke turn it off) is the one listener on the network, serving only `GET /health` and `POST /lots`.
+- Errors are RFC 9457 problem details. The server binds to `127.0.0.1` only; the FM receiver (`friday.core.fm.receiver`, port 8090, token in `fm/token.txt` under the data folder; tests and smoke turn it off) is the one listener on the network, serving only `GET /health` and `POST /lots`.
 - Windows is the target OS: keep commands Windows-safe (no `&&` chains in PowerShell 5, `npm.cmd` not `npm.ps1`, LF line endings via `.gitattributes`).
 
 ## Screens

@@ -1,7 +1,9 @@
 """SQLite engine, sessions and migrations."""
 
+import shutil
 from collections.abc import Iterator
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Any
 
 from alembic import command
@@ -9,7 +11,7 @@ from alembic.config import Config
 from sqlalchemy import Engine, create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from friday.config import BACKEND_DIR, Settings
+from friday.config import BACKEND_DIR, REPO_ROOT, Settings
 
 
 class Base(DeclarativeBase):
@@ -25,8 +27,26 @@ def _apply_pragmas(dbapi_connection: Any, _record: Any) -> None:
     cursor.close()
 
 
-def make_engine(settings: Settings) -> Engine:
+def move_old_data(old: Path, new: Path) -> bool:
+    """Move the data folder Friday used to keep in the repo to where it lives now, once.
+    Only when the new folder has no database yet, so nothing there is overwritten."""
+    if not (old / "friday.db").exists() or (new / "friday.db").exists():
+        return False
+    new.mkdir(parents=True, exist_ok=True)
+    for item in old.iterdir():
+        shutil.move(item, new / item.name)
+    old.rmdir()
+    return True
+
+
+def _prepare(settings: Settings) -> None:
+    if settings.data_dir == Settings.model_fields["data_dir"].default:
+        move_old_data(REPO_ROOT / "data", settings.data_dir)
     settings.data_dir.mkdir(parents=True, exist_ok=True)
+
+
+def make_engine(settings: Settings) -> Engine:
+    _prepare(settings)
     engine = create_engine(
         settings.database_url,
         connect_args={"check_same_thread": False},
@@ -62,5 +82,5 @@ def alembic_config(settings: Settings) -> Config:
 
 def upgrade_database(settings: Settings) -> None:
     """Bring the database schema up to the latest migration. Safe to run repeatedly."""
-    settings.data_dir.mkdir(parents=True, exist_ok=True)
+    _prepare(settings)
     command.upgrade(alembic_config(settings), "head")

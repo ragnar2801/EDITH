@@ -1,5 +1,6 @@
 """Runtime settings, from environment variables (prefix ``FRIDAY_``) or the repo-root ``.env``."""
 
+import os
 from functools import cached_property
 from pathlib import Path
 
@@ -7,6 +8,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = BACKEND_DIR.parent
+
+
+def _home() -> Path:
+    """Where my real data lives: outside the repo, so nothing working on the code finds it."""
+    local = os.environ.get("LOCALAPPDATA")
+    return Path(local) / "Friday" if local else Path.home() / ".local" / "share" / "friday"
+
+
+HOME = _home()
 
 
 class Settings(BaseSettings):
@@ -20,15 +30,15 @@ class Settings(BaseSettings):
     host: str = "127.0.0.1"
     port: int = 8000
 
-    data_dir: Path = REPO_ROOT / "data"
-    log_dir: Path = REPO_ROOT / "logs"
+    data_dir: Path = HOME / "data"
+    log_dir: Path = HOME / "logs"
     frontend_dist: Path = REPO_ROOT / "frontend" / "dist"
 
     # SEC asks for a name and contact email in the User-Agent. Without it, CIKs are skipped.
     sec_user_agent: str | None = None
 
     # FM on the phone sends its lots here ("Sync to Friday"). The one listener on the Wi-Fi:
-    # its own port, a token (made in data/fm/token.txt), and nothing served but the lots.
+    # its own port, a token (made in fm/token.txt in the data folder), and nothing served but the lots.
     fm_push: bool = True
     fm_push_port: int = 8090
 

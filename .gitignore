@@ -1,6 +1,7 @@
-# Local data and logs: never committed
+# Local data and logs: never committed (real data lives in %LOCALAPPDATA%\Friday)
 data/
 logs/
+dev/
 *.db
 *.db-wal
 *.db-shm

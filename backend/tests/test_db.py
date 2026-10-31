@@ -7,7 +7,7 @@ from sqlalchemy import Column, Integer, MetaData, Table, insert, select, text
 from sqlalchemy.exc import StatementError
 
 from friday.config import Settings
-from friday.core.db import alembic_config, make_engine, upgrade_database
+from friday.core.db import alembic_config, make_engine, move_old_data, upgrade_database
 from friday.core.types import DecimalText, UtcDateTime
 
 metadata = MetaData()
@@ -86,3 +86,20 @@ def test_migrations_run_and_are_repeatable(settings: Settings) -> None:
         version = connection.execute(text("SELECT version_num FROM alembic_version")).scalar()
     engine.dispose()
     assert version == ScriptDirectory.from_config(alembic_config(settings)).get_current_head()
+
+
+def test_old_data_moves_out_of_the_repo_once(tmp_path):
+    old, new = tmp_path / "repo" / "data", tmp_path / "home" / "data"
+    (old / "fm").mkdir(parents=True)
+    (old / "friday.db").write_text("db", encoding="utf-8")
+    (old / "fm" / "token.txt").write_text("token", encoding="utf-8")
+
+    assert move_old_data(old, new)
+    assert not old.exists()
+    assert (new / "friday.db").read_text(encoding="utf-8") == "db"
+    assert (new / "fm" / "token.txt").read_text(encoding="utf-8") == "token"
+
+    old.mkdir()
+    (old / "friday.db").write_text("stale", encoding="utf-8")
+    assert not move_old_data(old, new)
+    assert (new / "friday.db").read_text(encoding="utf-8") == "db"

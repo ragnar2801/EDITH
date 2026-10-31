@@ -4,7 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-// Dev mode: Vite serves the UI on :5173 and forwards /api to the backend on :8000.
+// Dev mode: Vite serves the UI on :5173 and forwards /api to the dev backend on :8001
+// (made-up data), leaving :8000 to the real Friday.
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -14,7 +15,7 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     strictPort: true,
-    proxy: { '/api': 'http://127.0.0.1:8000' },
+    proxy: { '/api': 'http://127.0.0.1:8001' },
   },
   test: {
     environment: 'jsdom',

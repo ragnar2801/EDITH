@@ -19,7 +19,7 @@ Open a new terminal so the tools are on `PATH`, then in the repo folder:
 just setup
 ```
 
-This installs Python 3.14 (via uv) and all packages, creates `data/friday.db` and builds the UI.
+This installs Python 3.14 (via uv) and all packages, creates the database in `%LOCALAPPDATA%\Friday\data` and builds the UI.
 
 ## Use it
 
@@ -60,7 +60,8 @@ Friday keeps a read-only copy of the fund purchases and sales you record in the 
 | Command | What it does |
 |---------|--------------|
 | `just run` | Run Friday for daily use at <http://localhost:8000> |
-| `just dev` | Develop with hot reload: UI at <http://localhost:5173>, API on `:8000` |
+| `just dev` | Develop with hot reload on made-up data: UI at <http://localhost:5173>, API on `:8001` |
+| `just demo` | Rebuild the made-up database `just dev` uses |
 | `just test` | Backend (pytest) and frontend (Vitest) tests |
 | `just lint` | Lint, formatting and type checks |
 | `just fmt` | Fix formatting |
@@ -72,4 +73,4 @@ Friday keeps a read-only copy of the fund purchases and sales you record in the 
 | `just navs` | Download missing NAVs for every tracked fund, up to today (`--fund 122639` for one) |
 | `just smoke` | Start a real server with a throwaway database and check it answers |
 
-Settings can be overridden in a `.env` file (see `.env.example`). Data lives in `data/`, logs in `logs/`; neither is committed.
+Settings can be overridden in a `.env` file (see `.env.example`). Your data and logs live in `%LOCALAPPDATA%\Friday`, outside the repo, so nothing working on the code comes across them. `just dev` runs on a made-up database in `dev/` instead (real funds and NAVs, invented holdings and cash), so it can run next to the real Friday.
