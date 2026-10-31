@@ -1,5 +1,7 @@
 """Backtest endpoints: run, store, save, list, interval, delete, and refusals (D-048, D-049)."""
 
+from decimal import Decimal
+
 import pytest
 from fastapi.testclient import TestClient
 from navs.conftest import NIFTY, PARAG, FakeNavFetcher
@@ -197,3 +199,83 @@ def test_deleting_a_bucket_deletes_its_runs(api: TestClient, bucket) -> None:
     api.delete(f"/api/v1/buckets/{bucket['id']}")
 
     assert api.get(f"/api/v1/backtests/{body['id']}").status_code == 404
+
+
+def split(funds, **weights) -> list[dict]:
+    return [{"instrument_id": funds[code], "weight": w} for code, w in weights.items()]
+
+
+def test_a_split_is_run_and_kept_without_changing_the_bucket(api: TestClient, bucket, funds):
+    params = {
+        "strategy": "regular",
+        "capital": "100000",
+        "start": "2026-10-01",
+        "split": [{"instrument_id": funds[PARAG], "weight": "100"}],
+    }
+    body = run(api, bucket, params).json()
+
+    assert [(f["name"], f["weight"]) for f in body["result"]["funds"]] == [
+        ("Parag Parikh Flexi Cap Fund", "100")
+    ]
+    assert body["params"]["split"] == [{"instrument_id": funds[PARAG], "weight": "100"}]
+    assert api.get(f"/api/v1/backtests/{body['id']}").json()["params"]["split"] == [
+        {"instrument_id": funds[PARAG], "weight": "100"}
+    ]
+    model = api.get(f"/api/v1/buckets/{bucket['id']}").json()
+    assert [f["weight"] for f in model["funds"]] == ["60", "40"]
+
+
+@pytest.mark.parametrize(
+    ("weights", "reason"),
+    [
+        ({PARAG: "60", NIFTY: "30"}, "Split: weights must add up to 100, not 90."),
+        ({PARAG: "0", NIFTY: "100"}, "weight must be more than 0 and at most 100"),
+    ],
+)
+def test_a_split_a_bucket_couldnt_have_is_refused(api, bucket, funds, weights, reason) -> None:
+    params = {"strategy": "sip", "amount": "1000", "split": split(funds, **weights)}
+
+    response = run(api, bucket, params)
+
+    assert response.status_code == 422
+    assert reason in response.json()["detail"]
+
+
+def test_comparing_a_tweaked_split_with_the_run_before(api: TestClient, bucket, funds) -> None:
+    common = {"strategy": "regular", "capital": "100000", "start": "2026-10-01"}
+    before = run(api, bucket, common).json()
+    after = run(api, bucket, {**common, "split": split(funds, **{PARAG: "90", NIFTY: "10"})})
+    after = after.json()
+
+    response = api.get(f"/api/v1/backtests/{after['id']}/compare", params={"against": before["id"]})
+
+    assert response.status_code == 200, response.text
+    got = response.json()
+    now, then = after["result"]["metrics"], before["result"]["metrics"]
+    assert got["against"] == before["id"]
+    assert got["same_settings"] is True
+    # by hand: the two runs' own figures, subtracted
+
+    assert Decimal(got["end_value"]) == Decimal(now["end_value"]) - Decimal(then["end_value"])
+    assert Decimal(got["volatility_pct"]) == (
+        Decimal(now["volatility_pct"]) - Decimal(then["volatility_pct"])
+    )
+    assert [(w["before"], w["after"]) for w in got["weights"]] == [("60", "90"), ("40", "10")]
+
+
+def test_comparing_runs_with_other_settings_or_dropped_funds(api, bucket, funds) -> None:
+    before = run(api, bucket, {"strategy": "sip", "amount": "1000"}).json()
+    after = run(
+        api, bucket, {"strategy": "sip", "amount": "2000", "split": split(funds, **{PARAG: "100"})}
+    ).json()
+
+    got = api.get(f"/api/v1/backtests/{after['id']}/compare", params={"against": before["id"]})
+
+    body = got.json()
+    assert body["same_settings"] is False
+    assert [(w["name"], w["before"], w["after"]) for w in body["weights"]] == [
+        ("Parag Parikh Flexi Cap Fund", "60", "100"),
+        ("UTI Nifty 50 Index Fund", "40", None),
+    ]
+    missing = api.get(f"/api/v1/backtests/{after['id']}/compare", params={"against": 999})
+    assert missing.status_code == 404

@@ -1,4 +1,5 @@
-"""Run a backtest of a bucket on its stored NAVs, keep the run, and slice it (D-048, D-049)."""
+"""Run a backtest of a bucket on its stored NAVs, keep the run, slice it and compare two runs
+(D-048, D-049, D-075, D-076)."""
 
 from datetime import UTC, date, datetime
 from decimal import Decimal
@@ -13,6 +14,7 @@ from friday.core.backtest.schemas import (
     BacktestParams,
     BacktestResult,
     BenchmarkOut,
+    ComparisonOut,
     CurvePoint,
     CustomParams,
     FundOutcomeOut,
@@ -22,8 +24,11 @@ from friday.core.backtest.schemas import (
     SipParams,
     SwpParams,
     TradeOut,
+    WeightChange,
+    WeightedParams,
 )
 from friday.core.buckets.models import Bucket
+from friday.core.buckets.service import InvalidBucket, check_split
 from friday.core.instruments.models import Instrument
 from friday.core.navs.service import nav_series
 
@@ -126,10 +131,24 @@ def _outcome(outcome: engine.FundOutcome, name: str) -> FundOutcomeOut:
     )
 
 
+def _split(
+    session: Session, bucket: Bucket, params: BacktestParams
+) -> dict[int, tuple[Instrument, Decimal]]:
+    """Fund id → (fund, weight): the split ``params`` tries, else the bucket's own (D-075)."""
+    if not isinstance(params, WeightedParams) or params.split is None:
+        return {m.instrument_id: (m.instrument, m.weight_pct) for m in bucket.funds}
+    funds = [(fund.instrument_id, fund.weight) for fund in params.split]
+    try:
+        instruments = check_split(session, funds)
+    except InvalidBucket as error:
+        raise EngineError(f"split: {error}") from None
+    return {fund.id: (fund, weight) for fund, (_, weight) in zip(instruments, funds, strict=True)}
+
+
 def run_backtest(session: Session, bucket: Bucket, params: BacktestParams) -> BacktestResult:
     """Run ``params`` on the bucket's stored NAVs. Raises :class:`EngineError` when it can't."""
-    members = {member.instrument_id: member for member in bucket.funds}
-    names = {fund_id: member.instrument.name for fund_id, member in members.items()}
+    members = _split(session, bucket, params)
+    names = {fund_id: fund.name for fund_id, (fund, _) in members.items()}
     warnings: list[str] = []
 
     if isinstance(params, CustomParams):
@@ -138,9 +157,7 @@ def run_backtest(session: Session, bucket: Bucket, params: BacktestParams) -> Ba
     else:
         trades = []
         fund_ids = list(members)
-    series = {
-        fund_id: _series(session, members[fund_id].instrument, warnings) for fund_id in fund_ids
-    }
+    series = {fund_id: _series(session, members[fund_id][0], warnings) for fund_id in fund_ids}
     missing = [names[fund_id] for fund_id, points in series.items() if not points]
     if missing:
         raise EngineError(f"no NAVs yet for {', '.join(missing)}; sync NAVs first")
@@ -150,7 +167,7 @@ def run_backtest(session: Session, bucket: Bucket, params: BacktestParams) -> Ba
         run = engine.run_custom(aligned, trades, names)
     else:
         aligned = engine.align(series, params.start, params.end)
-        weights = [(fund_id, members[fund_id].weight_pct) for fund_id in fund_ids]
+        weights = [(fund_id, members[fund_id][1]) for fund_id in fund_ids]
         if isinstance(params, RegularParams):
             rebalance = params.rebalance or bucket.rebalance
             run = engine.run_regular(aligned, weights, params.capital, rebalance)
@@ -283,4 +300,48 @@ def run_interval(
         invested=engine.money(window.invested),
         withdrawn=engine.money(window.withdrawn),
         benchmark_return_pct=engine.figure(bench.return_pct) if bench else None,
+    )
+
+
+def compare_runs(
+    params: BacktestParams,
+    result: BacktestResult,
+    against: int,
+    earlier_params: BacktestParams,
+    earlier: BacktestResult,
+) -> ComparisonOut:
+    """A run less an earlier one (D-076): what a change of split (or anything else) did."""
+    now, then = result.metrics, earlier.metrics
+
+    def change(a: Decimal | None, b: Decimal | None) -> Decimal | None:
+        return None if a is None or b is None else engine.figure(a - b)
+
+    before = {fund.instrument_id: fund for fund in earlier.funds}
+    after = {fund.instrument_id: fund for fund in result.funds}
+    weights = [
+        WeightChange(
+            instrument_id=fund_id,
+            name=fund.name,
+            before=before[fund_id].weight if fund_id in before else None,
+            after=fund.weight,
+        )
+        for fund_id, fund in after.items()
+        if fund_id not in before or before[fund_id].weight != fund.weight
+    ] + [
+        WeightChange(instrument_id=fund_id, name=fund.name, before=fund.weight, after=None)
+        for fund_id, fund in before.items()
+        if fund_id not in after
+    ]
+    return ComparisonOut(
+        against=against,
+        same_settings=params.model_dump(exclude={"split"})
+        == earlier_params.model_dump(exclude={"split"}),
+        end_value=engine.money(now.end_value - then.end_value),
+        xirr_pct=change(now.xirr_pct, then.xirr_pct),
+        cagr_pct=change(now.cagr_pct, then.cagr_pct),
+        absolute_return_pct=change(now.absolute_return_pct, then.absolute_return_pct),
+        max_drawdown_pct=engine.figure(now.max_drawdown_pct - then.max_drawdown_pct),
+        volatility_pct=engine.figure(now.volatility_pct - then.volatility_pct),
+        sharpe=change(now.sharpe, then.sharpe),
+        weights=weights,
     )

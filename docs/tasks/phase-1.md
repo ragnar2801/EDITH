@@ -6,7 +6,7 @@
 > **Already fixed:** React frontend + Python backend (D-023) · SQLite on the laptop (D-013) · free data only (D-012) · scheduled fetch + catch-up (D-022) · Windows + Task Scheduler (D-027) · Nifty 50 benchmark (D-043).
 > Everything else is decided **inside the task that needs it** (see each task's *Decisions* list). How this board works: [`README.md`](README.md)
 
-**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7; T1-18 dropped, D-068) · **Done:** 12 / 13
+**Board version:** 3 (2026-10-25: re-planned for funds first, D-043; T1-03 to T1-11 dropped, their content moved to T1-12 onward and Phases 6–7; T1-18 dropped, D-068) · **Done:** 13 / 14
 
 ---
 
@@ -28,6 +28,7 @@
 | T1-21 | UI kit and copy clean-up: no prose, info icons, no build talk | Feature | Claude | done | T1-16 |
 | T1-22 | Journeys: new navigation, one fund page, Invest, Models, Settings | Feature | Claude | done | T1-21 |
 | T1-23 | Portfolio that answers: value over time, the day, vs the benchmark, SIPs, target | Feature | Claude | done | T1-17 |
+| T1-24 | Backtest a tweaked split without changing the model, and compare runs | Feature | Claude | done | T1-14 |
 | ~~T1-03 to T1-11~~ | Board v2 tasks for stocks, US, LRS and the watchlist | — | — | dropped | see [Dropped tasks](#dropped-tasks-board-v2) |
 
 ```
@@ -469,6 +470,33 @@ T1-14 and T1-15 can be built in parallel. T1-18 was dropped (D-068): in Phase 1 
 - The history, the day and the benchmark gap have hand-worked tests ✔
 - Every figure on Portfolio is the API's string (the page only formats and draws) ✔
 - The last point of the chart is the value Portfolio shows; no sideways scroll at phone width ✔
+
+---
+
+## T1-24 · Backtest a tweaked split without changing the model, and compare runs
+`Feature` · Owner: Claude · Status: done · Depends on: T1-14
+
+**Goal:** on a model's Backtest tab I can change the weights, drop a fund or try another one, run it, and see straight away what the change did against the run before, without touching the model that Invest and drift use.
+
+**Scope**
+- Found 2026-10-31 (my question: "I want to tweak the numbers of a bucket in place to see if tweaking is doing anything"): a backtest reads the model's saved weights, so trying a split meant editing my real target and remembering the old numbers
+- Backend: an optional split (funds and weights) in a lump sum, SIP or SWP run, checked like a model's; kept with the run; a comparison of two runs
+- Backtest tab: the split, editable, with Modified, Reset and Save to model; the previous run drawn faded on the chart and the change in each figure
+
+**Decisions** (2026-10-31)
+- Decided: a run can carry a **split** (funds and weights) in its parameters instead of the model's; it is checked by the same rules as a model (AMFI schemes, each fund once, weights over 0 and adding up to exactly 100) and **never changes the model**: only *Save to model* does, and only the funds and weights. Custom runs have no split. The benchmark and rebalance stay as they were (rebalance is already a lump-sum field), so runs stay comparable. Kept in the run's parameters, so a saved run reloads with the split it used. A fund added to a split is tracked and its NAVs downloaded when I add it (D-075)
+- Decided: **comparing runs**: `GET /backtests/{id}/compare?against=` gives the change in final value (₹) and in each ratio (points), each fund's weight before and after where it changed, and whether the settings other than the split were the same. The tab compares a new run with the one shown before it; the earlier run is drawn faded on the chart, and figures come only from the API (D-076)
+
+**Progress (2026-10-31)**
+- Built: `split` on lump sum, SIP and SWP parameters (`WeightedParams`); the model's rules moved into `friday.core.buckets.service.check_split`, used by models and backtests; `compare_runs` in `friday.core.backtest.service` and `GET /api/v1/backtests/{id}/compare?against=`. No new tables (the split lives in the run's stored parameters)
+- UI: `SplitEditor` on the Backtest tab (weights, remove, add a fund, total, *Modified*, *Reset*, *Save to model* with a confirm); the split is sent only when it isn't the model's; a loaded run brings back its split. `RunComparison` under the figures (change in final value and each ratio, drawdown and volatility red when they rise, *Settings differ*, the weights that changed); the previous run drawn faded on the chart
+- Checked on a copy of my database: *CORE*, ₹10,000 SIP from Feb 2020; small cap 15 → 5 and arbitrage 5 → 15 gave −₹78.09K final value, −1.63 pts XIRR, −1.83 pts max drawdown, −1.36 pts volatility; the model kept its weights. No sideways scroll at 375 px
+- Tests: 5 API (split run and kept, model unchanged; two refused splits; comparison checked by subtracting the runs' own figures; other settings and a dropped fund; unknown run). Frontend: tweak, compare, request bodies, Reset. 308 backend, 73 frontend; `lint` passes
+
+**Done when**
+- A run with a split uses its weights, keeps the model as it was, and reloads with the split ✔
+- A split that isn't a valid model split is refused with the reason ✔
+- The comparison has a hand-checked test; every figure on the tab is the API's string ✔
 
 ---
 

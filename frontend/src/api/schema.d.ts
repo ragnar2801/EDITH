@@ -46,6 +46,26 @@ export interface paths {
         patch: operations["updateBacktest"];
         trace?: never;
     };
+    "/api/v1/backtests/{run_id}/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Compare
+         * @description This run less an earlier one: final value, ratios and the weights that changed (D-076).
+         */
+        get: operations["compareBacktests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/backtests/{run_id}/interval": {
         parameters: {
             query?: never;
@@ -972,6 +992,32 @@ export interface components {
              */
             exposure: "IN" | "US" | "GLOBAL";
         };
+        /**
+         * ComparisonOut
+         * @description This run less an earlier one (D-076): rupees for the final value, points for ratios.
+         */
+        ComparisonOut: {
+            /** Absolute Return Pct */
+            absolute_return_pct: string | null;
+            /** Against */
+            against: number;
+            /** Cagr Pct */
+            cagr_pct: string | null;
+            /** End Value */
+            end_value: string;
+            /** Max Drawdown Pct */
+            max_drawdown_pct: string;
+            /** Same Settings */
+            same_settings: boolean;
+            /** Sharpe */
+            sharpe: string | null;
+            /** Volatility Pct */
+            volatility_pct: string;
+            /** Weights */
+            weights: components["schemas"]["WeightChange"][];
+            /** Xirr Pct */
+            xirr_pct: string | null;
+        };
         /** CoverageOut */
         CoverageOut: {
             /** Count */
@@ -1832,6 +1878,8 @@ export interface components {
              * @default 0
              */
             risk_free_pct: string;
+            /** Split */
+            split?: components["schemas"]["SplitFund"][] | null;
             /** Start */
             start?: string | null;
             /**
@@ -2025,6 +2073,8 @@ export interface components {
              * @default 0
              */
             risk_free_pct: string;
+            /** Split */
+            split?: components["schemas"]["SplitFund"][] | null;
             /** Start */
             start?: string | null;
             /**
@@ -2055,6 +2105,13 @@ export interface components {
              */
             source: "nse" | "amfi" | "us";
         };
+        /** SplitFund */
+        SplitFund: {
+            /** Instrument Id */
+            instrument_id: number;
+            /** Weight */
+            weight: string;
+        };
         /** SwpParams */
         SwpParams: {
             /** Amount */
@@ -2074,6 +2131,8 @@ export interface components {
              * @default 0
              */
             risk_free_pct: string;
+            /** Split */
+            split?: components["schemas"]["SplitFund"][] | null;
             /** Start */
             start?: string | null;
             /**
@@ -2172,6 +2231,17 @@ export interface components {
             option: string | null;
             /** Plan */
             plan: string | null;
+        };
+        /** WeightChange */
+        WeightChange: {
+            /** After */
+            after: string | null;
+            /** Before */
+            before: string | null;
+            /** Instrument Id */
+            instrument_id: number;
+            /** Name */
+            name: string;
         };
     };
     responses: never;
@@ -2297,6 +2367,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BacktestRunSummary"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    compareBacktests: {
+        parameters: {
+            query: {
+                against: number;
+            };
+            header?: never;
+            path: {
+                run_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComparisonOut"];
                 };
             };
             /** @description Problem details (RFC 9457) */

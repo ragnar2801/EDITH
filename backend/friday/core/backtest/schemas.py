@@ -32,7 +32,17 @@ class CommonParams(BaseModel):
         return self
 
 
-class RegularParams(CommonParams):
+class SplitFund(BaseModel):
+    instrument_id: int
+    weight: Percent
+
+
+class WeightedParams(CommonParams):
+    split: list[SplitFund] | None = None
+    """Run these funds and weights instead of the bucket's; the bucket isn't changed (D-075)."""
+
+
+class RegularParams(WeightedParams):
     """A lump sum, optionally rebalanced to the bucket's weights."""
 
     strategy: Literal["regular"]
@@ -41,13 +51,13 @@ class RegularParams(CommonParams):
     """Leave out to use the bucket's own policy."""
 
 
-class SipParams(CommonParams):
+class SipParams(WeightedParams):
     strategy: Literal["sip"]
     amount: PositiveAmount
     frequency: Frequency = "monthly"
 
 
-class SwpParams(CommonParams):
+class SwpParams(WeightedParams):
     strategy: Literal["swp"]
     corpus: PositiveAmount
     amount: PositiveAmount
@@ -193,3 +203,29 @@ class IntervalOut(BaseModel):
     invested: Amount
     withdrawn: Amount
     benchmark_return_pct: Percent | None
+
+
+class WeightChange(BaseModel):
+    instrument_id: int
+    name: str
+    before: Percent | None
+    """None: the fund wasn't in the earlier run."""
+    after: Percent | None
+    """None: the fund isn't in this run."""
+
+
+class ComparisonOut(BaseModel):
+    """This run less an earlier one (D-076): rupees for the final value, points for ratios."""
+
+    against: int
+    same_settings: bool
+    """Everything but the split was the same, so the split is what changed."""
+    end_value: Amount
+    xirr_pct: Percent | None
+    cagr_pct: Percent | None
+    absolute_return_pct: Percent | None
+    max_drawdown_pct: Percent
+    volatility_pct: Percent
+    sharpe: Figure | None
+    weights: list[WeightChange]
+    """Only the funds whose weight changed, in this run's order then the dropped ones."""

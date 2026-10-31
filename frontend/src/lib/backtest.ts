@@ -1,4 +1,7 @@
 import type { Schemas } from '@/api/client'
+import type { BacktestRun } from '@/api/queries'
+import type { Bucket } from '@/lib/buckets'
+import { toBasisPoints } from '@/lib/weights'
 
 export type BacktestParams = Schemas['BacktestIn']['params']
 export type Strategy = BacktestParams['strategy']
@@ -28,6 +31,10 @@ export type TradeRow = {
   quantity: string
 }
 
+/** A fund in the split being tried (D-075). Loaded runs may only know a fund's name. */
+export type SplitFund = Pick<Schemas['FundRef'], 'id' | 'name' | 'plan' | 'option'>
+export type SplitRow = { fund: SplitFund; weight: string }
+
 /** Everything the form holds, as typed. Amounts stay strings end to end (D-032). */
 export type BacktestForm = {
   strategy: Strategy
@@ -44,6 +51,8 @@ export type BacktestForm = {
   customMode: 'positions' | 'trades'
   positions: PositionRow[]
   trades: TradeRow[]
+  /** The funds and weights to run (not custom runs); starts as the model's own. */
+  split: SplitRow[]
 }
 
 export const blankPosition = (): PositionRow => ({
@@ -74,17 +83,37 @@ export const DEFAULT_FORM: BacktestForm = {
   customMode: 'positions',
   positions: [blankPosition()],
   trades: [blankTrade()],
+  split: [],
+}
+
+/** The model's own funds and weights, as split rows. */
+export function modelSplit(bucket: Bucket): SplitRow[] {
+  return bucket.funds.map((member) => ({ fund: member.fund, weight: member.weight }))
+}
+
+/** True when the split isn't the model's: other funds, or a weight that isn't the same. */
+export function splitModified(split: SplitRow[], bucket: Bucket): boolean {
+  if (split.length !== bucket.funds.length) return true
+  const model = new Map(bucket.funds.map((m) => [m.fund.id, toBasisPoints(m.weight)]))
+  return split.some((row) => {
+    const points = toBasisPoints(row.weight)
+    return points === null || model.get(row.fund.id) !== points
+  })
 }
 
 const optional = (value: string) => value.trim() || null
 
-/** The API request for this form. Incomplete custom rows are left out. */
-export function toParams(form: BacktestForm): BacktestParams {
+/** The API request for this form. Incomplete custom rows are left out; the split is sent
+ * only when it isn't the model's own. */
+export function toParams(form: BacktestForm, bucket: Bucket): BacktestParams {
   const common = {
     start: optional(form.start),
     end: optional(form.end),
     risk_free_pct: form.riskFree.trim() || '0',
   }
+  const split = splitModified(form.split, bucket)
+    ? form.split.map((row) => ({ instrument_id: row.fund.id, weight: row.weight.trim() }))
+    : null
   switch (form.strategy) {
     case 'regular':
       return {
@@ -92,9 +121,16 @@ export function toParams(form: BacktestForm): BacktestParams {
         strategy: 'regular',
         capital: form.capital.trim(),
         rebalance: form.rebalance || null,
+        ...(split && { split }),
       }
     case 'sip':
-      return { ...common, strategy: 'sip', amount: form.amount.trim(), frequency: form.frequency }
+      return {
+        ...common,
+        strategy: 'sip',
+        amount: form.amount.trim(),
+        frequency: form.frequency,
+        ...(split && { split }),
+      }
     case 'swp':
       return {
         ...common,
@@ -102,6 +138,7 @@ export function toParams(form: BacktestForm): BacktestParams {
         corpus: form.corpus.trim(),
         amount: form.withdrawal.trim(),
         frequency: form.frequency,
+        ...(split && { split }),
       }
     case 'custom':
       return {
@@ -135,14 +172,33 @@ export function toParams(form: BacktestForm): BacktestParams {
   }
 }
 
-/** Fill the form from a stored run's parameters, so a loaded run can be changed and re-run. */
-export function fromParams(params: BacktestParams): BacktestForm {
+/** The split a stored run used, with each fund's name from the model or the run. */
+function runSplit(run: BacktestRun, bucket: Bucket): SplitRow[] {
+  const params = run.params
+  if (params.strategy === 'custom' || !params.split) return modelSplit(bucket)
+  const known = new Map(bucket.funds.map((member) => [member.fund.id, member.fund]))
+  const named = new Map(run.result.funds.map((fund) => [fund.instrument_id, fund.name]))
+  return params.split.map((row) => ({
+    fund: known.get(row.instrument_id) ?? {
+      id: row.instrument_id,
+      name: named.get(row.instrument_id) ?? `Fund ${row.instrument_id}`,
+      plan: null,
+      option: null,
+    },
+    weight: row.weight,
+  }))
+}
+
+/** Fill the form from a stored run, so a loaded run can be changed and re-run. */
+export function fromRun(run: BacktestRun, bucket: Bucket): BacktestForm {
+  const params = run.params
   const form: BacktestForm = {
     ...DEFAULT_FORM,
     strategy: params.strategy,
     start: params.start ?? '',
     end: params.end ?? '',
     riskFree: params.risk_free_pct ?? '0',
+    split: runSplit(run, bucket),
   }
   switch (params.strategy) {
     case 'regular':

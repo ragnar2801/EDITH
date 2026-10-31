@@ -1,4 +1,5 @@
-"""Backtests of a bucket: run, save, load, delete, and figures for a window (T1-14)."""
+"""Backtests of a bucket: run, save, load, delete, figures for a window (T1-14), and two runs
+compared (T1-24)."""
 
 from datetime import date
 
@@ -10,8 +11,20 @@ from friday.api.deps import SessionDep
 from friday.api.routes.buckets import _sentence
 from friday.core.backtest.engine import EngineError
 from friday.core.backtest.models import BacktestRun
-from friday.core.backtest.schemas import BacktestParams, BacktestResult, IntervalOut, Strategy
-from friday.core.backtest.service import run_backtest, run_interval, saved_runs, store_run
+from friday.core.backtest.schemas import (
+    BacktestParams,
+    BacktestResult,
+    ComparisonOut,
+    IntervalOut,
+    Strategy,
+)
+from friday.core.backtest.service import (
+    compare_runs,
+    run_backtest,
+    run_interval,
+    saved_runs,
+    store_run,
+)
 from friday.core.buckets.models import Bucket
 from friday.core.schema_types import UtcDatetime
 
@@ -133,3 +146,16 @@ def interval(
     if window is None:
         raise HTTPException(422, "Pick a window with at least two dates in the run.")
     return window
+
+
+@router.get("/backtests/{run_id}/compare", operation_id="compareBacktests")
+def compare(session: SessionDep, run_id: int, against: int) -> ComparisonOut:
+    """This run less an earlier one: final value, ratios and the weights that changed (D-076)."""
+    run, earlier = _run(session, run_id), _run(session, against)
+    return compare_runs(
+        _params.validate_json(run.params),
+        BacktestResult.model_validate_json(run.result),
+        earlier.id,
+        _params.validate_json(earlier.params),
+        BacktestResult.model_validate_json(earlier.result),
+    )

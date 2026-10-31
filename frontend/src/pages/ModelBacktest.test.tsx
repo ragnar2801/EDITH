@@ -184,3 +184,58 @@ test('the Backtest tab is part of the model page', async () => {
   expect(await screen.findByText('Ready to backtest Core')).toBeInTheDocument()
   expect(screen.queryByRole('combobox', { name: 'Model' })).not.toBeInTheDocument() // no picker
 })
+
+test('try another split, compare it with the run before, and keep the model as it is', async () => {
+  let id = 41
+  const calls = fakeApi({
+    'GET /api/v1/buckets': () => [bucket()],
+    'GET /api/v1/buckets/1/backtests': () => [],
+    'POST /api/v1/backtests': () => backtestRun({ id: id++ }),
+    'GET /api/v1/backtests/42/compare': () => ({
+      against: 41,
+      same_settings: true,
+      end_value: '-12500.00',
+      xirr_pct: '-0.42',
+      cagr_pct: '-0.30',
+      absolute_return_pct: '-1.10',
+      max_drawdown_pct: '2.15',
+      volatility_pct: '0.80',
+      sharpe: '-0.05',
+      weights: [
+        { instrument_id: parag.id, name: parag.name, before: '60', after: '90' },
+        { instrument_id: 99, name: 'UTI Nifty 50 Index Fund', before: '40', after: '10' },
+      ],
+    }),
+  })
+  renderAt('/models/1/backtest')
+  const form = await screen.findByRole('form', { name: 'Backtest settings' })
+  await userEvent.click(within(form).getByRole('button', { name: 'Run backtest' }))
+  await screen.findByText('Final value')
+  expect(screen.queryByText('Modified')).not.toBeInTheDocument()
+
+  const weight = (name: string) => within(form).getByLabelText(`Weight of ${name}`)
+  await userEvent.clear(weight(parag.name))
+  await userEvent.type(weight(parag.name), '90')
+  await userEvent.clear(weight('UTI Nifty 50 Index Fund'))
+  await userEvent.type(weight('UTI Nifty 50 Index Fund'), '10')
+  expect(within(form).getByText('Modified')).toBeInTheDocument()
+  expect(within(form).getByRole('button', { name: 'Save to model' })).toBeEnabled()
+  await userEvent.click(within(form).getByRole('button', { name: 'Run backtest' }))
+
+  expect(await screen.findByText('vs previous run (SIP)')).toBeInTheDocument()
+  expect(await screen.findByText('−₹12.5K')).toHaveClass('text-destructive')
+  expect(screen.getByText('+2.15 pts')).toHaveClass('text-destructive') // a deeper drawdown is worse
+  const changed = screen.getByRole('list', { name: 'Weights changed' })
+  expect(within(changed).getByText('60% → 90%')).toBeInTheDocument()
+  const posts = calls.filter((call) => call.method === 'POST')
+  expect((await posts[0].json()).params.split).toBeUndefined()
+  expect((await posts[1].json()).params.split).toEqual([
+    { instrument_id: parag.id, weight: '90' },
+    { instrument_id: bucket().funds[1].fund.id, weight: '10' },
+  ])
+  expect(calls.some((call) => call.method === 'PUT')).toBe(false)
+
+  await userEvent.click(within(form).getByRole('button', { name: 'Reset' }))
+  expect(weight(parag.name)).toHaveValue('60')
+  expect(within(form).queryByText('Modified')).not.toBeInTheDocument()
+})

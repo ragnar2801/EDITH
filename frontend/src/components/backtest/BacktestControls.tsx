@@ -21,6 +21,8 @@ import {
 } from '@/lib/backtest'
 import { REBALANCE_LABELS } from '@/lib/buckets'
 
+import { SplitEditor } from './SplitEditor'
+
 type Bucket = Schemas['BucketOut']
 
 type Props = {
@@ -136,7 +138,11 @@ export function BacktestControls({ bucket, form, onForm, onRun, running }: Props
           <FrequencyField value={form.frequency} onChange={(frequency) => set({ frequency })} />
         </>
       )}
-      {form.strategy === 'custom' && <CustomBuilder form={form} set={set} funds={funds} />}
+      {form.strategy === 'custom' ? (
+        <CustomBuilder form={form} set={set} funds={funds} />
+      ) : (
+        <SplitEditor bucket={bucket} split={form.split} onChange={(split) => set({ split })} />
+      )}
 
       <div className="grid gap-2">
         {form.strategy !== 'custom' && (

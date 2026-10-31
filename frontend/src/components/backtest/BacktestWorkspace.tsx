@@ -17,20 +17,31 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
 import { useConfirm } from '@/hooks/use-confirm'
-import { DEFAULT_FORM, STRATEGY_LABELS, fromParams, toParams } from '@/lib/backtest'
+import { DEFAULT_FORM, STRATEGY_LABELS, fromRun, modelSplit, toParams } from '@/lib/backtest'
 import type { Bucket } from '@/lib/buckets'
 import { formatDateTime } from '@/lib/time'
 
 import { BacktestControls } from './BacktestControls'
 import { BacktestResults } from './BacktestResults'
 
-/** Backtests of one model (T1-14), ported from Friday: controls on the left, results right. */
+/** Backtests of one model (T1-14), ported from Friday: controls on the left, results right.
+ * Each run is compared with the one shown before it (D-076). */
 export function BacktestWorkspace({ bucket }: { bucket: Bucket }) {
-  const [form, setForm] = useState(DEFAULT_FORM)
+  const [form, setForm] = useState(() => ({ ...DEFAULT_FORM, split: modelSplit(bucket) }))
   const [shown, setShown] = useState<BacktestRun | null>(null)
+  const [previous, setPrevious] = useState<BacktestRun | null>(null)
   const run = useRunBacktest()
   const load = useLoadBacktest()
   const current = shown && shown.bucket_id === bucket.id ? shown : null
+  const baseline =
+    current && previous && previous.bucket_id === bucket.id && previous.id !== current.id
+      ? previous
+      : null
+
+  function show(next: BacktestRun) {
+    setPrevious(current)
+    setShown(next)
+  }
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[18rem_minmax(0,1fr)]">
@@ -43,8 +54,8 @@ export function BacktestWorkspace({ bucket }: { bucket: Bucket }) {
             running={run.isPending}
             onRun={() =>
               run.mutate(
-                { bucket_id: bucket.id, params: toParams(form), save: false },
-                { onSuccess: setShown },
+                { bucket_id: bucket.id, params: toParams(form, bucket), save: false },
+                { onSuccess: show },
               )
             }
           />
@@ -56,8 +67,8 @@ export function BacktestWorkspace({ bucket }: { bucket: Bucket }) {
             onLoad={(id) =>
               load.mutate(id, {
                 onSuccess: (loaded) => {
-                  setShown(loaded)
-                  setForm(fromParams(loaded.params))
+                  show(loaded)
+                  setForm(fromRun(loaded, bucket))
                 },
               })
             }
@@ -67,7 +78,12 @@ export function BacktestWorkspace({ bucket }: { bucket: Bucket }) {
       </Card>
 
       {current ? (
-        <BacktestResults key={current.id} run={current} />
+        <BacktestResults
+          key={current.id}
+          run={current}
+          baseline={baseline}
+          onClearBaseline={() => setPrevious(null)}
+        />
       ) : (
         <EmptyState icon={FlaskConical} title={`Ready to backtest ${bucket.name}`} />
       )}

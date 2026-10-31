@@ -53,24 +53,32 @@ def _fund(session: Session, instrument_id: int, role: str) -> Instrument:
     return instrument
 
 
+def check_split(session: Session, funds: list[tuple[int, Decimal]]) -> list[Instrument]:
+    """The funds of a split, if it's one a bucket could have (also a backtest's, D-075)."""
+    if not funds:
+        raise InvalidBucket("add at least one fund")
+    ids = [instrument_id for instrument_id, _ in funds]
+    if len(set(ids)) != len(ids):
+        raise InvalidBucket("a fund is listed twice")
+    instruments = []
+    for instrument_id, weight in funds:
+        fund = _fund(session, instrument_id, "fund")
+        if weight <= 0 or weight > HUNDRED:
+            raise InvalidBucket(f"{fund.name}: weight must be more than 0 and at most 100")
+        instruments.append(fund)
+    total = sum((weight for _, weight in funds), Decimal(0))
+    if total != HUNDRED:
+        raise InvalidBucket(f"weights must add up to 100, not {total.normalize():f}")
+    return instruments
+
+
 def _validate(session: Session, data: BucketInput, bucket_id: int | None) -> str:
     name = " ".join(data.name.split())
     if not name:
         raise InvalidBucket("give the bucket a name")
     if data.rebalance not in REBALANCE:
         raise InvalidBucket(f"rebalance must be one of {', '.join(REBALANCE)}")
-    if not data.funds:
-        raise InvalidBucket("add at least one fund")
-    ids = [instrument_id for instrument_id, _ in data.funds]
-    if len(set(ids)) != len(ids):
-        raise InvalidBucket("a fund is listed twice")
-    for instrument_id, weight in data.funds:
-        fund = _fund(session, instrument_id, "fund")
-        if weight <= 0 or weight > HUNDRED:
-            raise InvalidBucket(f"{fund.name}: weight must be more than 0 and at most 100")
-    total = sum((weight for _, weight in data.funds), Decimal(0))
-    if total != HUNDRED:
-        raise InvalidBucket(f"weights must add up to 100, not {total.normalize():f}")
+    check_split(session, data.funds)
     if data.benchmark_id is not None:
         _fund(session, data.benchmark_id, "benchmark")
 

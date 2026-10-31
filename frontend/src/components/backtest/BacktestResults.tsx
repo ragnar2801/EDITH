@@ -21,6 +21,8 @@ import { formatPercent, toneOf } from '@/lib/percent'
 import { RANGES, rangeStart, usefulRanges, type RangeKey } from '@/lib/ranges'
 import { formatDate } from '@/lib/time'
 
+import { RunComparison } from './RunComparison'
+
 const axisMoney = (value: number) => inrShort(value.toFixed(0))
 
 /** One-line definitions for the figures (D-060). */
@@ -36,8 +38,17 @@ const METRIC_INFO = {
 
 const tip = (label: string, text: string) => <InfoTip label={label}>{text}</InfoTip>
 
-/** Everything a run returned (T1-14): figures vs the benchmark, chart, interval, tables. */
-export function BacktestResults({ run }: { run: BacktestRun }) {
+/** Everything a run returned (T1-14): figures vs the benchmark, chart, interval, tables, and
+ * what changed against `baseline`, which is drawn faded (D-076). */
+export function BacktestResults({
+  run,
+  baseline = null,
+  onClearBaseline,
+}: {
+  run: BacktestRun
+  baseline?: BacktestRun | null
+  onClearBaseline?: () => void
+}) {
   const { result } = run
   const m = result.metrics
   const b = result.benchmark?.metrics
@@ -74,6 +85,13 @@ export function BacktestResults({ run }: { run: BacktestRun }) {
         points: clip(curve).map((point) => ({ date: point.date, value: point.invested })),
       })
     }
+    if (baseline) {
+      lines.push({
+        name: baseline.name ?? 'Previous run',
+        color: 'color-mix(in oklch, var(--chart-main) 40%, transparent)',
+        points: clip(baseline.result.curve).map((p) => ({ date: p.date, value: p.value })),
+      })
+    }
     if (result.benchmark) {
       lines.push({
         name: result.benchmark.name,
@@ -83,7 +101,7 @@ export function BacktestResults({ run }: { run: BacktestRun }) {
       })
     }
     return lines
-  }, [curve, result, run.bucket_name, visible])
+  }, [baseline, curve, result, run.bucket_name, visible])
 
   const markers: ChartMarker[] = result.trades
     .filter((trade) => !visible || trade.date >= visible)
@@ -167,6 +185,10 @@ export function BacktestResults({ run }: { run: BacktestRun }) {
         {formatDate(m.start_date)} – {formatDate(m.end_date)} · {m.years} years
         {result.benchmark && ` · vs ${result.benchmark.name}`}
       </p>
+
+      {baseline && (
+        <RunComparison run={run} baseline={baseline} onClear={() => onClearBaseline?.()} />
+      )}
 
       <Card>
         <CardContent className="flex flex-col gap-3">

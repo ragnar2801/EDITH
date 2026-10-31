@@ -186,21 +186,32 @@ export function useSyncNavs() {
   })
 }
 
+async function trackAndSync(id: number) {
+  const tracked = await api.PUT('/api/v1/instruments/{instrument_id}/tracking', {
+    params: { path: { instrument_id: id } },
+  })
+  if (tracked.error) throw failure(tracked.error)
+  const { data, error } = await api.POST('/api/v1/navs/sync', {
+    body: { instrument_ids: [id] },
+  })
+  if (error) throw failure(error)
+  return data
+}
+
 /** Track a fund and download its history straight away. */
 export function useTrackFund(id: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async () => {
-      const tracked = await api.PUT('/api/v1/instruments/{instrument_id}/tracking', {
-        params: { path: { instrument_id: id } },
-      })
-      if (tracked.error) throw failure(tracked.error)
-      const { data, error } = await api.POST('/api/v1/navs/sync', {
-        body: { instrument_ids: [id] },
-      })
-      if (error) throw failure(error)
-      return data
-    },
+    mutationFn: () => trackAndSync(id),
+    onSettled: () => invalidateNavs(queryClient),
+  })
+}
+
+/** The same for any fund, e.g. one added to a backtest's split (D-075). */
+export function useTrackAnyFund() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: trackAndSync,
     onSettled: () => invalidateNavs(queryClient),
   })
 }
@@ -386,6 +397,21 @@ export function useBacktestInterval(
     },
     enabled: runId !== undefined && window !== null,
     placeholderData: keepPreviousData,
+  })
+}
+
+/** A run less an earlier one (D-076); `null` = nothing to compare with. */
+export function useCompareBacktests(runId: number, against: number | null) {
+  return useQuery({
+    queryKey: ['backtest-compare', runId, against],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/api/v1/backtests/{run_id}/compare', {
+        params: { path: { run_id: runId }, query: { against: against! } },
+      })
+      if (error) throw failure(error)
+      return data
+    },
+    enabled: against !== null,
   })
 }
 
