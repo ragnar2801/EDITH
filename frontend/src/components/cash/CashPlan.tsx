@@ -1,14 +1,16 @@
-import { Loader2, Target } from 'lucide-react'
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { Loader2 } from 'lucide-react'
+import { useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router'
+import { toast } from 'sonner'
 
-import { useCashPlan, type CashPlan as Plan } from '@/api/queries'
+import { useBuyOnPaper, useCashPlan, type Bucket, type CashPlan as Plan } from '@/api/queries'
 import { Table, TBody, Td, TFoot, Th, THead, Tr } from '@/components/DataTable'
-import { EmptyState } from '@/components/EmptyState'
 import { ErrorText, Field } from '@/components/Field'
 import { InfoTip } from '@/components/InfoTip'
 import { Stat, StatGrid } from '@/components/Stat'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { bucketPath } from '@/lib/buckets'
 import { fundPath, planLabel } from '@/lib/instruments'
 import { inr } from '@/lib/money'
 import { formatPercent } from '@/lib/percent'
@@ -16,20 +18,12 @@ import { formatDate, formatMonthYear } from '@/lib/time'
 
 import { positive } from './labels'
 
-/** "I have ₹X": one amount in, what to buy out. */
-export function CashPlan({
-  investable,
-  ready,
-  chooseTarget,
-}: {
-  investable: string
-  /** A target model is chosen; without one there's nothing to plan towards. */
-  ready: boolean
-  chooseTarget: ReactNode
-}) {
-  const [amount, setAmount] = useState(positive(investable) ? investable : '')
+/** "I have ₹X": one amount in, what to buy for the bucket out. A paper bucket's plan can be
+ * bought on the spot. */
+export function CashPlan({ bucket, investable }: { bucket: Bucket; investable: string }) {
+  const [amount, setAmount] = useState(!bucket.paper && positive(investable) ? investable : '')
   const [asked, setAsked] = useState<string | null>(null)
-  const plan = useCashPlan(asked)
+  const plan = useCashPlan(bucket.id, asked)
 
   function submit(event: FormEvent) {
     event.preventDefault()
@@ -39,9 +33,6 @@ export function CashPlan({
     else setAsked(next)
   }
 
-  if (!ready)
-    return <EmptyState icon={Target} title="Choose a target model" action={chooseTarget} />
-
   return (
     <div className="flex flex-col gap-6">
       <form aria-label="Make a plan" className="flex flex-wrap items-end gap-2" onSubmit={submit}>
@@ -50,6 +41,7 @@ export function CashPlan({
             <Input
               id={id}
               inputMode="decimal"
+              required={bucket.paper}
               placeholder="1,00,000"
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
@@ -63,6 +55,9 @@ export function CashPlan({
       </form>
       <ErrorText error={plan.error} />
       {plan.isSuccess && <PlanResult plan={plan.data} />}
+      {plan.isSuccess && bucket.paper && (
+        <BuyOnPaper plan={plan.data} onBought={() => setAsked(null)} />
+      )}
     </div>
   )
 }
@@ -73,20 +68,24 @@ function PlanResult({ plan }: { plan: Plan }) {
     <div className="flex flex-col gap-6">
       <StatGrid>
         <Stat label="Amount" value={inr(plan.amount)} />
-        <Stat
-          label="Emergency top-up"
-          info={
-            <InfoTip label="Emergency top-up">Brings emergency money up to its goal first.</InfoTip>
-          }
-          value={inr(plan.emergency_topup)}
-          hint={
-            positive(plan.emergency_topup)
-              ? emergencyFund
-                ? `Into ${emergencyFund.name}`
-                : 'Keep as cash'
-              : undefined
-          }
-        />
+        {!plan.bucket.paper && (
+          <Stat
+            label="Emergency top-up"
+            info={
+              <InfoTip label="Emergency top-up">
+                Brings emergency money up to its goal first.
+              </InfoTip>
+            }
+            value={inr(plan.emergency_topup)}
+            hint={
+              positive(plan.emergency_topup)
+                ? emergencyFund
+                  ? `Into ${emergencyFund.name}`
+                  : 'Keep as cash'
+                : undefined
+            }
+          />
+        )}
         <Stat label="Into funds" value={inr(plan.invested)} hint={plan.model.name} />
         <Stat
           label="Left as cash"
@@ -144,8 +143,10 @@ function PlanResult({ plan }: { plan: Plan }) {
       {plan.ignored.length > 0 && (
         <section className="flex flex-col gap-1 text-sm">
           <h2 className="text-muted-foreground flex items-center gap-1 text-xs font-medium">
-            Not in the target model
-            <InfoTip label="Not in the target model">Held, but left out of the plan.</InfoTip>
+            Not in the model
+            <InfoTip label="Not in the model">
+              Held in the bucket, but left out of the plan.
+            </InfoTip>
           </h2>
           <ul>
             {plan.ignored.map((row) => (
@@ -201,5 +202,45 @@ function StaggerTable({ plan }: { plan: Plan }) {
         </TBody>
       </Table>
     </section>
+  )
+}
+
+/** Buy a paper bucket's plan at each fund's latest NAV, then see the bucket. Once bought, the
+ * plan is put away so it can't be bought twice by accident. */
+function BuyOnPaper({ plan, onBought }: { plan: Plan; onBought: () => void }) {
+  const buy = useBuyOnPaper()
+  const navigate = useNavigate()
+  if (!positive(plan.invested)) return null
+  return (
+    <div className="flex flex-col gap-2">
+      <div>
+        <Button
+          disabled={buy.isPending}
+          onClick={() =>
+            buy.mutate(
+              { bucket_id: plan.bucket.id, amount: plan.amount },
+              {
+                onSuccess: (bought) => {
+                  onBought()
+                  toast.success(
+                    `Bought ${inr(bought.invested)} on paper in ${bought.bucket.name}`,
+                    {
+                      action: {
+                        label: 'View',
+                        onClick: () => navigate(bucketPath(bought.bucket.id)),
+                      },
+                    },
+                  )
+                },
+              },
+            )
+          }
+        >
+          {buy.isPending && <Loader2 className="animate-spin" />}
+          Buy on paper
+        </Button>
+      </div>
+      <ErrorText error={buy.error} />
+    </div>
   )
 }

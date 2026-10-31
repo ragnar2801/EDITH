@@ -17,6 +17,7 @@ import { Section } from '@/components/Section'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useConfirm } from '@/hooks/use-confirm'
+import { bucketLabel } from '@/lib/buckets'
 import { KIND_LABELS, type Lot, type Sip } from '@/lib/holdings'
 import { formatNav, formatUnits, inr } from '@/lib/money'
 import { formatDate } from '@/lib/time'
@@ -81,6 +82,11 @@ function SipTable({ holding, onEdit }: { holding: Holding; onEdit: (sip: Sip) =>
               <Td numeric>{sip.instalments}</Td>
               <Td>
                 <Badge variant="outline">{sip.active ? 'Active' : 'Ended'}</Badge>
+                {sip.bucket && (
+                  <Badge variant="secondary" className="ml-1">
+                    {bucketLabel(sip.bucket)}
+                  </Badge>
+                )}
                 {sip.note && <div className="text-muted-foreground text-xs">{sip.note}</div>}
               </Td>
               <Td className="w-0">
@@ -154,6 +160,7 @@ function Purchases({ holding, onEdit }: { holding: Holding; onEdit: (lot: Lot) =
                       {lot.skipped && <Badge variant="outline">Skipped</Badge>}
                       {lot.edited && !lot.skipped && <Badge variant="outline">Edited</Badge>}
                       {fromFm(lot) && <Badge variant="outline">FM</Badge>}
+                      {lot.bucket && <Badge variant="secondary">{bucketLabel(lot.bucket)}</Badge>}
                     </span>
                     {lot.note && <div className="text-muted-foreground text-xs">{lot.note}</div>}
                   </Td>

@@ -3,7 +3,8 @@
 FM is where purchases and sales are recorded; Friday keeps a read-only copy in its own
 tables. Each import deletes every FM purchase and sale and adds the feed's, in one
 transaction, so a purchase deleted or changed in FM is gone or changed here too. Purchases
-and SIPs entered in Friday are left alone. The feed itself isn't kept.
+and SIPs entered in Friday are left alone. A purchase FM put in a bucket goes in the Friday
+bucket made for it (see ``buckets.service.fm_bucket``). The feed itself isn't kept.
 """
 
 import json
@@ -14,6 +15,7 @@ from decimal import Decimal
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, sessionmaker
 
+from friday.core.buckets.service import fm_bucket
 from friday.core.db import session_scope
 from friday.core.fm.feed import FmFeed, FmFeedError, read_feed
 from friday.core.fm.models import FmImport
@@ -61,10 +63,13 @@ def apply_feed(session: Session, feed: FmFeed) -> ImportResult:
     for sale in feed.sales:
         sales_by_lot.setdefault(sale.lot_id, []).append(sale)
     kept = [lot for lot in feed.lots if lot.amfi_code in funds]
+    names = {item.bucket_id: item.bucket_name for item in kept if item.bucket_id}
+    buckets = {fm_id: fm_bucket(session, fm_id, name or "").id for fm_id, name in names.items()}
     for item in kept:
         sales = sales_by_lot.get(item.id, [])
         lot = Lot(
             instrument_id=funds[item.amfi_code].id,
+            bucket_id=buckets.get(item.bucket_id or ""),
             buy_date=item.buy_date,
             amount=item.amount,
             nav=item.nav,

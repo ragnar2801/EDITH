@@ -8,8 +8,9 @@ from fastapi import APIRouter, HTTPException, Response
 from pydantic import AfterValidator, BaseModel, Field
 
 from friday.api.deps import SessionDep
+from friday.api.routes.buckets import ref
 from friday.api.routes.models import _sentence
-from friday.api.schemas import FundRef
+from friday.api.schemas import BucketRef, FundRef, ModelRef
 from friday.core.cash.models import CashAccount, PlanSettings
 from friday.core.cash.plan import percent
 from friday.core.cash.service import (
@@ -21,6 +22,7 @@ from friday.core.cash.service import (
     FundValue,
     InvalidCash,
     SettingsInput,
+    buy_on_paper,
     cash_plan,
     cash_total,
     create_account,
@@ -82,13 +84,7 @@ class CashOut(BaseModel):
     emergency: EmergencyOut
 
 
-class ModelRef(BaseModel):
-    id: int
-    name: str
-
-
 class SettingsOut(BaseModel):
-    target_model: ModelRef | None
     emergency_goal: Rupees
     emergency_fund: FundRef | None
     stagger_fund: FundRef | None
@@ -100,7 +96,6 @@ class SettingsOut(BaseModel):
 
 
 class SettingsIn(BaseModel):
-    target_model_id: int | None = None
     emergency_goal: Amount
     emergency_fund_id: int | None = None
     stagger_fund_id: int | None = None
@@ -111,8 +106,20 @@ class SettingsIn(BaseModel):
 
 
 class PlanIn(BaseModel):
+    bucket_id: int
     amount: Amount | None = None
-    """Blank: all deployable cash."""
+    """Blank: all deployable cash (a paper bucket needs an amount)."""
+
+
+class PaperBuyIn(BaseModel):
+    bucket_id: int
+    amount: Amount
+
+
+class PaperBuyOut(BaseModel):
+    bucket: BucketRef
+    purchases: int
+    invested: Rupees
 
 
 class PlanFundOut(BaseModel):
@@ -123,7 +130,7 @@ class PlanFundOut(BaseModel):
     nav_date: date | None
     value_now: Rupees
     share_now: Percent | None
-    """Share of the model's value now; blank when the model holds nothing yet."""
+    """Share of what the bucket holds of the model's funds now; blank when it holds none."""
     invest: Rupees
     value_after: Rupees
     share_after: Percent | None
@@ -139,6 +146,7 @@ class PlanMonthOut(BaseModel):
 
 class PlanOut(BaseModel):
     amount: Rupees
+    bucket: BucketRef
     model: ModelRef
     emergency: EmergencyOut
     emergency_topup: Rupees
@@ -155,7 +163,7 @@ class PlanOut(BaseModel):
     months: list[PlanMonthOut]
     """Monthly transfers when the amount is staggered; empty when it goes in at once."""
     ignored: list[FundValueOut]
-    """Funds I hold outside the target model: not part of the plan."""
+    """Funds the bucket holds outside its model: not part of the plan."""
     min_per_fund: Rupees
 
 
@@ -188,9 +196,7 @@ def _emergency(status: Emergency) -> EmergencyOut:
 
 
 def _settings(settings: PlanSettings) -> SettingsOut:
-    model = settings.target_model
     return SettingsOut(
-        target_model=ModelRef(id=model.id, name=model.name) if model else None,
         emergency_goal=settings.emergency_goal,
         emergency_fund=_ref(settings.emergency_fund) if settings.emergency_fund else None,
         stagger_fund=_ref(settings.stagger_fund) if settings.stagger_fund else None,
@@ -231,6 +237,7 @@ def _plan(plan: CashPlan) -> PlanOut:
     stagger_fund = plan.settings.stagger_fund
     return PlanOut(
         amount=plan.amount,
+        bucket=ref(plan.bucket),
         model=ModelRef(id=plan.model.id, name=plan.model.name),
         emergency=_emergency(plan.emergency),
         emergency_topup=plan.emergency_topup,
@@ -298,14 +305,13 @@ def remove_account(session: SessionDep, account_id: int) -> Response:
 
 @router.get("/plan/settings", operation_id="getPlanSettings")
 def read_settings(session: SessionDep) -> SettingsOut:
-    """Target model, emergency goal and fund, and the staggering rule."""
+    """Emergency goal and fund, the minimum per fund and the staggering rule."""
     return _settings(get_settings(session))
 
 
 @router.put("/plan/settings", operation_id="updatePlanSettings")
 def change_settings(session: SessionDep, payload: SettingsIn) -> SettingsOut:
     data = SettingsInput(
-        target_model_id=payload.target_model_id,
         emergency_goal=payload.emergency_goal,
         emergency_fund_id=payload.emergency_fund_id,
         stagger_fund_id=payload.stagger_fund_id,
@@ -318,7 +324,19 @@ def change_settings(session: SessionDep, payload: SettingsIn) -> SettingsOut:
 
 @router.post("/plan", operation_id="makeCashPlan")
 def make(session: SessionDep, payload: PlanIn) -> PlanOut:
-    """Where new cash should go: emergency top-up first, then the funds furthest below
-    the target split, never selling. Large amounts come with a monthly stagger
-    plan. Nothing is saved."""
-    return _plan(_do(cash_plan, session, payload.amount))
+    """Where new cash should go in a bucket: emergency top-up first (real buckets), then the
+    funds of its model furthest below their weights, never selling. Large amounts in a real
+    bucket come with a monthly stagger plan. Nothing is saved."""
+    return _plan(_do(cash_plan, session, payload.bucket_id, payload.amount))
+
+
+@router.post("/plan/paper", status_code=201, operation_id="buyPlanOnPaper")
+def buy_paper(session: SessionDep, payload: PaperBuyIn) -> PaperBuyOut:
+    """Buy a paper bucket's plan for the amount: one purchase per fund that gets money, at
+    its latest NAV."""
+    lots = _do(buy_on_paper, session, payload.bucket_id, payload.amount)
+    return PaperBuyOut(
+        bucket=ref(lots[0].bucket),
+        purchases=len(lots),
+        invested=sum((lot.amount for lot in lots), Decimal(0)),
+    )

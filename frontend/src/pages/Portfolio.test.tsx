@@ -6,6 +6,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import type { Schemas } from '@/api/client'
 import { routes } from '@/app/routes'
 import {
+  bucket,
   model,
   detail,
   fakeApi,
@@ -56,7 +57,10 @@ const empty: Schemas['PortfolioOut'] = {
   sips: { monthly: '0.00', count: 0, next_date: null, next_fund: null },
   funds: [],
   allocation: [],
-  target: null,
+  bucket: null,
+  model: null,
+  model_returns: null,
+  ahead_of_model: null,
   drift: [],
   cash: { deployable: '0.00', emergency: '0.00', reserved: '0.00', total: '0.00' },
   net_worth: '0.00',
@@ -80,7 +84,7 @@ const held: Schemas['PortfolioOut'] = {
   funds: [
     {
       fund: fundRef(parag),
-      role: 'target',
+      role: 'outside',
       units: '90.000',
       cost: '10000.00',
       realised: '2500.00',
@@ -95,16 +99,26 @@ const held: Schemas['PortfolioOut'] = {
     },
   ],
   allocation: [{ asset: 'equity', value: '14400.00', share: '100.00' }],
-  target: { id: 1, name: 'Core' },
-  drift: [
-    { fund: fundRef(parag), weight: '60.00', value: '14400.00', share: '100.00', drift: '40.00' },
-    { fund: fundRef(nifty), weight: '40.00', value: '0.00', share: '0.00', drift: '-40.00' },
-  ],
   cash: { deployable: '4000.00', emergency: '20000.00', reserved: '0.00', total: '24000.00' },
   net_worth: '38400.00',
   nav_oldest: '2026-10-22',
   nav_newest: '2026-10-23',
   last_sync: '2026-10-23T18:00:00Z',
+}
+
+// The same money as one bucket following a 60 / 40 model.
+const inBucket: Schemas['PortfolioOut'] = {
+  ...held,
+  funds: held.funds.map((fund) => ({ ...fund, role: 'target' })),
+  bucket: { id: 4, name: 'Retirement', paper: false },
+  model: { id: 1, name: 'Core' },
+  model_returns: returns({ value: '14040.00', gain: '6540.00' }),
+  ahead_of_model: '360.00',
+  sips: { monthly: '0.00', count: 0, next_date: null, next_fund: null },
+  drift: [
+    { fund: fundRef(parag), weight: '60.00', value: '14400.00', share: '100.00', drift: '40.00' },
+    { fund: fundRef(nifty), weight: '40.00', value: '0.00', share: '0.00', drift: '-40.00' },
+  ],
 }
 
 const holdingRow = {
@@ -163,7 +177,6 @@ test('Portfolio shows value, gain, the day and XIRR exactly as the API sends the
   expect(within(row).getByText('-₹120.50')).toBeInTheDocument() // day
   expect(within(row).getByText('₹900.00')).toBeInTheDocument() // vs benchmark
   expect(within(row).getByText('100.00%')).toBeInTheDocument() // weight
-  expect(within(row).getByText('of 60.00%')).toBeInTheDocument() // target
   expect(within(row).getByText(/1 SIP/)).toBeInTheDocument()
   expect(screen.getByRole('region', { name: 'Allocation' })).toHaveTextContent('Equity')
 })
@@ -189,18 +202,81 @@ test("the value chart shows the range's gain and return from the API", async () 
   )
 })
 
-test('the target model shows each fund against its weight, with Invest', async () => {
-  fakeApi({
-    'GET /api/v1/portfolio': () => held,
+test('one bucket shows against its model, each fund against its weight, with Invest', async () => {
+  const calls = fakeApi({
+    'GET /api/v1/buckets': () => [bucket(), bucket({ id: 6, name: 'Try', paper: true })],
+    'GET /api/v1/portfolio': (request) =>
+      new URL(request.url).searchParams.get('bucket_id') === '4' ? inBucket : held,
     'GET /api/v1/portfolio/history': () => history,
     'GET /api/v1/holdings': () => [holdingRow],
   })
   renderAt('/')
 
-  const target = await screen.findByRole('region', { name: 'Target model' })
-  expect(within(target).getByText(/of 40\.00% · −40\.00 pts/)).toBeInTheDocument()
-  expect(within(target).getByRole('link', { name: 'Invest' })).toHaveAttribute('href', '/invest')
-  expect(within(target).getByRole('link', { name: 'Core' })).toHaveAttribute('href', '/models/1')
+  await screen.findByText('Value', { selector: 'dt' })
+  expect(screen.queryByText('vs model', { selector: 'dt' })).not.toBeInTheDocument()
+  expect(screen.queryByRole('region', { name: 'Model' })).not.toBeInTheDocument()
+  await userEvent.selectOptions(await screen.findByLabelText('Bucket'), 'Retirement')
+
+  expect(await screen.findByText('vs model', { selector: 'dt' })).toBeInTheDocument()
+  expect(within(stat('vs model')).getByText('₹360.00')).toBeInTheDocument()
+  expect(within(stat('vs model')).getByText('Same money: ₹14,040.00')).toBeInTheDocument()
+  expect(screen.queryByText('SIPs a month', { selector: 'dt' })).not.toBeInTheDocument()
+  const model = screen.getByRole('region', { name: 'Model' })
+  expect(within(model).getByText(/of 40\.00% · −40\.00 pts/)).toBeInTheDocument()
+  expect(within(model).getByRole('link', { name: 'Invest' })).toHaveAttribute(
+    'href',
+    '/invest?bucket=4',
+  )
+  expect(within(model).getByRole('link', { name: 'Core' })).toHaveAttribute('href', '/models/1')
+  const table = screen.getByRole('table', { name: 'Holdings' })
+  expect(within(table).getByText('of 60.00%')).toBeInTheDocument()
+  for (const path of ['/api/v1/portfolio?', '/api/v1/holdings?', '/api/v1/portfolio/history?']) {
+    const asked = calls.some((call) => call.url.includes(path) && call.url.includes('bucket_id=4'))
+    expect(asked).toBe(true)
+  }
+})
+
+test('the Buckets tab lists every bucket and opens one', async () => {
+  fakeApi({
+    'GET /api/v1/buckets': () => [
+      bucket(),
+      bucket({ id: 6, name: 'Try', paper: true, model: null }),
+    ],
+    'GET /api/v1/portfolio': () => inBucket,
+    'GET /api/v1/portfolio/history': () => history,
+    'GET /api/v1/holdings': () => [holdingRow],
+  })
+  renderAt('/buckets')
+
+  const table = await screen.findByRole('table', { name: 'Buckets' })
+  const row = within(table).getByText('Retirement').closest('tr')!
+  expect(within(row).getByText('Core')).toBeInTheDocument()
+  expect(within(row).getByText('₹360.00')).toBeInTheDocument()
+  expect(within(table).getByText('Paper')).toBeInTheDocument()
+  await userEvent.click(within(row).getByText('₹20,400.00'))
+
+  expect(await screen.findByLabelText('Bucket')).toHaveValue('4')
+})
+
+test('making a bucket sends its name, model and paper', async () => {
+  const calls = fakeApi({
+    'GET /api/v1/buckets': () => [bucket()],
+    'GET /api/v1/models': () => [model()],
+    'POST /api/v1/buckets': () =>
+      Response.json(bucket({ id: 7, name: 'Try', paper: true }), { status: 201 }),
+  })
+  renderAt('/buckets')
+
+  await userEvent.click(await screen.findByRole('button', { name: 'New bucket' }))
+  const form = screen.getByRole('form', { name: 'New bucket' })
+  await userEvent.type(within(form).getByLabelText('Name'), 'Try')
+  await userEvent.selectOptions(within(form).getByLabelText('Model'), 'Core')
+  await userEvent.click(within(form).getByRole('radio', { name: 'Paper' }))
+  await userEvent.click(within(form).getByRole('button', { name: 'Make bucket' }))
+
+  expect(await screen.findByText('Try made')).toBeInTheDocument()
+  const request = calls.find((call) => call.method === 'POST')!
+  expect(await request.json()).toEqual({ name: 'Try', model_id: 1, paper: true })
 })
 
 test('with nothing held, Portfolio shows no totals', async () => {
@@ -231,24 +307,15 @@ test('the fund page shows its returns next to the benchmark', async () => {
   expect(within(stat('In the benchmark')).getByText('₹13,500.00')).toBeInTheDocument()
 })
 
-test('the target model shows how far each fund is from its weight', async () => {
+test('a model lists the buckets following it, each against the model', async () => {
   fakeApi({
     'GET /api/v1/models': () => [model()],
-    'GET /api/v1/plan/settings': () => ({
-      target_model: { id: 1, name: 'Core' },
-      emergency_goal: '0.00',
-      emergency_fund: null,
-      stagger_fund: null,
-      stagger_threshold: '500000.00',
-      stagger_months: 6,
-      min_per_fund: '500.00',
-      updated_at: '2026-10-25T05:00:00Z',
-    }),
-    'GET /api/v1/portfolio': () => held,
+    'GET /api/v1/buckets': () => [bucket(), bucket({ id: 6, name: 'House', model: null })],
   })
   renderAt('/models/1')
 
-  const funds = await screen.findByRole('table', { name: 'Funds' })
-  expect(await within(funds).findByText('−40.00 pts')).toBeInTheDocument()
-  expect(within(funds).getByText('+40.00 pts')).toBeInTheDocument()
+  const buckets = await screen.findByRole('table', { name: 'Buckets' })
+  const row = within(buckets).getByText('Retirement').closest('tr')!
+  expect(within(row).getByText('₹360.00')).toBeInTheDocument()
+  expect(within(buckets).queryByText('House')).not.toBeInTheDocument()
 })

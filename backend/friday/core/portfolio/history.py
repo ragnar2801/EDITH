@@ -139,6 +139,24 @@ def replay(series: list[tuple[date, Decimal]], flows: list[Flow], on: date) -> R
     return returns([Flow(move.date, move.flow) for move in moves], end.value, on)
 
 
+def replay_split(
+    split: list[tuple[Decimal, list[tuple[date, Decimal]]]], flows: list[Flow], on: date
+) -> Returns | None:
+    """Returns of the same money split over several funds by weight (percentages adding up
+    to 100): each fund gets its share of every flow, as in :func:`mirror`, and nothing is
+    rebalanced. ``None`` when a fund has no NAV on or before the first flow."""
+    moved: list[Move] = []
+    value = ZERO
+    for weight, series in split:
+        moves = mirror(series, [Flow(f.date, f.amount * weight / HUNDRED) for f in flows])
+        if moves is None:
+            return None
+        [end] = daily(moves, series, [on])
+        value += end.value
+        moved.extend(moves)
+    return returns([Flow(move.date, move.flow) for move in moved], value, on)
+
+
 def change(points: list[Point], start: date | None = None) -> Change | None:
     """Gain and time-weighted return from the last point on or before ``start`` (or from
     nothing, before the first point) to the last point. ``None`` without two points to

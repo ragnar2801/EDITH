@@ -491,6 +491,149 @@
         "title": "BenchmarkOut",
         "type": "object"
       },
+      "BucketIn": {
+        "properties": {
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "paper": {
+            "default": false,
+            "title": "Paper",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "BucketIn",
+        "type": "object"
+      },
+      "BucketOut": {
+        "properties": {
+          "ahead_of_model": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ahead Of Model"
+          },
+          "cost": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Cost",
+            "type": "string"
+          },
+          "from_fm": {
+            "title": "From Fm",
+            "type": "boolean"
+          },
+          "gain": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gain"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "paper": {
+            "title": "Paper",
+            "type": "boolean"
+          },
+          "purchases": {
+            "title": "Purchases",
+            "type": "integer"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "paper",
+          "from_fm",
+          "model",
+          "purchases",
+          "cost",
+          "value",
+          "gain",
+          "ahead_of_model"
+        ],
+        "title": "BucketOut",
+        "type": "object"
+      },
+      "BucketRef": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "paper": {
+            "title": "Paper",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "paper"
+        ],
+        "title": "BucketRef",
+        "type": "object"
+      },
       "Candidate": {
         "description": "A split with its figures from the exact engine.",
         "properties": {
@@ -2504,6 +2647,17 @@
             "title": "Amount",
             "type": "string"
           },
+          "bucket_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bucket Id"
+          },
           "buy_date": {
             "format": "date",
             "title": "Buy Date",
@@ -2564,6 +2718,16 @@
             "pattern": "^-?\\d+(\\.\\d+)?$",
             "title": "Amount",
             "type": "string"
+          },
+          "bucket": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BucketRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "buy_date": {
             "format": "date",
@@ -2666,6 +2830,7 @@
           "skipped",
           "note",
           "source",
+          "bucket",
           "sales"
         ],
         "title": "LotOut",
@@ -2677,6 +2842,17 @@
             "pattern": "^-?\\d+(\\.\\d+)?$",
             "title": "Amount",
             "type": "string"
+          },
+          "bucket_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bucket Id"
           },
           "buy_date": {
             "format": "date",
@@ -3517,6 +3693,48 @@
         "title": "OverrideIn",
         "type": "object"
       },
+      "PaperBuyIn": {
+        "properties": {
+          "amount": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Amount",
+            "type": "string"
+          },
+          "bucket_id": {
+            "title": "Bucket Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bucket_id",
+          "amount"
+        ],
+        "title": "PaperBuyIn",
+        "type": "object"
+      },
+      "PaperBuyOut": {
+        "properties": {
+          "bucket": {
+            "$ref": "#/components/schemas/BucketRef"
+          },
+          "invested": {
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Invested",
+            "type": "string"
+          },
+          "purchases": {
+            "title": "Purchases",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "bucket",
+          "purchases",
+          "invested"
+        ],
+        "title": "PaperBuyOut",
+        "type": "object"
+      },
       "PlanFundOut": {
         "properties": {
           "fund": {
@@ -3624,8 +3842,15 @@
               }
             ],
             "title": "Amount"
+          },
+          "bucket_id": {
+            "title": "Bucket Id",
+            "type": "integer"
           }
         },
+        "required": [
+          "bucket_id"
+        ],
         "title": "PlanIn",
         "type": "object"
       },
@@ -3664,6 +3889,9 @@
             "pattern": "^-?\\d+(\\.\\d+)?$",
             "title": "Amount",
             "type": "string"
+          },
+          "bucket": {
+            "$ref": "#/components/schemas/BucketRef"
           },
           "emergency": {
             "$ref": "#/components/schemas/EmergencyOut"
@@ -3740,6 +3968,7 @@
         },
         "required": [
           "amount",
+          "bucket",
           "model",
           "emergency",
           "emergency_topup",
@@ -3771,6 +4000,18 @@
             ],
             "title": "Ahead"
           },
+          "ahead_of_model": {
+            "anyOf": [
+              {
+                "pattern": "^-?\\d+(\\.\\d+)?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ahead Of Model"
+          },
           "allocation": {
             "items": {
               "$ref": "#/components/schemas/AssetOut"
@@ -3792,6 +4033,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/FundRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bucket": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BucketRef"
               },
               {
                 "type": "null"
@@ -3849,6 +4100,26 @@
             "title": "Missing Nav",
             "type": "array"
           },
+          "model": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model_returns": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReturnsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "nav_newest": {
             "anyOf": [
               {
@@ -3896,16 +4167,6 @@
           "sips": {
             "$ref": "#/components/schemas/SipsOut"
           },
-          "target": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/TargetOut"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "unrealised": {
             "anyOf": [
               {
@@ -3931,7 +4192,10 @@
           "sips",
           "funds",
           "allocation",
-          "target",
+          "bucket",
+          "model",
+          "model_returns",
+          "ahead_of_model",
           "drift",
           "cash",
           "net_worth",
@@ -4493,17 +4757,6 @@
               }
             ],
             "title": "Stagger Threshold"
-          },
-          "target_model_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Target Model Id"
           }
         },
         "required": [
@@ -4562,16 +4815,6 @@
             ],
             "title": "Stagger Threshold"
           },
-          "target_model": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ModelRef"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "updated_at": {
             "format": "date-time",
             "title": "Updated At",
@@ -4579,7 +4822,6 @@
           }
         },
         "required": [
-          "target_model",
           "emergency_goal",
           "emergency_fund",
           "stagger_fund",
@@ -4623,6 +4865,17 @@
             "pattern": "^-?\\d+(\\.\\d+)?$",
             "title": "Amount",
             "type": "string"
+          },
+          "bucket_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bucket Id"
           },
           "day": {
             "maximum": 28.0,
@@ -4674,6 +4927,17 @@
             "pattern": "^-?\\d+(\\.\\d+)?$",
             "title": "Amount",
             "type": "string"
+          },
+          "bucket_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bucket Id"
           },
           "day": {
             "maximum": 28.0,
@@ -4735,6 +4999,16 @@
             "title": "Amount",
             "type": "string"
           },
+          "bucket": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BucketRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "day": {
             "title": "Day",
             "type": "integer"
@@ -4778,6 +5052,7 @@
         },
         "required": [
           "id",
+          "bucket",
           "amount",
           "day",
           "start_date",
@@ -5131,24 +5406,6 @@
           "results"
         ],
         "title": "SyncRunOut",
-        "type": "object"
-      },
-      "TargetOut": {
-        "properties": {
-          "id": {
-            "title": "Id",
-            "type": "integer"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "name"
-        ],
-        "title": "TargetOut",
         "type": "object"
       },
       "TrackedFundOut": {
@@ -5688,6 +5945,168 @@
         ]
       }
     },
+    "/api/v1/buckets": {
+      "get": {
+        "description": "Real buckets first, then paper ones, with what each holds.",
+        "operationId": "listBuckets",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BucketOut"
+                  },
+                  "title": "Response Listbuckets",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "List All",
+        "tags": [
+          "buckets"
+        ]
+      },
+      "post": {
+        "operationId": "createBucket",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BucketIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BucketOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Create",
+        "tags": [
+          "buckets"
+        ]
+      }
+    },
+    "/api/v1/buckets/{bucket_id}": {
+      "delete": {
+        "description": "Delete a bucket. A paper bucket's purchases and SIPs go with it; a real bucket's stay,\nin no bucket.",
+        "operationId": "deleteBucket",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bucket_id",
+            "required": true,
+            "schema": {
+              "title": "Bucket Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Delete",
+        "tags": [
+          "buckets"
+        ]
+      },
+      "put": {
+        "description": "Rename it or change its model. Paper or real changes only while it's empty.",
+        "operationId": "updateBucket",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "bucket_id",
+            "required": true,
+            "schema": {
+              "title": "Bucket Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BucketIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BucketOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Update",
+        "tags": [
+          "buckets"
+        ]
+      }
+    },
     "/api/v1/cash": {
       "get": {
         "description": "My cash accounts, totals per earmark, and the emergency money against its goal.",
@@ -5953,8 +6372,26 @@
     },
     "/api/v1/holdings": {
       "get": {
-        "description": "Every fund I have a lot or a SIP in, with units and cost of what I still hold.",
+        "description": "Every fund I have real money in (a lot or a SIP outside paper buckets), or one bucket\nhas, with units and cost of what is still held.",
         "operationId": "listHoldings",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "bucket_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Bucket Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -5989,7 +6426,7 @@
     },
     "/api/v1/holdings/{instrument_id}": {
       "get": {
-        "description": "One fund's lots (oldest first), with what was sold from each, and its SIPs.",
+        "description": "One fund's lots (oldest first), with what was sold from each, and its SIPs, paper\nones too.",
         "operationId": "getHolding",
         "parameters": [
           {
@@ -7120,7 +7557,7 @@
     },
     "/api/v1/plan": {
       "post": {
-        "description": "Where new cash should go: emergency top-up first, then the funds furthest below\nthe target split, never selling. Large amounts come with a monthly stagger\nplan. Nothing is saved.",
+        "description": "Where new cash should go in a bucket: emergency top-up first (real buckets), then the\nfunds of its model furthest below their weights, never selling. Large amounts in a real\nbucket come with a monthly stagger plan. Nothing is saved.",
         "operationId": "makeCashPlan",
         "requestBody": {
           "content": {
@@ -7160,9 +7597,51 @@
         ]
       }
     },
+    "/api/v1/plan/paper": {
+      "post": {
+        "description": "Buy a paper bucket's plan for the amount: one purchase per fund that gets money, at\nits latest NAV.",
+        "operationId": "buyPlanOnPaper",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaperBuyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaperBuyOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "4XX": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Problem details (RFC 9457)"
+          }
+        },
+        "summary": "Buy Paper",
+        "tags": [
+          "cash"
+        ]
+      }
+    },
     "/api/v1/plan/settings": {
       "get": {
-        "description": "Target model, emergency goal and fund, and the staggering rule.",
+        "description": "Emergency goal and fund, the minimum per fund and the staggering rule.",
         "operationId": "getPlanSettings",
         "responses": {
           "200": {
@@ -7233,7 +7712,26 @@
     },
     "/api/v1/portfolio": {
       "get": {
+        "description": "Real money (purchases in no bucket or a real one), or one bucket's.",
         "operationId": "getPortfolio",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "bucket_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Bucket Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -7264,7 +7762,7 @@
     },
     "/api/v1/portfolio/history": {
       "get": {
-        "description": "Value, invested and the benchmark over time, from ``start`` (or the first purchase)\nto the latest NAV date, with the gain and return over that range.",
+        "description": "Value, invested and the benchmark over time, from ``start`` (or the first purchase)\nto the latest NAV date, with the gain and return over that range. Real money, or one\nbucket.",
         "operationId": "getPortfolioHistory",
         "parameters": [
           {
@@ -7282,6 +7780,22 @@
                 }
               ],
               "title": "Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "bucket_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Bucket Id"
             }
           }
         ],

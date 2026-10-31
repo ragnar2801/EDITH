@@ -1,7 +1,10 @@
-"""The portfolio view: what my funds are
-worth, what they made, how they did against the same money in the Nifty 50 index fund,
-how they moved on the last NAV date, how they split over asset classes, how far each is
-from my target split, and the same over time.
+"""The portfolio view: what my funds are worth, what they made, how they did against the
+same money in the benchmark fund, how they moved on the last NAV date, how they split over
+asset classes, and the same over time.
+
+The view is of real money (purchases in no bucket or a real one) or of one bucket. A
+bucket with a model also shows how far each of the model's funds is from its weight, and
+the same money split by the model's weights on the same dates.
 
 Every figure is worked out here; the UI only shows them.
 """
@@ -13,6 +16,7 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from friday.core.buckets.models import Bucket
 from friday.core.cash.service import cash_total, get_settings
 from friday.core.holdings.models import Lot
 from friday.core.holdings.service import (
@@ -38,6 +42,7 @@ from friday.core.portfolio.history import (
     daily,
     mirror,
     replay,
+    replay_split,
     thin,
 )
 from friday.core.portfolio.returns import ZERO, Flow, Returns, money, pct, returns
@@ -50,7 +55,7 @@ EARMARKS = ("deployable", "emergency", "reserved")
 class FundPosition:
     instrument: Instrument
     role: str
-    """``target`` (in my target split), ``emergency`` (the emergency fund) or ``outside``."""
+    """``target`` (in the bucket's model), ``emergency`` (the emergency fund) or ``outside``."""
     units: Decimal
     cost: Decimal
     """What the units still held cost."""
@@ -93,7 +98,7 @@ class Drift:
     weight: Decimal
     value: Decimal
     share: Decimal | None
-    """Share of what I hold of the target split's funds, in percent."""
+    """Share of what the bucket holds of the model's funds, in percent."""
     drift: Decimal | None
     """``share - weight``, in percentage points: below 0 is under target."""
 
@@ -117,7 +122,11 @@ class Portfolio:
     benchmark_fund: Instrument | None
     benchmark: Returns | None
     allocation: list[AssetSlice]
-    target: Model | None
+    bucket: Bucket | None
+    model: Model | None
+    """The bucket's model."""
+    model_returns: Returns | None
+    """The same flows split by the model's weights."""
     drift: list[Drift]
     cash: dict[str, Decimal]
     day: Change | None
@@ -128,6 +137,10 @@ class Portfolio:
     @property
     def ahead(self) -> Decimal | None:
         return ahead(self.returns, self.benchmark)
+
+    @property
+    def ahead_of_model(self) -> Decimal | None:
+        return ahead(self.returns, self.model_returns)
 
     @property
     def nav_dates(self) -> tuple[date, date] | None:
@@ -307,23 +320,36 @@ def _sort_key(fund: FundPosition):
     return (fund.value is None, -(fund.value or ZERO), fund.instrument.name)
 
 
-def portfolio(session: Session) -> Portfolio:
+def _benchmark(session: Session, model: Model | None) -> Instrument | None:
+    return (model.benchmark if model else None) or default_benchmark(session)
+
+
+def _model_returns(session: Session, model: Model, flows: list[Flow], on: date) -> Returns | None:
+    split = [(m.weight_pct, nav_series(session, m.instrument_id)) for m in model.funds]
+    if not flows or not all(series for _, series in split):
+        return None
+    return replay_split(split, flows, on)
+
+
+def portfolio(session: Session, bucket: Bucket | None = None) -> Portfolio:
+    """Real money, or one bucket's."""
     settings = get_settings(session)
-    target = settings.target_model
-    in_target = {m.instrument_id for m in target.funds} if target else set()
-    benchmark_fund = (target.benchmark if target else None) or default_benchmark(session)
+    model = bucket.model if bucket else None
+    in_model = {m.instrument_id for m in model.funds} if model else set()
+    emergency_id = None if bucket and bucket.paper else settings.emergency_fund_id
+    benchmark_fund = _benchmark(session, model)
     series = nav_series(session, benchmark_fund.id) if benchmark_fund else None
 
     funds, navs = [], {}
-    holdings = list_holdings(session)
+    holdings = list_holdings(session, bucket.id if bucket else None)
     for held in holdings:
         if not any(not lot.skipped for lot in held.lots):
             continue  # a SIP with no instalment yet
         role = (
             "target"
-            if held.instrument.id in in_target
+            if held.instrument.id in in_model
             else "emergency"
-            if held.instrument.id == settings.emergency_fund_id
+            if held.instrument.id == emergency_id
             else "outside"
         )
         navs[held.instrument.id] = _last_navs(session, held.instrument.id, 2)
@@ -331,13 +357,15 @@ def portfolio(session: Session) -> Portfolio:
 
     priced, day = _day([f for f in funds if f.returns], navs)
     funds = sorted([*priced, *(f for f in funds if f.returns is None)], key=_sort_key)
-    overall = same = None
+    overall = same = split = None
     if priced:
         on = max(f.returns.on for f in priced)
         flows = [flow for f in priced for flow in _flows(f.lots)[0]]
         overall = returns(flows, sum((f.value for f in priced), ZERO), on)
         if series:
             same = replay(series, flows, on)
+        if model:
+            split = _model_returns(session, model, flows, on)
     return Portfolio(
         funds=funds,
         returns=overall,
@@ -346,8 +374,10 @@ def portfolio(session: Session) -> Portfolio:
         benchmark_fund=benchmark_fund if series else None,
         benchmark=same,
         allocation=_allocation(priced),
-        target=target,
-        drift=_drift(target, funds) if target else [],
+        bucket=bucket,
+        model=model,
+        model_returns=split,
+        drift=_drift(model, funds) if model else [],
         cash={earmark: money(cash_total(session, earmark)) for earmark in EARMARKS},
         day=day,
         sips=_sips(holdings),
@@ -366,15 +396,13 @@ class History:
     benchmark_change: Change | None
 
 
-def history(session: Session, start: date | None = None) -> History:
+def history(session: Session, start: date | None = None, bucket: Bucket | None = None) -> History:
     """Value, cost and the benchmark's value on every NAV date from the first purchase (or
-    the last date on or before ``start``) to the latest NAV date. Funds without a
-    stored NAV are left out, as in the totals."""
-    settings = get_settings(session)
-    target = settings.target_model
-    benchmark_fund = (target.benchmark if target else None) or default_benchmark(session)
+    the last date on or before ``start``) to the latest NAV date, of real money or one
+    bucket. Funds without a stored NAV are left out, as in the totals."""
+    benchmark_fund = _benchmark(session, bucket.model if bucket else None)
     held = []
-    for holding in list_holdings(session):
+    for holding in list_holdings(session, bucket.id if bucket else None):
         series = nav_series(session, holding.instrument.id)
         moves = _moves(holding.lots)
         if series and moves:

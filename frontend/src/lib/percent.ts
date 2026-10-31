@@ -17,6 +17,12 @@ export function toneOf(value: string | null | undefined): 'positive' | 'negative
   return value.startsWith('-') ? 'negative' : 'positive'
 }
 
+/** The text colour for a gain or loss figure. */
+export function toneClass(value: string | null | undefined): string {
+  const tone = toneOf(value)
+  return tone === 'positive' ? 'text-positive' : tone === 'negative' ? 'text-destructive' : ''
+}
+
 /** "-2.50" → "−2.50 pts": the figure is the API's, this only adds the sign and unit. */
 export function formatPoints(value: string | null | undefined): string {
   if (value === null || value === undefined) return '—'

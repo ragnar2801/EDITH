@@ -174,6 +174,7 @@ export function lot(extra: Partial<Schemas['LotOut']> = {}): Schemas['LotOut'] {
     cost_remaining: '5000.00',
     edited: false,
     source: null,
+    bucket: null,
     skipped: false,
     note: null,
     sales: [],
@@ -190,6 +191,7 @@ export function holding(extra: Partial<Schemas['HoldingOut']> = {}): Schemas['Ho
     sips: [
       {
         id: 3,
+        bucket: null,
         amount: '5000',
         day: 5,
         start_date: '2026-01-01',
@@ -311,6 +313,22 @@ export function backtestRun(
       },
       warnings: [],
     },
+    ...extra,
+  }
+}
+
+export function bucket(extra: Partial<Schemas['BucketOut']> = {}): Schemas['BucketOut'] {
+  return {
+    id: 4,
+    name: 'Retirement',
+    paper: false,
+    from_fm: false,
+    model: { id: 1, name: 'Core' },
+    purchases: 2,
+    cost: '15000.00',
+    value: '20400.00',
+    gain: '5400.00',
+    ahead_of_model: '360.00',
     ...extra,
   }
 }

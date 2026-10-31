@@ -1,7 +1,8 @@
 """Reading the lots feed FM sends: every investment lot with its sales, as JSON.
 
 Each lot carries FM's own row (every column of ``lots``) with its ``security``,
-``account``, ``currency`` and ``acquisition`` rows nested in, and ``sales``: each sell
+``account``, ``currency`` and ``acquisition`` rows nested in, the ``bucket`` its purchase
+was put in (``id`` and ``name``; null or missing for none), and ``sales``: each sell
 allocation with its sell ``transaction``. Fields are looked up by name, so fields FM adds
 later are ignored; only a renamed or removed one breaks the import. Numbers are read as
 decimals straight from the JSON and rounded to the places Friday keeps, so FM's float noise
@@ -33,6 +34,8 @@ class FmLot:
     amount: Decimal
     nav: Decimal
     units: Decimal
+    bucket_id: str | None = None
+    bucket_name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -155,6 +158,8 @@ def _lot(item: dict, security: dict, feed: FmFeed) -> FmLot | None:
     if problem:
         feed.warnings.append(f"A purchase of {name} {problem}; it was left out.")
         return None
+    bucket = item.get("bucket") or {}
+    bucket_id = str(bucket.get("id") or "").strip() or None
     return FmLot(
         id=str(item["id"]),
         amfi_code=code,
@@ -164,6 +169,8 @@ def _lot(item: dict, security: dict, feed: FmFeed) -> FmLot | None:
         amount=amount,
         nav=nav,
         units=units,
+        bucket_id=bucket_id,
+        bucket_name=str(bucket.get("name") or "").strip() if bucket_id else None,
     )
 
 

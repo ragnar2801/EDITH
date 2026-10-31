@@ -5,7 +5,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 
 import type { Schemas } from '@/api/client'
 import { routes } from '@/app/routes'
-import { fakeApi, fundRef, parag, problem } from '@/test/fake-api'
+import { bucket, fakeApi, fundRef, parag, problem } from '@/test/fake-api'
 
 function renderAt(path: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -47,7 +47,6 @@ const cash: Schemas['CashOut'] = {
 }
 
 const settings: Schemas['SettingsOut'] = {
-  target_model: { id: 4, name: 'Core' },
   emergency_goal: '150000.00',
   emergency_fund: null,
   stagger_fund: null,
@@ -75,7 +74,8 @@ function planRow(fund: typeof parag, extra: Partial<Schemas['PlanFundOut']>) {
 
 const plan: Schemas['PlanOut'] = {
   amount: '650000.00',
-  model: { id: 4, name: 'Core' },
+  bucket: { id: 4, name: 'Retirement', paper: false },
+  model: { id: 1, name: 'Core' },
   emergency,
   emergency_topup: '50000.00',
   to_funds: '600000.00',
@@ -99,7 +99,7 @@ const plan: Schemas['PlanOut'] = {
 test('the plan shows the API figures, with a stagger table for large amounts', async () => {
   const calls = fakeApi({
     'GET /api/v1/cash': () => cash,
-    'GET /api/v1/plan/settings': () => settings,
+    'GET /api/v1/buckets': () => [bucket()],
     'POST /api/v1/plan': () => plan,
   })
   renderAt('/invest')
@@ -120,13 +120,13 @@ test('the plan shows the API figures, with a stagger table for large amounts', a
   expect(screen.getByText(/From a liquid or arbitrage fund · 2 months/)).toBeInTheDocument()
 
   const request = calls.find((call) => call.url.endsWith('/api/v1/plan'))!
-  expect(await request.json()).toEqual({ amount: '650000' })
+  expect(await request.json()).toEqual({ bucket_id: 4, amount: '650000' })
 })
 
 test('a blank amount asks for all investable cash, and errors are shown', async () => {
   const calls = fakeApi({
     'GET /api/v1/cash': () => cash,
-    'GET /api/v1/plan/settings': () => settings,
+    'GET /api/v1/buckets': () => [bucket()],
     'POST /api/v1/plan': () => problem(422, 'Friday has no NAV for Parag Parikh; sync NAVs first.'),
   })
   renderAt('/invest')
@@ -136,19 +136,66 @@ test('a blank amount asks for all investable cash, and errors are shown', async 
 
   expect(await screen.findByRole('alert')).toHaveTextContent('sync NAVs first')
   const request = calls.find((call) => call.url.endsWith('/api/v1/plan'))!
-  expect(await request.json()).toEqual({})
+  expect(await request.json()).toEqual({ bucket_id: 4 })
 })
 
-test('without a target model, Invest asks for one', async () => {
+test('without a bucket, Invest offers to make one', async () => {
   fakeApi({
     'GET /api/v1/cash': () => cash,
-    'GET /api/v1/plan/settings': () => ({ ...settings, target_model: null }),
+    'GET /api/v1/buckets': () => [],
+    'GET /api/v1/models': () => [],
   })
   renderAt('/invest')
 
-  expect(await screen.findByText('Choose a target model')).toBeInTheDocument()
-  expect(screen.getByRole('link', { name: 'Choose' })).toHaveAttribute('href', '/models')
+  expect(await screen.findByText('Make a bucket to invest into')).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'New bucket' }))
+  expect(screen.getByRole('form', { name: 'New bucket' })).toBeInTheDocument()
   expect(screen.queryByRole('button', { name: 'Make plan' })).not.toBeInTheDocument()
+})
+
+test('a bucket without a model asks for one', async () => {
+  fakeApi({
+    'GET /api/v1/cash': () => cash,
+    'GET /api/v1/buckets': () => [bucket({ model: null })],
+  })
+  renderAt('/invest')
+
+  expect(await screen.findByText('Choose a model for Retirement')).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Make plan' })).not.toBeInTheDocument()
+})
+
+test('Invest plans for the bucket in the address, and buys a paper plan', async () => {
+  const paper = bucket({ id: 6, name: 'Try', paper: true })
+  const calls = fakeApi({
+    'GET /api/v1/cash': () => cash,
+    'GET /api/v1/buckets': () => [bucket(), paper],
+    'POST /api/v1/plan': () => ({
+      ...plan,
+      amount: '10000.00',
+      bucket: { id: 6, name: 'Try', paper: true },
+      emergency_topup: '0.00',
+      months: [],
+    }),
+    'POST /api/v1/plan/paper': () =>
+      Response.json(
+        { bucket: { id: 6, name: 'Try', paper: true }, purchases: 2, invested: '10000.00' },
+        { status: 201 },
+      ),
+  })
+  renderAt('/invest?bucket=6')
+
+  const amount = await screen.findByLabelText('Amount (₹)')
+  expect(amount).toHaveValue('') // paper money isn't investable cash
+  expect(screen.getByLabelText('Bucket')).toHaveValue('6')
+  await userEvent.type(amount, '10000')
+  await userEvent.click(screen.getByRole('button', { name: 'Make plan' }))
+  expect(await screen.findByRole('table', { name: 'Plan per fund' })).toBeInTheDocument()
+  expect(screen.queryByText('Emergency top-up')).not.toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Buy on paper' }))
+
+  expect(await screen.findByText('Bought ₹10,000.00 on paper in Try')).toBeInTheDocument()
+  const bought = calls.find((call) => call.url.endsWith('/api/v1/plan/paper'))!
+  expect(await bought.json()).toEqual({ bucket_id: 6, amount: '10000.00' })
 })
 
 test('the Cash tab shows what cash is for', async () => {
@@ -163,7 +210,6 @@ test('the Cash tab shows what cash is for', async () => {
 test('adding an account sends the balance as a string', async () => {
   const calls = fakeApi({
     'GET /api/v1/cash': () => cash,
-    'GET /api/v1/plan/settings': () => ({ ...settings, target_model: null }),
     'POST /api/v1/cash/accounts': () => Response.json(cash.accounts[0], { status: 201 }),
   })
   renderAt('/cash')

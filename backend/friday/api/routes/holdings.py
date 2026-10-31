@@ -2,20 +2,21 @@
 
 from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
-from typing import Literal
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from friday.api.deps import SessionDep
+from friday.api.routes.buckets import get_bucket, ref
 from friday.api.routes.models import _sentence
-from friday.api.schemas import CoverageOut, FundRef
+from friday.api.schemas import BucketRef, CoverageOut, FundRef
 from friday.core.holdings.models import Lot, LotSale, Sip
 from friday.core.holdings.service import (
+    ANY,
     CENT,
     BuyInput,
-    Holding,
     HoldingConflict,
     InvalidHolding,
     SaleInput,
@@ -73,11 +74,14 @@ class LotOut(BaseModel):
     note: str | None
     source: Literal["fm"] | None
     """Copied from the FM app: read-only here."""
+    bucket: BucketRef | None
+    """Its SIP's for an instalment; blank: real money in no bucket."""
     sales: list[SaleOut]
 
 
 class SipOut(BaseModel):
     id: int
+    bucket: BucketRef | None
     amount: Amount
     day: int
     start_date: date
@@ -101,8 +105,10 @@ class HoldingSummaryOut(BaseModel):
 class HoldingOut(BaseModel):
     fund: FundRef
     units: Units
+    """Real money only: paper buckets' units aren't counted."""
     cost: Amount
     lots: list[LotOut]
+    """Every lot, paper ones too."""
     sips: list[SipOut]
     coverage: CoverageOut
 
@@ -115,6 +121,8 @@ class LotIn(BaseModel):
     units: Units | None = None
     """Blank: amount ÷ NAV rounded to 3 places, as AMCs allot."""
     note: str | None = Field(default=None, max_length=200)
+    bucket_id: int | None = None
+    """Blank: no bucket. Ignored for a SIP instalment, which is in its SIP's bucket."""
 
 
 class LumpSumIn(LotIn):
@@ -132,6 +140,8 @@ class SipEditIn(BaseModel):
     start_date: date
     end_date: date | None = None
     note: str | None = Field(default=None, max_length=200)
+    bucket_id: int | None = None
+    """Blank: no bucket. Its instalments move with it."""
 
 
 class SipIn(SipEditIn):
@@ -181,6 +191,7 @@ def _lot(lot: Lot) -> LotOut:
         skipped=lot.skipped,
         note=lot.note,
         source=lot.source,
+        bucket=ref(lot.bucket) if lot.bucket else None,
         sales=[_sale(sale) for sale in lot.sales],
     )
 
@@ -188,6 +199,7 @@ def _lot(lot: Lot) -> LotOut:
 def _sip(sip: Sip) -> SipOut:
     return SipOut(
         id=sip.id,
+        bucket=ref(sip.bucket) if sip.bucket else None,
         amount=sip.amount,
         day=sip.day,
         start_date=sip.start_date,
@@ -198,21 +210,22 @@ def _sip(sip: Sip) -> SipOut:
     )
 
 
-def _out(session: Session, value: Holding) -> HoldingOut:
-    covered = coverage(session, [value.instrument.id])[value.instrument.id]
+def _out(session: Session, instrument: Instrument) -> HoldingOut:
+    real, every = holding(session, instrument), holding(session, instrument, ANY)
+    covered = coverage(session, [instrument.id])[instrument.id]
     return HoldingOut(
-        fund=_ref(value.instrument),
-        units=value.units,
-        cost=value.cost,
-        lots=[_lot(lot) for lot in value.lots],
-        sips=[_sip(sip) for sip in value.sips],
+        fund=_ref(instrument),
+        units=real.units,
+        cost=real.cost,
+        lots=[_lot(lot) for lot in every.lots],
+        sips=[_sip(sip) for sip in every.sips],
         coverage=CoverageOut(first=covered.first, last=covered.last, count=covered.count),
     )
 
 
 def _holding_out(session: Session, instrument: Instrument) -> HoldingOut:
     session.expire_all()  # relationships changed under the objects we loaded
-    return _out(session, holding(session, instrument))
+    return _out(session, instrument)
 
 
 def _get(session: Session, model, item_id: int, what: str):
@@ -245,6 +258,7 @@ def _buy(payload: LotIn) -> BuyInput:
         nav=payload.nav,
         units=payload.units,
         note=payload.note,
+        bucket_id=payload.bucket_id,
     )
 
 
@@ -255,13 +269,19 @@ def _sip_input(payload: SipEditIn) -> SipInput:
         start_date=payload.start_date,
         end_date=payload.end_date,
         note=payload.note,
+        bucket_id=payload.bucket_id,
     )
 
 
 @router.get("/holdings", operation_id="listHoldings")
-def list_all(session: SessionDep) -> list[HoldingSummaryOut]:
-    """Every fund I have a lot or a SIP in, with units and cost of what I still hold."""
-    values = list_holdings(session)
+def list_all(
+    session: SessionDep, bucket_id: Annotated[int | None, Query()] = None
+) -> list[HoldingSummaryOut]:
+    """Every fund I have real money in (a lot or a SIP outside paper buckets), or one bucket
+    has, with units and cost of what is still held."""
+    if bucket_id is not None:
+        get_bucket(session, bucket_id)
+    values = list_holdings(session, bucket_id)
     covered = coverage(session, [value.instrument.id for value in values])
     return [
         HoldingSummaryOut(
@@ -278,8 +298,9 @@ def list_all(session: SessionDep) -> list[HoldingSummaryOut]:
 
 @router.get("/holdings/{instrument_id}", operation_id="getHolding")
 def get(session: SessionDep, instrument_id: int) -> HoldingOut:
-    """One fund's lots (oldest first), with what was sold from each, and its SIPs."""
-    return _out(session, holding(session, _fund(session, instrument_id)))
+    """One fund's lots (oldest first), with what was sold from each, and its SIPs, paper
+    ones too."""
+    return _out(session, _fund(session, instrument_id))
 
 
 @router.post("/lots", status_code=201, operation_id="addLumpSum")

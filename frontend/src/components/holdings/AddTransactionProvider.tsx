@@ -30,13 +30,13 @@ const KIND_LABELS: Record<TransactionKind, string> = {
   sell: 'Sell',
 }
 
-type State = { fund: Schemas['FundRef'] | null; kind: TransactionKind } | null
+type State = { fund: Schemas['FundRef'] | null; kind: TransactionKind; bucket?: number } | null
 
 /** One Add transaction dialog for the whole app: pick a fund, a kind, fill in, save. */
 export function AddTransactionProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State>(null)
   const open = useCallback<OpenAddTransaction>(
-    (fund, kind = 'lump-sum') => setState({ fund: fund ?? null, kind }),
+    (fund, kind = 'lump-sum', bucket) => setState({ fund: fund ?? null, kind, bucket }),
     [],
   )
   const close = () => setState(null)
@@ -59,6 +59,7 @@ export function AddTransactionProvider({ children }: { children: ReactNode }) {
                 key={state.fund.id}
                 fund={state.fund}
                 kind={state.kind}
+                bucket={state.bucket}
                 onKind={(kind) => setState({ ...state, kind })}
                 onChangeFund={() => setState({ ...state, fund: null })}
                 onDone={close}
@@ -82,12 +83,14 @@ export function AddTransactionProvider({ children }: { children: ReactNode }) {
 function FundTransaction({
   fund,
   kind,
+  bucket,
   onKind,
   onChangeFund,
   onDone,
 }: {
   fund: Schemas['FundRef']
   kind: TransactionKind
+  bucket?: number
   onKind: (kind: TransactionKind) => void
   onChangeFund: () => void
   onDone: () => void
@@ -119,11 +122,11 @@ function FundTransaction({
       <ErrorText error={holding.error} />
       {holding.isSuccess &&
         (kind === 'sip' ? (
-          <SipForm holding={holding.data} onDone={onDone} />
+          <SipForm holding={holding.data} bucket={bucket} onDone={onDone} />
         ) : kind === 'sell' && canSell ? (
           <SellForm holding={holding.data} onDone={onDone} />
         ) : (
-          <LumpSumForm holding={holding.data} onDone={onDone} />
+          <LumpSumForm holding={holding.data} bucket={bucket} onDone={onDone} />
         ))}
     </div>
   )

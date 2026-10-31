@@ -12,12 +12,13 @@ import { Button } from '@/components/ui/button'
 import { useAddTransaction } from '@/hooks/use-add-transaction'
 import { fundPath, planLabel } from '@/lib/instruments'
 import { formatUnits, inr } from '@/lib/money'
-import { formatPercent, toneOf } from '@/lib/percent'
+import { formatPercent, toneClass } from '@/lib/percent'
 
-/** Every fund I hold, biggest first: what's invested, and (from the portfolio view) value,
- * gain, the day's move, XIRR, the gap to the benchmark, weight and target weight. */
-export function HoldingsTable({ portfolio }: { portfolio?: Portfolio }) {
-  const holdings = useHoldings()
+/** Every fund I hold (or one bucket holds), biggest first: what's invested, and (from the
+ * portfolio view) value, gain, the day's move, XIRR, the gap to the benchmark, weight and the
+ * model's weight. */
+export function HoldingsTable({ portfolio, bucket }: { portfolio?: Portfolio; bucket?: number }) {
+  const holdings = useHoldings(bucket)
   const addTransaction = useAddTransaction()
   const navigate = useNavigate()
 
@@ -29,7 +30,7 @@ export function HoldingsTable({ portfolio }: { portfolio?: Portfolio }) {
         icon={BriefcaseBusiness}
         title="No funds yet"
         action={
-          <Button onClick={() => addTransaction()}>
+          <Button onClick={() => addTransaction(undefined, 'lump-sum', bucket)}>
             <Plus /> Add transaction
           </Button>
         }
@@ -69,8 +70,7 @@ export function HoldingsTable({ portfolio }: { portfolio?: Portfolio }) {
           <span className="inline-flex items-center gap-1">
             Weight
             <InfoTip label="Weight">
-              Share of what your funds are worth; below it, the fund&apos;s weight in your target
-              model.
+              Share of what the funds are worth; below it, the fund&apos;s weight in the model.
             </InfoTip>
           </span>
         </Th>
@@ -110,7 +110,7 @@ export function HoldingsTable({ portfolio }: { portfolio?: Portfolio }) {
               </Td>
               <Td numeric>
                 {result ? (
-                  <span className={gainClass(result.gain)}>
+                  <span className={toneClass(result.gain)}>
                     {inr(result.gain)}
                     <span className="block text-xs">{formatPercent(result.return_pct)}</span>
                   </span>
@@ -120,7 +120,7 @@ export function HoldingsTable({ portfolio }: { portfolio?: Portfolio }) {
               </Td>
               <Td numeric>
                 {position?.day && !sold ? (
-                  <span className={gainClass(position.day.gain)}>
+                  <span className={toneClass(position.day.gain)}>
                     {inr(position.day.gain)}
                     <span className="block text-xs">{formatPercent(position.day.return_pct)}</span>
                   </span>
@@ -129,13 +129,13 @@ export function HoldingsTable({ portfolio }: { portfolio?: Portfolio }) {
                 )}
               </Td>
               <Td numeric>
-                <span className={gainClass(result?.xirr_pct)}>
+                <span className={toneClass(result?.xirr_pct)}>
                   {formatPercent(result?.xirr_pct)}
                 </span>
               </Td>
               <Td numeric>
                 {position?.ahead ? (
-                  <span className={gainClass(position.ahead)}>{inr(position.ahead)}</span>
+                  <span className={toneClass(position.ahead)}>{inr(position.ahead)}</span>
                 ) : (
                   '—'
                 )}
@@ -155,12 +155,12 @@ export function HoldingsTable({ portfolio }: { portfolio?: Portfolio }) {
                     {
                       label: 'Add lump sum',
                       icon: Plus,
-                      onSelect: () => addTransaction(row.fund, 'lump-sum'),
+                      onSelect: () => addTransaction(row.fund, 'lump-sum', bucket),
                     },
                     {
                       label: 'Start a SIP',
                       icon: Repeat,
-                      onSelect: () => addTransaction(row.fund, 'sip'),
+                      onSelect: () => addTransaction(row.fund, 'sip', bucket),
                     },
                     {
                       label: 'Sell',
@@ -182,9 +182,4 @@ export function HoldingsTable({ portfolio }: { portfolio?: Portfolio }) {
       </TBody>
     </Table>
   )
-}
-
-function gainClass(value: string | null | undefined) {
-  const tone = toneOf(value)
-  return tone === 'positive' ? 'text-positive' : tone === 'negative' ? 'text-destructive' : ''
 }

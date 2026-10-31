@@ -2,11 +2,20 @@ import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { toast } from 'sonner'
 
-import { useAddLumpSum, useSaveSip, useSell, useUpdateLot, type Holding } from '@/api/queries'
+import {
+  useAddLumpSum,
+  useBuckets,
+  useSaveSip,
+  useSell,
+  useUpdateLot,
+  type Holding,
+} from '@/api/queries'
 import { ErrorText, Field } from '@/components/Field'
 import { Button } from '@/components/ui/button'
 import { DialogFooter } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { NativeSelect } from '@/components/ui/native-select'
+import { bucketLabel } from '@/lib/buckets'
 import { hasUnits, KIND_LABELS, type Lot, type Sip } from '@/lib/holdings'
 import { formatUnits, inr } from '@/lib/money'
 import { formatDate, todayIst } from '@/lib/time'
@@ -66,6 +75,38 @@ function FormShell({
     </form>
   )
 }
+
+/** Which bucket a purchase or SIP is in: '' for none. Hidden until a bucket exists. A
+ * purchase that exists already moves only between real buckets, or only between paper ones. */
+function BucketField({
+  value,
+  onChange,
+  paper,
+}: {
+  value: string
+  onChange: (value: string) => void
+  paper?: boolean
+}) {
+  const buckets = useBuckets()
+  const choices = (buckets.data ?? []).filter((b) => paper === undefined || b.paper === paper)
+  if (choices.length === 0 && !value) return null
+  return (
+    <Field label="Bucket" info="Money set aside for a goal; paper buckets are pretend.">
+      {(id) => (
+        <NativeSelect id={id} value={value} onChange={(event) => onChange(event.target.value)}>
+          {!paper && <option value="">No bucket</option>}
+          {choices.map((bucket) => (
+            <option key={bucket.id} value={bucket.id}>
+              {bucketLabel(bucket)}
+            </option>
+          ))}
+        </NativeSelect>
+      )}
+    </Field>
+  )
+}
+
+const bucketId = (value: string) => (value ? Number(value) : null)
 
 type BuyDraft = { buy_date: string; amount: string; nav: string; units: string; note: string }
 
@@ -161,8 +202,18 @@ function buyBody(draft: BuyDraft) {
   }
 }
 
-export function LumpSumForm({ holding, onDone }: { holding: Holding; onDone: () => void }) {
+export function LumpSumForm({
+  holding,
+  bucket,
+  onDone,
+}: {
+  holding: Holding
+  /** The bucket it starts in. */
+  bucket?: number
+  onDone: () => void
+}) {
   const add = useAddLumpSum(holding)
+  const [inBucket, setInBucket] = useState(bucket ? String(bucket) : '')
   const [draft, setDraft] = useState<BuyDraft>({
     buy_date: defaultDate(holding),
     amount: '',
@@ -177,16 +228,20 @@ export function LumpSumForm({ holding, onDone }: { holding: Holding; onDone: () 
       pending={add.isPending}
       submit="Save"
       onSubmit={() =>
-        add.mutate(buyBody(draft), {
-          onSuccess: () => {
-            toast.success(`${inr(draft.amount.trim())} added to ${holding.fund.name}`)
-            onDone()
+        add.mutate(
+          { ...buyBody(draft), bucket_id: bucketId(inBucket) },
+          {
+            onSuccess: () => {
+              toast.success(`${inr(draft.amount.trim())} added to ${holding.fund.name}`)
+              onDone()
+            },
           },
-        })
+        )
       }
       onCancel={onDone}
     >
       <BuyFields draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} />
+      <BucketField value={inBucket} onChange={setInBucket} />
     </FormShell>
   )
 }
@@ -208,6 +263,7 @@ export function LotEditForm({
     units: lot.skipped ? '' : lot.units,
     note: lot.note ?? '',
   })
+  const [inBucket, setInBucket] = useState(lot.bucket ? String(lot.bucket.id) : '')
   return (
     <FormShell
       label="Purchase"
@@ -216,7 +272,10 @@ export function LotEditForm({
       submit="Save"
       onSubmit={() =>
         save.mutate(
-          { id: lot.id, body: { ...buyBody(draft), skipped: false } },
+          {
+            id: lot.id,
+            body: { ...buyBody(draft), bucket_id: bucketId(inBucket), skipped: false },
+          },
           {
             onSuccess: () => {
               toast.success('Purchase saved')
@@ -228,6 +287,9 @@ export function LotEditForm({
       onCancel={onDone}
     >
       <BuyFields draft={draft} update={(patch) => setDraft({ ...draft, ...patch })} />
+      {lot.kind === 'lump_sum' && (
+        <BucketField value={inBucket} onChange={setInBucket} paper={!!lot.bucket?.paper} />
+      )}
     </FormShell>
   )
 }
@@ -235,14 +297,18 @@ export function LotEditForm({
 export function SipForm({
   holding,
   sip,
+  bucket,
   onDone,
 }: {
   holding: Holding
   sip?: Sip
+  /** The bucket a new SIP starts in. */
+  bucket?: number
   onDone: () => void
 }) {
   const save = useSaveSip(holding)
   const [draft, setDraft] = useState({
+    bucket: sip ? (sip.bucket ? String(sip.bucket.id) : '') : bucket ? String(bucket) : '',
     amount: sip?.amount ?? '',
     day: String(sip?.day ?? 5),
     start_date: sip?.start_date ?? '',
@@ -266,6 +332,7 @@ export function SipForm({
               start_date: draft.start_date,
               end_date: draft.end_date || null,
               note: draft.note.trim() || null,
+              bucket_id: bucketId(draft.bucket),
             },
           },
           {
@@ -330,6 +397,11 @@ export function SipForm({
           )}
         </Field>
       </div>
+      <BucketField
+        value={draft.bucket}
+        onChange={(value) => update({ bucket: value })}
+        paper={sip ? !!sip.bucket?.paper : undefined}
+      />
       <MoreOptions>
         <Field label="Note">
           {(id) => (
@@ -399,7 +471,9 @@ export function SellForm({ holding, onDone }: { holding: Holding; onDone: () => 
                 <span className="min-w-0">
                   <span className="font-medium">{formatDate(lot.buy_date)}</span>{' '}
                   <span className="text-muted-foreground">
-                    · {KIND_LABELS[lot.kind]} · {formatUnits(lot.units_remaining)} left
+                    · {KIND_LABELS[lot.kind]}
+                    {lot.bucket && ` · ${bucketLabel(lot.bucket)}`} ·{' '}
+                    {formatUnits(lot.units_remaining)} left
                   </span>
                 </span>
                 <span className="ml-auto flex items-center gap-1">

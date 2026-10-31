@@ -166,17 +166,7 @@ test('first run: a banner downloads the fund list, and a checklist shows what is
       emergency: { goal: '0.00', cash: '0.00', fund: null, total: '0.00', shortfall: '0.00' },
     }),
     'GET /api/v1/holdings': () => [],
-    'GET /api/v1/models': () => [],
-    'GET /api/v1/plan/settings': () => ({
-      target_model: null,
-      emergency_goal: '0.00',
-      emergency_fund: null,
-      stagger_fund: null,
-      stagger_threshold: '500000.00',
-      stagger_months: 6,
-      min_per_fund: '500.00',
-      updated_at: '2026-10-25T05:00:00Z',
-    }),
+    'GET /api/v1/buckets': () => [],
   })
   renderAt('/')
 
@@ -185,11 +175,7 @@ test('first run: a banner downloads the fund list, and a checklist shows what is
     within(steps)
       .getAllByRole('listitem')
       .map((item) => item.textContent),
-  ).toEqual([
-    'Add your cashAdd cash',
-    'Add your fundsAdd transaction',
-    'Choose a target modelNew model',
-  ])
+  ).toEqual(['Add your cashAdd cash', 'Add your fundsAdd transaction', 'Make a bucketBuckets'])
   const banner = (await screen.findByText('Fund list not downloaded')).closest('[role=status]')!
   await userEvent.click(within(banner as HTMLElement).getByRole('button', { name: 'Download' }))
 

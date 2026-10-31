@@ -450,11 +450,14 @@ export function useCompareBacktests(runId: number, against: number | null) {
 export type Holding = Schemas['HoldingOut']
 export type Lot = Schemas['LotOut']
 
-export function useHoldings() {
+/** Funds held with real money, or in one bucket. */
+export function useHoldings(bucket?: number) {
   return useQuery({
-    queryKey: ['holdings'],
+    queryKey: ['holdings', bucket ?? 'all'],
     queryFn: async () => {
-      const { data, error } = await api.GET('/api/v1/holdings')
+      const { data, error } = await api.GET('/api/v1/holdings', {
+        params: { query: bucket === undefined ? {} : { bucket_id: bucket } },
+      })
       if (error) throw failure(error)
       return data
     },
@@ -631,29 +634,59 @@ export function usePlanSettings() {
   })
 }
 
-/** Make a model the target (or none), keeping the other invest rules as they are. */
-export function useSetTarget() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (modelId: number | null) => {
-      const current = await api.GET('/api/v1/plan/settings')
-      if (current.error) throw failure(current.error)
-      const rules = current.data
-      const { data, error } = await api.PUT('/api/v1/plan/settings', {
-        body: {
-          target_model_id: modelId,
-          emergency_goal: rules.emergency_goal,
-          emergency_fund_id: rules.emergency_fund?.id ?? null,
-          stagger_fund_id: rules.stagger_fund?.id ?? null,
-          stagger_threshold: rules.stagger_threshold,
-          stagger_months: rules.stagger_months,
-          min_per_fund: rules.min_per_fund,
-        },
-      })
+export type Bucket = Schemas['BucketOut']
+
+/** Every bucket with what it holds. Under 'portfolio': whatever changes the portfolio
+ * changes these figures too. */
+export function useBuckets() {
+  return useQuery({
+    queryKey: ['portfolio', 'buckets'],
+    queryFn: async () => {
+      const { data, error } = await api.GET('/api/v1/buckets')
       if (error) throw failure(error)
       return data
     },
-    onSuccess: () => invalidateCash(queryClient),
+  })
+}
+
+/** Make a bucket (no `id`) or change one. */
+export function useSaveBucket() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, body }: { id?: number; body: Schemas['BucketIn'] }) => {
+      const { data, error } = id
+        ? await api.PUT('/api/v1/buckets/{bucket_id}', {
+            params: { path: { bucket_id: id } },
+            body,
+          })
+        : await api.POST('/api/v1/buckets', { body })
+      if (error) throw failure(error)
+      return data
+    },
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['portfolio'] }),
+        queryClient.invalidateQueries({ queryKey: ['plan'] }),
+        queryClient.invalidateQueries({ queryKey: ['holding'] }),
+      ]),
+  })
+}
+
+export function useDeleteBucket() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { error } = await api.DELETE('/api/v1/buckets/{bucket_id}', {
+        params: { path: { bucket_id: id } },
+      })
+      if (error) throw failure(error)
+    },
+    onSettled: () =>
+      Promise.all(
+        ['portfolio', 'plan', 'holding', 'holdings'].map((key) =>
+          queryClient.invalidateQueries({ queryKey: [key] }),
+        ),
+      ),
   })
 }
 
@@ -669,13 +702,14 @@ export function useSavePlanSettings() {
   })
 }
 
-/** The plan for `amount` ('' = all deployable cash); nothing is asked until it's not null. */
-export function useCashPlan(amount: string | null) {
+/** A bucket's plan for `amount` ('' = all deployable cash); nothing is asked until it's not
+ * null. */
+export function useCashPlan(bucketId: number, amount: string | null) {
   return useQuery({
-    queryKey: ['plan', amount],
+    queryKey: ['plan', bucketId, amount],
     queryFn: async () => {
       const { data, error } = await api.POST('/api/v1/plan', {
-        body: amount ? { amount } : {},
+        body: amount ? { bucket_id: bucketId, amount } : { bucket_id: bucketId },
       })
       if (error) throw failure(error)
       return data
@@ -685,18 +719,42 @@ export function useCashPlan(amount: string | null) {
   })
 }
 
+/** Buy a paper bucket's plan for `amount` at each fund's latest NAV. */
+export function useBuyOnPaper() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (body: Schemas['PaperBuyIn']) => {
+      const { data, error } = await api.POST('/api/v1/plan/paper', { body })
+      if (error) throw failure(error)
+      return data
+    },
+    onSettled: () =>
+      Promise.all(
+        ['portfolio', 'plan', 'holding', 'nav-status'].map((key) =>
+          queryClient.invalidateQueries({ queryKey: [key] }),
+        ),
+      ),
+  })
+}
+
 export type Portfolio = Schemas['PortfolioOut']
 export type FundPosition = Schemas['FundPositionOut']
 
 export type PortfolioHistory = Schemas['HistoryOut']
 
-/** Value, P&L, XIRR, allocation and drift, all worked out by the backend. */
-export function usePortfolio({ enabled = true } = {}) {
+/** Value, P&L, XIRR, allocation and drift of real money, or of one bucket; all worked out by
+ * the backend. */
+export function usePortfolio({
+  enabled = true,
+  bucket,
+}: { enabled?: boolean; bucket?: number } = {}) {
   return useQuery({
-    queryKey: ['portfolio'],
+    queryKey: ['portfolio', 'view', bucket ?? 'all'],
     enabled,
     queryFn: async () => {
-      const { data, error } = await api.GET('/api/v1/portfolio')
+      const { data, error } = await api.GET('/api/v1/portfolio', {
+        params: { query: bucket === undefined ? {} : { bucket_id: bucket } },
+      })
       if (error) throw failure(error)
       return data
     },
@@ -704,15 +762,20 @@ export function usePortfolio({ enabled = true } = {}) {
 }
 
 /** Value, invested and the benchmark over time from `start`, with the range's gain. */
-export function usePortfolioHistory(start: string | undefined, enabled = true) {
+export function usePortfolioHistory(start: string | undefined, enabled = true, bucket?: number) {
   return useQuery({
     // Under 'portfolio', so every change that refreshes the portfolio refreshes this too.
-    queryKey: ['portfolio', 'history', start ?? 'all'],
+    queryKey: ['portfolio', 'history', bucket ?? 'all', start ?? 'all'],
     enabled,
     placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data, error } = await api.GET('/api/v1/portfolio/history', {
-        params: { query: start ? { start } : {} },
+        params: {
+          query: {
+            ...(start ? { start } : {}),
+            ...(bucket === undefined ? {} : { bucket_id: bucket }),
+          },
+        },
       })
       if (error) throw failure(error)
       return data

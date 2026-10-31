@@ -2,7 +2,7 @@
 screenshotted without my real portfolio.
 
 The funds and their NAVs are real and public (downloaded from AMFI and mfapi); every
-purchase, SIP, sale, cash balance and model is invented here.
+purchase, SIP, sale, cash balance, model and bucket is invented here.
 """
 
 from datetime import date, timedelta
@@ -11,6 +11,7 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from friday.core.buckets.service import BucketInput, create_bucket
 from friday.core.cash.service import AccountInput, SettingsInput, create_account, update_settings
 from friday.core.db import session_scope
 from friday.core.holdings.service import (
@@ -89,25 +90,6 @@ def make_demo(
         raise DemoError("couldn't download any NAVs")
 
     with session_scope(factory) as session:
-
-        def buy(code: str, years_ago: float, amount: int) -> int:
-            day = _nav_day(session, ids[code], today - timedelta(days=round(years_ago * 365)))
-            return create_lump_sum(session, ids[code], BuyInput(day, Decimal(amount))).id
-
-        buy(FLEXI, 4.2, 150_000)
-        nifty = buy(NIFTY, 3.6, 200_000)
-        buy(NIFTY, 1.1, 75_000)
-        buy(MIDCAP, 2.4, 60_000)
-        buy(GOLD, 2.0, 40_000)
-        buy(SHORT, 1.5, 50_000)
-        buy(LIQUID, 2.8, 120_000)
-
-        create_sip(session, ids[FLEXI], SipInput(Decimal(10_000), 5, today - timedelta(days=1100)))
-        create_sip(session, ids[MIDCAP], SipInput(Decimal(5_000), 12, today - timedelta(days=700)))
-
-        sale_day = _nav_day(session, ids[NIFTY], today - timedelta(days=200))
-        sell(session, SaleInput(sale_day, [(nifty, Decimal(1500))]))
-
         long_term = create_model(
             session,
             ModelInput(
@@ -122,13 +104,39 @@ def make_demo(
                 rebalance="yearly",
             ),
         )
-        create_model(
+        steady = create_model(
             session,
             ModelInput(
                 name="Steady",
                 funds=[(ids[NIFTY], Decimal(50)), (ids[SHORT], Decimal(50))],
             ),
         )
+        retirement = create_bucket(session, BucketInput("Retirement", long_term.id)).id
+        house = create_bucket(session, BucketInput("House", steady.id)).id
+        paper = create_bucket(session, BucketInput("Steady on paper", steady.id, paper=True)).id
+
+        def buy(code: str, years_ago: float, amount: int, bucket: int | None) -> int:
+            day = _nav_day(session, ids[code], today - timedelta(days=round(years_ago * 365)))
+            data = BuyInput(day, Decimal(amount), bucket_id=bucket)
+            return create_lump_sum(session, ids[code], data).id
+
+        buy(FLEXI, 4.2, 150_000, retirement)
+        nifty = buy(NIFTY, 3.6, 200_000, retirement)
+        buy(NIFTY, 1.1, 75_000, house)
+        buy(MIDCAP, 2.4, 60_000, retirement)
+        buy(GOLD, 2.0, 40_000, retirement)
+        buy(SHORT, 1.5, 50_000, house)
+        buy(LIQUID, 2.8, 120_000, None)
+        buy(NIFTY, 1.0, 50_000, paper)
+        buy(SHORT, 1.0, 50_000, paper)
+
+        for code, amount, day, days_ago in [(FLEXI, 10_000, 5, 1100), (MIDCAP, 5_000, 12, 700)]:
+            start = today - timedelta(days=days_ago)
+            data = SipInput(Decimal(amount), day, start, bucket_id=retirement)
+            create_sip(session, ids[code], data)
+
+        sale_day = _nav_day(session, ids[NIFTY], today - timedelta(days=200))
+        sell(session, SaleInput(sale_day, [(nifty, Decimal(1500))]))
 
         create_account(session, AccountInput("Savings", Decimal(320_000), "deployable"))
         create_account(session, AccountInput("Emergency FD", Decimal(200_000), "emergency"))
@@ -136,7 +144,6 @@ def make_demo(
         update_settings(
             session,
             SettingsInput(
-                target_model_id=long_term.id,
                 emergency_goal=Decimal(600_000),
                 emergency_fund_id=ids[LIQUID],
                 stagger_fund_id=ids[LIQUID],

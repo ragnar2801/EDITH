@@ -16,11 +16,12 @@ const axisMoney = (value: number) => inrShort(value.toFixed(0))
 /** What my funds were worth over time, against what they cost and the same money in the
  * benchmark. The range's gain and return are the API's, worked out on every date. */
 export function ValueChart({ portfolio }: { portfolio: Portfolio }) {
+  const bucket = portfolio.bucket?.id
   const first = portfolio.returns?.since ?? null
   const last = portfolio.returns?.on ?? null
   const [range, setRange] = useState<RangeKey>('MAX')
   const start = last && range !== 'MAX' ? (rangeStart(range, last) ?? undefined) : undefined
-  const history = usePortfolioHistory(start, !!last)
+  const history = usePortfolioHistory(start, !!last, bucket)
   const data = history.data
   const benchmarkName = data?.benchmark_fund?.name ?? 'Benchmark'
 

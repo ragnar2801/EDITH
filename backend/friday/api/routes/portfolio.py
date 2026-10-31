@@ -1,5 +1,5 @@
-"""The portfolio view: value, P&L, XIRR, allocation and drift; the
-day's move, the gap to the benchmark, SIPs and value over time."""
+"""The portfolio view, of real money or one bucket: value, P&L, XIRR, allocation and drift;
+the day's move, the gap to the benchmark and to the model, SIPs and value over time."""
 
 from datetime import date, datetime
 from typing import Annotated, Literal
@@ -8,7 +8,8 @@ from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
 from friday.api.deps import SessionDep
-from friday.api.schemas import FundRef
+from friday.api.routes.buckets import get_bucket, ref
+from friday.api.schemas import BucketRef, FundRef, ModelRef
 from friday.core.instruments.models import Instrument
 from friday.core.navs.service import last_run
 from friday.core.portfolio.history import Change, Point
@@ -80,14 +81,9 @@ class DriftOut(BaseModel):
     weight: Percent
     value: Amount
     share: Percent | None
-    """Share of what I hold of the target split's funds."""
+    """Share of what the bucket holds of the model's funds."""
     drift: Percent | None
     """Share − weight, in percentage points: below 0 is under target."""
-
-
-class TargetOut(BaseModel):
-    id: int
-    name: str
 
 
 class CashTotalsOut(BaseModel):
@@ -121,8 +117,16 @@ class PortfolioOut(BaseModel):
     funds: list[FundPositionOut]
     """Biggest first; funds without a NAV last."""
     allocation: list[AssetOut]
-    target: TargetOut | None
+    bucket: BucketRef | None
+    """The bucket shown; blank for real money (purchases in no bucket or a real one)."""
+    model: ModelRef | None
+    """The bucket's model."""
+    model_returns: ReturnsOut | None
+    """The same flows split by the model's weights on the same dates, never rebalanced."""
+    ahead_of_model: Amount | None
+    """Gain − the model's gain on the same flows."""
     drift: list[DriftOut]
+    """How far each of the model's funds is from its weight."""
     cash: CashTotalsOut
     net_worth: Amount
     """Funds plus every cash account."""
@@ -196,8 +200,12 @@ def _fund(view: Portfolio, fund: FundPosition) -> FundPositionOut:
 
 
 @router.get("/portfolio", operation_id="getPortfolio")
-def get_portfolio(session: SessionDep) -> PortfolioOut:
-    view = portfolio(session)
+def get_portfolio(
+    session: SessionDep, bucket_id: Annotated[int | None, Query()] = None
+) -> PortfolioOut:
+    """Real money (purchases in no bucket or a real one), or one bucket's."""
+    bucket = get_bucket(session, bucket_id) if bucket_id is not None else None
+    view = portfolio(session, bucket)
     run = last_run(session)
     finished: datetime | None = run.finished_at if run else None
     dates = view.nav_dates
@@ -218,7 +226,10 @@ def get_portfolio(session: SessionDep) -> PortfolioOut:
         ),
         funds=[_fund(view, fund) for fund in view.funds],
         allocation=[AssetOut(asset=s.asset, value=s.value, share=s.share) for s in view.allocation],
-        target=TargetOut(id=view.target.id, name=view.target.name) if view.target else None,
+        bucket=ref(view.bucket) if view.bucket else None,
+        model=ModelRef(id=view.model.id, name=view.model.name) if view.model else None,
+        model_returns=_returns(view.model_returns),
+        ahead_of_model=view.ahead_of_model,
         drift=[
             DriftOut(
                 fund=_ref(row.instrument),
@@ -240,11 +251,15 @@ def get_portfolio(session: SessionDep) -> PortfolioOut:
 
 @router.get("/portfolio/history", operation_id="getPortfolioHistory")
 def get_portfolio_history(
-    session: SessionDep, start: Annotated[date | None, Query()] = None
+    session: SessionDep,
+    start: Annotated[date | None, Query()] = None,
+    bucket_id: Annotated[int | None, Query()] = None,
 ) -> HistoryOut:
     """Value, invested and the benchmark over time, from ``start`` (or the first purchase)
-    to the latest NAV date, with the gain and return over that range."""
-    view = history(session, start)
+    to the latest NAV date, with the gain and return over that range. Real money, or one
+    bucket."""
+    bucket = get_bucket(session, bucket_id) if bucket_id is not None else None
+    view = history(session, start, bucket)
     bench: dict[date, Point] = {p.date: p for p in view.benchmark or []}
     return HistoryOut(
         benchmark_fund=_ref(view.benchmark_fund) if view.benchmark_fund else None,

@@ -19,7 +19,10 @@ class Feed:
     def __init__(self) -> None:
         self.lots: dict[str, dict] = {}
 
-    def lot(self, lot_id, security, date, units, price, *, account="grow", currency="INR"):
+    def lot(
+        self, lot_id, security, date, units, price, *, account="grow", currency="INR", bucket=None
+    ):
+        """``bucket``: FM's ``(id, name)`` of the bucket the purchase was put in."""
         self.lots[lot_id] = {
             "id": lot_id,
             "security_id": security,
@@ -32,7 +35,12 @@ class Feed:
             "security": {"id": security, "market": "NASDAQ", **SECURITIES[security]},
             "account": {"id": account, "name": ACCOUNTS[account], "account_type": "security"},
             "currency": {"id": currency.lower(), "code": currency},
-            "acquisition": {"id": f"t-{lot_id}", "type": "BUYSECURITY"},
+            "acquisition": {
+                "id": f"t-{lot_id}",
+                "type": "BUYSECURITY",
+                "bucket_id": bucket[0] if bucket else None,
+            },
+            "bucket": {"id": bucket[0], "name": bucket[1]} if bucket else None,
             "sales": [],
         }
         return self.lots[lot_id]

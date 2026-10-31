@@ -7,8 +7,8 @@ import { formatPercent, toneOf } from '@/lib/percent'
 import { ASSET_LABELS } from '@/lib/portfolio'
 import { formatDate, formatDayMonth } from '@/lib/time'
 
-/** Value, gain, the day's move and XIRR of every fund I hold, next to the same money in the
- * benchmark, and my SIPs. */
+/** Value, gain, the day's move and XIRR of every fund I hold (or one bucket holds), next to
+ * the same money in the benchmark and, for a bucket, in its model; and the SIPs. */
 export function PortfolioSummary({ data }: { data: Portfolio }) {
   const total = data.returns
   const benchmark = data.benchmark
@@ -73,15 +73,31 @@ export function PortfolioSummary({ data }: { data: Portfolio }) {
             </InfoTip>
           }
         />
-        <Stat
-          label="SIPs a month"
-          value={sips.count > 0 ? inr(sips.monthly) : '—'}
-          hint={
-            sips.next_date && sips.next_fund
-              ? `Next ${formatDayMonth(sips.next_date)} · ${sips.next_fund.name}`
-              : undefined
-          }
-        />
+        {data.model && (
+          <Stat
+            label="vs model"
+            value={data.ahead_of_model === null ? '—' : inr(data.ahead_of_model)}
+            tone={toneOf(data.ahead_of_model)}
+            hint={data.model_returns && `Same money: ${inr(data.model_returns.value)}`}
+            info={
+              <InfoTip label="vs model">
+                Your gain minus what the same purchases and sales, split by the model&apos;s weights
+                on the same dates, would have made.
+              </InfoTip>
+            }
+          />
+        )}
+        {(!data.bucket || sips.count > 0) && (
+          <Stat
+            label="SIPs a month"
+            value={sips.count > 0 ? inr(sips.monthly) : '—'}
+            hint={
+              sips.next_date && sips.next_fund
+                ? `Next ${formatDayMonth(sips.next_date)} · ${sips.next_fund.name}`
+                : undefined
+            }
+          />
+        )}
       </StatGrid>
       {data.missing_nav.length > 0 && (
         <p className="text-sm text-amber-700 dark:text-amber-400">

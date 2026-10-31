@@ -52,17 +52,9 @@ def lump_sum(api: TestClient, fund_id: int, day: str, amount: str, **extra) -> d
 @pytest.fixture
 def held(api: TestClient, funds: dict[str, int]) -> TestClient:
     """Parag Parikh: ₹10,000 at 100 (100 units) and ₹5,000 at 125 (40 units); 50 units of
-    the first lot sold at 150 (₹7,500). ₹6,000 of the arbitrage fund as emergency money,
-    in a 60 / 40 target model of Parag Parikh and the Nifty 50 index fund."""
-    lump_sum(api, funds[PARAG], "2024-01-01", "10000")
-    holding = lump_sum(api, funds[PARAG], "2025-01-01", "5000")
-    first = holding["lots"][0]
-    post(
-        api,
-        "/api/v1/sales",
-        {"sale_date": "2025-07-01", "lots": [{"lot_id": first["id"], "units": "50"}]},
-    )
-    lump_sum(api, funds[ARBITRAGE], "2026-01-01", "6000")
+    the first lot sold at 150 (₹7,500); both in a Retirement bucket following a 60 / 40 model
+    of Parag Parikh and the Nifty 50 index fund. ₹6,000 of the arbitrage fund as emergency
+    money, in no bucket."""
     model = post(
         api,
         "/api/v1/models",
@@ -74,10 +66,19 @@ def held(api: TestClient, funds: dict[str, int]) -> TestClient:
             ],
         },
     )
+    bucket = post(api, "/api/v1/buckets", {"name": "Retirement", "model_id": model["id"]})
+    lump_sum(api, funds[PARAG], "2024-01-01", "10000", bucket_id=bucket["id"])
+    holding = lump_sum(api, funds[PARAG], "2025-01-01", "5000", bucket_id=bucket["id"])
+    first = holding["lots"][0]
+    post(
+        api,
+        "/api/v1/sales",
+        {"sale_date": "2025-07-01", "lots": [{"lot_id": first["id"], "units": "50"}]},
+    )
+    lump_sum(api, funds[ARBITRAGE], "2026-01-01", "6000")
     response = api.put(
         "/api/v1/plan/settings",
         json={
-            "target_model_id": model["id"],
             "emergency_fund_id": funds[ARBITRAGE],
             "emergency_goal": "100000",
             "stagger_threshold": "500000",
@@ -97,8 +98,13 @@ def held(api: TestClient, funds: dict[str, int]) -> TestClient:
     return api
 
 
-def view(api: TestClient) -> dict:
-    response = api.get("/api/v1/portfolio")
+def bucket_id(api: TestClient) -> int:
+    return api.get("/api/v1/buckets").json()[0]["id"]
+
+
+def view(api: TestClient, bucket: int | None = None) -> dict:
+    params = {"bucket_id": bucket} if bucket is not None else {}
+    response = api.get("/api/v1/portfolio", params=params)
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -128,7 +134,7 @@ def test_value_and_pnl_of_a_partly_sold_fund(held: TestClient, funds) -> None:
     )
     assert returns["return_pct"] == "46.00"
     assert returns["xirr_pct"] is not None and returns["since"] == "2024-01-01"
-    assert parag["role"] == "target"
+    assert parag["role"] == "outside"  # real money as a whole follows no model
 
     # The same money in the index fund: 50 units at 200, 20 at 250, 25 out at 300; 45 × 300.
     benchmark = parag["benchmark"]
@@ -176,10 +182,13 @@ def test_allocation_by_asset_class(held: TestClient) -> None:
     ]
 
 
-def test_drift_from_the_target_split(held: TestClient) -> None:
-    data = view(held)
+def test_drift_from_the_buckets_model(held: TestClient) -> None:
+    assert view(held)["drift"] == []  # real money as a whole has no model
 
-    assert data["target"]["name"] == "Core"
+    data = view(held, bucket_id(held))
+
+    assert (data["bucket"]["name"], data["model"]["name"]) == ("Retirement", "Core")
+    assert [f["role"] for f in data["funds"]] == ["target"]
     drift = {row["fund"]["amfi_code"]: row for row in data["drift"]}
     assert (drift[PARAG]["share"], drift[PARAG]["weight"], drift[PARAG]["drift"]) == (
         "100.00",
@@ -297,8 +306,11 @@ def test_sips_per_month_and_the_next_one(held: TestClient, funds, monkeypatch) -
     assert data["sips"]["next_fund"]["amfi_code"] == NIFTY
 
 
-def history(api: TestClient, start: str | None = None) -> dict:
-    response = api.get("/api/v1/portfolio/history", params={"start": start} if start else {})
+def history(api: TestClient, start: str | None = None, bucket: int | None = None) -> dict:
+    params = {"start": start, "bucket_id": bucket}
+    response = api.get(
+        "/api/v1/portfolio/history", params={k: v for k, v in params.items() if v is not None}
+    )
     assert response.status_code == 200, response.text
     return response.json()
 
@@ -345,3 +357,37 @@ def test_history_with_nothing_held(api: TestClient) -> None:
     data = history(api)
 
     assert (data["points"], data["change"], data["benchmark_change"]) == ([], None, None)
+
+
+def test_a_bucket_against_the_same_money_in_its_model(held: TestClient) -> None:
+    data = view(held, bucket_id(held))
+
+    # Only the bucket's purchases: Parag Parikh, not the emergency fund outside it.
+    assert [f["fund"]["amfi_code"] for f in data["funds"]] == [PARAG]
+    assert (data["returns"]["value"], data["returns"]["gain"]) == ("14400.00", "6900.00")
+    # The same flows 60 / 40: Parag 60 + 24 − 30 = 54 units at 160 (8,640), Nifty
+    # 20 + 8 − 10 = 18 units at 300 (5,400). Gain 14,040 + 7,500 − 15,000 = 6,540.
+    model = data["model_returns"]
+    assert (model["value"], model["gain"]) == ("14040.00", "6540.00")
+    assert data["ahead_of_model"] == "360.00"
+
+    [row] = held.get("/api/v1/buckets").json()
+    assert (row["purchases"], row["cost"], row["value"], row["gain"]) == (
+        2,
+        "10000.00",
+        "14400.00",
+        "6900.00",
+    )
+    assert (row["model"]["name"], row["ahead_of_model"], row["paper"]) == ("Core", "360.00", False)
+
+
+def test_paper_purchases_stay_out_of_real_money(held: TestClient, funds) -> None:
+    before = history(held)
+    paper = post(held, "/api/v1/buckets", {"name": "Try", "paper": True})
+    lump_sum(held, funds[NIFTY], "2025-01-01", "50000", bucket_id=paper["id"])
+
+    assert view(held)["returns"]["value"] == "20400.00"  # unchanged
+    assert history(held) == before
+    on_paper = view(held, paper["id"])
+    assert (on_paper["bucket"]["paper"], on_paper["returns"]["value"]) == (True, "60000.00")
+    assert history(held, bucket=paper["id"])["points"][0]["date"] == "2025-01-01"

@@ -5,6 +5,9 @@ pick and is kept per lot, so the balance can be put back if I delete it. SIP ins
 are lots too: Friday adds one per month on the first NAV date on or after the SIP day,
 as far as the stored NAVs go, and leaves alone the ones I edited or skipped.
 
+A lot or SIP may belong to a bucket; an instalment is always in its SIP's. Reading takes a
+``Scope``: one bucket, real money (lots in no bucket or a real one) or everything.
+
 Only ``navs.models`` is imported from the NAV package: the NAV service imports this
 module to track held funds and to add instalments after a sync.
 """
@@ -13,10 +16,12 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Literal
 
-from sqlalchemy import select
+from sqlalchemy import ColumnElement, or_, select, true
 from sqlalchemy.orm import Session
 
+from friday.core.buckets.models import Bucket
 from friday.core.holdings.models import Lot, LotSale, Sip
 from friday.core.instruments.models import Instrument
 from friday.core.navs.models import FundNav
@@ -32,6 +37,11 @@ NAV_WINDOW = timedelta(days=10)
 
 HOLDING = "holding"
 """Tracking reason for a fund I hold or have a SIP in."""
+
+ANY = "any"
+Scope = int | Literal["any"] | None
+"""Whose lots: one bucket's (its id), real money (``None``: no bucket or a real one), or
+``ANY`` (paper ones too)."""
 
 
 class InvalidHolding(ValueError):
@@ -49,6 +59,7 @@ class BuyInput:
     nav: Decimal | None = None
     units: Decimal | None = None
     note: str | None = None
+    bucket_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -58,6 +69,7 @@ class SipInput:
     start_date: date
     end_date: date | None = None
     note: str | None = None
+    bucket_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -135,15 +147,47 @@ def _not_copied(lot: Lot) -> None:
         raise HoldingConflict("this purchase comes from FM; change it there")
 
 
+def _bucket(session: Session, bucket_id: int | None) -> Bucket | None:
+    if bucket_id is None:
+        return None
+    bucket = session.get(Bucket, bucket_id)
+    if bucket is None:
+        raise InvalidHolding(f"no bucket with id {bucket_id}")
+    return bucket
+
+
+def _paper(bucket: Bucket | None) -> bool:
+    return bucket is not None and bucket.paper
+
+
+def _move_to(session: Session, current: Bucket | None, bucket_id: int | None) -> int | None:
+    """The bucket a purchase or SIP may move to: real money stays real, paper stays paper."""
+    bucket = _bucket(session, bucket_id)
+    if _paper(bucket) != _paper(current):
+        raise InvalidHolding("a purchase can't move between a paper bucket and real money")
+    return bucket_id
+
+
+def in_scope(column: ColumnElement, scope: Scope) -> ColumnElement[bool]:
+    """A filter on a ``bucket_id`` column for ``scope``."""
+    if scope == ANY:
+        return true()
+    if scope is None:
+        return or_(column.is_(None), column.not_in(select(Bucket.id).where(Bucket.paper)))
+    return column == scope
+
+
 # Lump sums and editing any lot ------------------------------------------------------------
 
 
 def create_lump_sum(session: Session, instrument_id: int, data: BuyInput) -> Lot:
     instrument = _fund(session, instrument_id)
     nav, units = _priced(session, instrument, data)
+    bucket = _bucket(session, data.bucket_id)
     now = _now()
     lot = Lot(
         instrument_id=instrument.id,
+        bucket_id=bucket.id if bucket else None,
         buy_date=data.buy_date,
         amount=data.amount,
         nav=nav,
@@ -183,6 +227,8 @@ def update_lot(session: Session, lot: Lot, data: BuyInput, *, skipped: bool = Fa
     first_sale = min((sale.sale_date for sale in lot.sales), default=None)
     if first_sale is not None and data.buy_date > first_sale:
         raise HoldingConflict("the buy date can't be after a sale from this lot")
+    if lot.sip_id is None:  # an instalment stays in its SIP's bucket
+        lot.bucket_id = _move_to(session, lot.bucket, data.bucket_id)
     lot.buy_date, lot.amount, lot.nav, lot.units = data.buy_date, data.amount, nav, units
     lot.units_remaining = units - sold
     lot.note = _note(data.note)
@@ -276,6 +322,7 @@ def _add_instalments(session: Session, sip: Sip) -> int:
         sip.instalments.append(
             Lot(
                 instrument_id=sip.instrument_id,
+                bucket_id=sip.bucket_id,
                 due_month=month,
                 buy_date=nav_date,
                 amount=sip.amount,
@@ -299,9 +346,11 @@ def add_due_instalments(session: Session) -> int:
 def create_sip(session: Session, instrument_id: int, data: SipInput) -> Sip:
     instrument = _fund(session, instrument_id)
     _validate_sip(data)
+    bucket = _bucket(session, data.bucket_id)
     now = _now()
     sip = Sip(
         instrument_id=instrument.id,
+        bucket_id=bucket.id if bucket else None,
         amount=data.amount,
         day=data.day,
         start_date=data.start_date,
@@ -318,8 +367,10 @@ def create_sip(session: Session, instrument_id: int, data: SipInput) -> Sip:
 
 def update_sip(session: Session, sip: Sip, data: SipInput) -> Sip:
     """Change the SIP and rebuild its instalments, keeping the ones I edited, skipped or
-    sold from. Sold instalments outside the new dates are refused."""
+    sold from. Sold instalments outside the new dates are refused. Its instalments
+    move with it to another bucket."""
     _validate_sip(data)
+    bucket_id = _move_to(session, sip.bucket, data.bucket_id)
     dues = {
         due.replace(day=1) for due in due_dates(data.start_date, data.day, data.end_date, today())
     }
@@ -334,6 +385,9 @@ def update_sip(session: Session, sip: Sip, data: SipInput) -> Sip:
         if lot.sales or (inside and lot.edited):
             kept.append(lot)
     sip.instalments = kept
+    sip.bucket_id = bucket_id
+    for lot in kept:
+        lot.bucket_id = bucket_id
     sip.amount, sip.day = data.amount, data.day
     sip.start_date, sip.end_date = data.start_date, data.end_date
     sip.note = _note(data.note)
@@ -443,27 +497,33 @@ def _holding(instrument: Instrument, lots: list[Lot], sips: list[Sip]) -> Holdin
     )
 
 
-def holding(session: Session, instrument: Instrument) -> Holding:
+def holding(session: Session, instrument: Instrument, scope: Scope = None) -> Holding:
     lots = session.scalars(
-        select(Lot).where(Lot.instrument_id == instrument.id).order_by(Lot.buy_date, Lot.id)
+        select(Lot)
+        .where(Lot.instrument_id == instrument.id, in_scope(Lot.bucket_id, scope))
+        .order_by(Lot.buy_date, Lot.id)
     ).all()
     sips = session.scalars(
-        select(Sip).where(Sip.instrument_id == instrument.id).order_by(Sip.start_date, Sip.id)
+        select(Sip)
+        .where(Sip.instrument_id == instrument.id, in_scope(Sip.bucket_id, scope))
+        .order_by(Sip.start_date, Sip.id)
     ).all()
     return _holding(instrument, list(lots), list(sips))
 
 
-def held_ids(session: Session) -> list[int]:
-    return list(session.scalars(select(Lot.instrument_id).union(select(Sip.instrument_id))))
+def held_ids(session: Session, scope: Scope = ANY) -> list[int]:
+    lots = select(Lot.instrument_id).where(in_scope(Lot.bucket_id, scope))
+    sips = select(Sip.instrument_id).where(in_scope(Sip.bucket_id, scope))
+    return list(session.scalars(lots.union(sips)))
 
 
-def list_holdings(session: Session) -> list[Holding]:
+def list_holdings(session: Session, scope: Scope = None) -> list[Holding]:
     """Every fund I have a lot or a SIP in, by name."""
-    ids = held_ids(session)
+    ids = held_ids(session, scope)
     instruments = session.scalars(
         select(Instrument).where(Instrument.id.in_(ids)).order_by(Instrument.name)
     )
-    return [holding(session, instrument) for instrument in instruments]
+    return [holding(session, instrument, scope) for instrument in instruments]
 
 
 def holding_reasons(session: Session) -> dict[int, list[str]]:

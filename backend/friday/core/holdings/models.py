@@ -1,7 +1,8 @@
 """Holding tables: lots, SIPs and the units taken out of lots.
 
 A lot is one buy: a lump sum, or one SIP instalment. Selling isn't a transaction of its
-own: it takes units out of lots I pick, and each take is kept as a ``LotSale``.
+own: it takes units out of lots I pick, and each take is kept as a ``LotSale``. Lots and
+SIPs may belong to a bucket.
 """
 
 from datetime import date, datetime
@@ -10,6 +11,7 @@ from decimal import Decimal
 from sqlalchemy import Date, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from friday.core.buckets.models import Bucket
 from friday.core.db import Base
 from friday.core.instruments.models import Instrument
 from friday.core.types import DecimalText, UtcDateTime
@@ -20,6 +22,7 @@ class Sip(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     instrument_id: Mapped[int] = mapped_column(ForeignKey("instruments.id"))
+    bucket_id: Mapped[int | None] = mapped_column(ForeignKey("buckets.id", ondelete="SET NULL"))
     amount: Mapped[Decimal] = mapped_column(DecimalText(2))
     day: Mapped[int]  # day of the month, 1–28
     start_date: Mapped[date] = mapped_column(Date)
@@ -29,6 +32,7 @@ class Sip(Base):
     updated_at: Mapped[datetime] = mapped_column(UtcDateTime())
 
     instrument: Mapped[Instrument] = relationship()
+    bucket: Mapped[Bucket | None] = relationship()
     instalments: Mapped[list[Lot]] = relationship(
         back_populates="sip", cascade="all, delete-orphan", order_by="Lot.due_month"
     )
@@ -41,6 +45,8 @@ class Lot(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     instrument_id: Mapped[int] = mapped_column(ForeignKey("instruments.id"))
     sip_id: Mapped[int | None] = mapped_column(ForeignKey("sips.id", ondelete="CASCADE"))
+    # Its SIP's bucket for an instalment. No bucket: real money not set aside for a goal.
+    bucket_id: Mapped[int | None] = mapped_column(ForeignKey("buckets.id", ondelete="SET NULL"))
     due_month: Mapped[date | None] = mapped_column(Date)  # SIP instalments: 1st of the month
     buy_date: Mapped[date] = mapped_column(Date)
     amount: Mapped[Decimal] = mapped_column(DecimalText(2))
@@ -57,6 +63,7 @@ class Lot(Base):
     updated_at: Mapped[datetime] = mapped_column(UtcDateTime())
 
     instrument: Mapped[Instrument] = relationship()
+    bucket: Mapped[Bucket | None] = relationship()
     sip: Mapped[Sip | None] = relationship(back_populates="instalments")
     sales: Mapped[list[LotSale]] = relationship(
         back_populates="lot", order_by="(LotSale.sale_date, LotSale.id)"

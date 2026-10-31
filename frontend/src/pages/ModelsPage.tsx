@@ -1,7 +1,7 @@
-import { Copy, FlaskConical, Pencil, PieChart, Plus, Target, Trash2 } from 'lucide-react'
+import { Copy, FlaskConical, Pencil, PieChart, Plus, Trash2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router'
 
-import { useModels, usePlanSettings } from '@/api/queries'
+import { useBuckets, useModels } from '@/api/queries'
 import { Table, TBody, Td, Th, THead, Tr } from '@/components/DataTable'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorText } from '@/components/Field'
@@ -9,17 +9,18 @@ import { Loading } from '@/components/Loading'
 import { useModelActions } from '@/components/models/useModelActions'
 import { PageHeader } from '@/components/PageHeader'
 import { RowActions } from '@/components/RowActions'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { bucketLabel } from '@/lib/buckets'
 import { MODELS_PATH, REBALANCE_LABELS, backtestPath, modelPath } from '@/lib/models'
 
-/** Models (models): target splits to backtest and to invest towards. */
+/** Models: splits of funds to backtest, and for buckets to invest towards. */
 export function ModelsPage() {
   const models = useModels()
-  const settings = usePlanSettings()
+  const buckets = useBuckets()
   const actions = useModelActions()
   const navigate = useNavigate()
-  const targetId = settings.data?.target_model?.id
+  const followers = (id: number) =>
+    (buckets.data ?? []).filter((bucket) => bucket.model?.id === id).map(bucketLabel)
   const newModel = (
     <Button asChild>
       <Link to={`${MODELS_PATH}/new`}>
@@ -43,35 +44,28 @@ export function ModelsPage() {
             <Th numeric>Funds</Th>
             <Th>Rebalance</Th>
             <Th>Benchmark</Th>
+            <Th>Buckets</Th>
             <Th />
           </THead>
           <TBody>
             {models.data.map((model) => (
               <Tr key={model.id} to={modelPath(model.id)}>
                 <Td>
-                  <span className="flex flex-wrap items-center gap-2">
-                    <Link
-                      to={modelPath(model.id)}
-                      className="font-medium underline-offset-4 hover:underline"
-                    >
-                      {model.name}
-                    </Link>
-                    {model.id === targetId && <Badge>Target</Badge>}
-                  </span>
+                  <Link
+                    to={modelPath(model.id)}
+                    className="font-medium underline-offset-4 hover:underline"
+                  >
+                    {model.name}
+                  </Link>
                 </Td>
                 <Td numeric>{model.funds.length}</Td>
                 <Td>{REBALANCE_LABELS[model.rebalance]}</Td>
                 <Td className="text-muted-foreground">{model.benchmark?.fund.name ?? '—'}</Td>
+                <Td className="text-muted-foreground">{followers(model.id).join(', ') || '—'}</Td>
                 <Td className="w-0">
                   <RowActions
                     label={`Actions for ${model.name}`}
                     actions={[
-                      {
-                        label: 'Set as target',
-                        icon: Target,
-                        hidden: model.id === targetId,
-                        onSelect: () => actions.makeTarget(model),
-                      },
                       {
                         label: 'Backtest',
                         icon: FlaskConical,

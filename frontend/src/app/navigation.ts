@@ -10,7 +10,7 @@ export type Section = {
 
 /** The four jobs. */
 export const SECTIONS: Section[] = [
-  { path: '/', label: 'Portfolio', icon: BriefcaseBusiness, also: ['/cash'] },
+  { path: '/', label: 'Portfolio', icon: BriefcaseBusiness, also: ['/buckets', '/cash'] },
   { path: '/invest', label: 'Invest', icon: Banknote },
   { path: '/models', label: 'Models', icon: PieChart },
   { path: '/funds', label: 'Funds', icon: Search },

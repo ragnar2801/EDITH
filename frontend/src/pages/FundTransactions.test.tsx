@@ -86,6 +86,7 @@ test('a lump sum into a fund without NAVs: track it, download NAVs, then save', 
     nav: null,
     units: null,
     note: null,
+    bucket_id: null,
   })
 })
 
@@ -191,6 +192,7 @@ test('start a SIP; lots show what was sold from them, with an undo', async () =>
     start_date: '2026-01-01',
     end_date: null,
     note: null,
+    bucket_id: null,
   })
 })
 

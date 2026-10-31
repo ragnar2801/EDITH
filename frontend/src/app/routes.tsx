@@ -17,9 +17,6 @@ const MOVED: [string, (params: Record<string, string | undefined>) => string][] 
   ['/holdings/:id', ({ id }) => `/funds/${id}/transactions`],
   ['/instruments', () => '/funds'],
   ['/instruments/:id', ({ id }) => `/funds/${id}`],
-  ['/models', () => '/models'],
-  ['/models/new', () => '/models/new'],
-  ['/models/:id/edit', ({ id }) => `/models/${id}/edit`],
   ['/backtest', () => '/models'],
   ['/backtest/:id', ({ id }) => `/models/${id}/backtest`],
   ['/status', () => '/settings/data'],
@@ -30,6 +27,7 @@ export const routes: RouteObject[] = [
     element: <AppShell />,
     children: [
       { path: '/', element: <PortfolioPage /> },
+      { path: '/buckets', element: <PortfolioPage /> },
       { path: '/cash', element: <PortfolioPage /> },
       { path: '/invest', element: <InvestPage /> },
       { path: '/models', element: <ModelsPage /> },

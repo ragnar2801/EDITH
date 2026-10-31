@@ -9,6 +9,8 @@ from navs.conftest import PARAG
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from friday.core.buckets.models import Bucket
+from friday.core.buckets.service import BucketInput, create_bucket
 from friday.core.db import session_scope
 from friday.core.fm.feed import FmFeedError, decimal, read_feed
 from friday.core.fm.models import FmImport
@@ -157,3 +159,34 @@ def test_a_removed_field_is_reported(feed) -> None:
     del feed.lot("a", "parag", "2025-04-01", 100, 20)["unit_price"]
     with pytest.raises(FmFeedError, match="FM's lots have changed: 'unit_price'"):
         read_feed(feed.body())
+
+
+def buckets_of(factory: sessionmaker[Session]) -> dict[str, str | None]:
+    """FM lot id → the name of the Friday bucket it's in."""
+    with session_scope(factory) as session:
+        lots = session.scalars(select(Lot).where(Lot.source == "fm")).all()
+        return {lot.source_id: lot.bucket.name if lot.bucket else None for lot in lots}
+
+
+def test_purchases_land_in_the_buckets_fm_put_them_in(feed, factory, funds) -> None:
+    with session_scope(factory) as session:
+        create_bucket(session, BucketInput("retirement"))  # made in Friday first
+        create_bucket(session, BucketInput("House", paper=True))
+    feed.lot("a", "parag", "2025-04-01", 10, 20, bucket=("b1", "Retirement"))
+    feed.lot("b", "nifty", "2025-05-08", 10, 20, bucket=("b2", "House"))
+    feed.lot("c", "nifty", "2025-06-08", 10, 20)
+
+    import_feed(factory, feed.body())
+
+    # A real bucket of the same name is FM's from now on; a paper one is never.
+    assert buckets_of(factory) == {"a": "Retirement", "b": "House (FM)", "c": None}
+
+    # Renamed in FM: the same bucket, renamed. Moved in FM: moved here.
+    feed.lots["a"]["bucket"] = {"id": "b1", "name": "Pension"}
+    feed.lots["c"]["bucket"] = {"id": "b1", "name": "Pension"}
+    import_feed(factory, feed.body())
+
+    assert buckets_of(factory) == {"a": "Pension", "b": "House (FM)", "c": "Pension"}
+    with session_scope(factory) as session:
+        names = sorted(session.scalars(select(Bucket.name)))
+    assert names == ["House", "House (FM)", "Pension"]

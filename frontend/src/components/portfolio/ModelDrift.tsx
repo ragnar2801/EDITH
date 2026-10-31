@@ -5,28 +5,30 @@ import { InfoTip } from '@/components/InfoTip'
 import { Section } from '@/components/Section'
 import { Button } from '@/components/ui/button'
 import { fundPath, planLabel } from '@/lib/instruments'
+import { investPath } from '@/lib/buckets'
 import { modelPath } from '@/lib/models'
 import { formatPercent, formatPoints } from '@/lib/percent'
 
-/** How far each fund of the target model is from its weight, with the way to close
- * the gap: new cash through Invest. */
-export function TargetDrift({ data }: { data: Portfolio }) {
-  if (!data.target || data.drift.length === 0) return null
+/** How far each fund of the bucket's model is from its weight, with the way to close the
+ * gap: new cash through Invest. */
+export function ModelDrift({ data }: { data: Portfolio }) {
+  if (!data.bucket || !data.model || data.drift.length === 0) return null
   return (
     <Section
-      title="Target model"
+      title="Model"
       info={
-        <InfoTip label="Target model">
-          Each fund&apos;s share of what you hold of the model&apos;s funds, against its weight.
+        <InfoTip label="Model">
+          Each fund&apos;s share of what the bucket holds of the model&apos;s funds, against its
+          weight.
         </InfoTip>
       }
       actions={
         <>
           <Button asChild size="sm" variant="ghost">
-            <Link to={modelPath(data.target.id)}>{data.target.name}</Link>
+            <Link to={modelPath(data.model.id)}>{data.model.name}</Link>
           </Button>
           <Button asChild size="sm" variant="outline">
-            <Link to="/invest">Invest</Link>
+            <Link to={investPath(data.bucket.id)}>Invest</Link>
           </Button>
         </>
       }

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 
 import { routes } from '@/app/routes'
-import { model, fakeApi, fundRef, nifty, parag, problem, syncRun } from '@/test/fake-api'
+import { bucket, model, fakeApi, fundRef, nifty, parag, problem, syncRun } from '@/test/fake-api'
 
 function renderAt(path: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -113,43 +113,21 @@ test('a refused model shows the reason', async () => {
   expect(await screen.findByRole('alert')).toHaveTextContent('not 99.99')
 })
 
-test('the target model wears a badge; another can be made the target', async () => {
-  const settings = {
-    target_model: { id: 1, name: 'Core' },
-    emergency_goal: '150000.00',
-    emergency_fund: { ...fundRef(nifty) },
-    stagger_fund: null,
-    stagger_threshold: '500000.00',
-    stagger_months: 6,
-    min_per_fund: '500.00',
-    updated_at: '2026-10-25T05:00:00Z',
-  }
-  const calls = fakeApi({
+test('the models list shows which buckets follow each model', async () => {
+  fakeApi({
     'GET /api/v1/models': () => [model(), model({ id: 2, name: 'Index only' })],
-    'GET /api/v1/plan/settings': () => settings,
-    'PUT /api/v1/plan/settings': () => ({
-      ...settings,
-      target_model: { id: 2, name: 'Index only' },
-    }),
+    'GET /api/v1/buckets': () => [
+      bucket(),
+      bucket({ id: 6, name: 'Try', paper: true }),
+      bucket({ id: 7, name: 'House', model: null }),
+    ],
   })
   renderAt('/models')
 
   const core = (await screen.findByRole('link', { name: 'Core' })).closest('tr')!
-  expect(await within(core).findByText('Target')).toBeInTheDocument()
+  expect(await within(core).findByText('Retirement, Try (paper)')).toBeInTheDocument()
   await userEvent.click(screen.getByRole('button', { name: 'Actions for Index only' }))
-  await userEvent.click(screen.getByRole('menuitem', { name: 'Set as target' }))
-
-  expect(await screen.findByText('Index only is your target')).toBeInTheDocument()
-  const put = calls.find((call) => call.method === 'PUT')
-  expect(await put?.json()).toEqual({
-    target_model_id: 2,
-    emergency_goal: '150000.00',
-    emergency_fund_id: nifty.id,
-    stagger_fund_id: null,
-    stagger_threshold: '500000.00',
-    stagger_months: 6,
-    min_per_fund: '500.00',
-  })
+  expect(screen.queryByRole('menuitem', { name: 'Set as target' })).not.toBeInTheDocument()
 })
 
 test('a model page shows its funds and links each to its fund page', async () => {

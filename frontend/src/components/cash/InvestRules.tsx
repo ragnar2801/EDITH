@@ -2,20 +2,18 @@ import { X } from 'lucide-react'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { toast } from 'sonner'
 
-import { useModels, useSavePlanSettings, type PlanSettings } from '@/api/queries'
+import { useSavePlanSettings, type PlanSettings } from '@/api/queries'
 import { ErrorText, Field } from '@/components/Field'
 import { InfoTip } from '@/components/InfoTip'
 import { InstrumentSearch } from '@/components/InstrumentSearch'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { NativeSelect } from '@/components/ui/native-select'
 import { planLabel } from '@/lib/instruments'
 import { inr } from '@/lib/money'
 
 type FundChoice = { id: number; name: string } | null
 
 const RULE_INFO = {
-  target: 'The model new cash moves you towards.',
   emergencyGoal: 'Topped up before anything is invested.',
   emergencyFund: 'A liquid or arbitrage fund whose value counts towards the emergency goal.',
   staggerFund: 'Where large amounts wait before the monthly transfers.',
@@ -32,9 +30,6 @@ function fundName(value: PlanSettings['emergency_fund']) {
 export function InvestRulesSummary({ settings }: { settings: PlanSettings }) {
   return (
     <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
-      <Rule label="Target model" info={RULE_INFO.target}>
-        {settings.target_model?.name ?? 'Not chosen'}
-      </Rule>
       <Rule label="Emergency goal" info={RULE_INFO.emergencyGoal}>
         {inr(settings.emergency_goal)}
       </Rule>
@@ -119,10 +114,8 @@ export function InvestRulesForm({
   settings: PlanSettings
   onDone?: () => void
 }) {
-  const models = useModels()
   const save = useSavePlanSettings()
   const [draft, setDraft] = useState({
-    target_model_id: settings.target_model ? String(settings.target_model.id) : '',
     emergency_goal: settings.emergency_goal,
     stagger_threshold: settings.stagger_threshold ?? '',
     stagger_months: String(settings.stagger_months),
@@ -135,7 +128,6 @@ export function InvestRulesForm({
     event.preventDefault()
     save.mutate(
       {
-        target_model_id: draft.target_model_id ? Number(draft.target_model_id) : null,
         emergency_goal: draft.emergency_goal.trim(),
         emergency_fund_id: emergencyFund?.id ?? null,
         stagger_fund_id: staggerFund?.id ?? null,
@@ -155,22 +147,6 @@ export function InvestRulesForm({
   return (
     <form aria-label="Invest rules" className="flex flex-col gap-4" onSubmit={submit}>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Target model" info={RULE_INFO.target}>
-          {(id) => (
-            <NativeSelect
-              id={id}
-              value={draft.target_model_id}
-              onChange={(event) => setDraft({ ...draft, target_model_id: event.target.value })}
-            >
-              <option value="">Not chosen</option>
-              {models.data?.map((model) => (
-                <option key={model.id} value={model.id}>
-                  {model.name}
-                </option>
-              ))}
-            </NativeSelect>
-          )}
-        </Field>
         <Field label="Emergency goal (₹)" info={RULE_INFO.emergencyGoal}>
           {(id) => (
             <Input

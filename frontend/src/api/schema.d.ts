@@ -106,6 +106,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/buckets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List All
+         * @description Real buckets first, then paper ones, with what each holds.
+         */
+        get: operations["listBuckets"];
+        put?: never;
+        /** Create */
+        post: operations["createBucket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/buckets/{bucket_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Update
+         * @description Rename it or change its model. Paper or real changes only while it's empty.
+         */
+        put: operations["updateBucket"];
+        post?: never;
+        /**
+         * Delete
+         * @description Delete a bucket. A paper bucket's purchases and SIPs go with it; a real bucket's stay,
+         *     in no bucket.
+         */
+        delete: operations["deleteBucket"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cash": {
         parameters: {
             query?: never;
@@ -227,7 +273,8 @@ export interface paths {
         };
         /**
          * List All
-         * @description Every fund I have a lot or a SIP in, with units and cost of what I still hold.
+         * @description Every fund I have real money in (a lot or a SIP outside paper buckets), or one bucket
+         *     has, with units and cost of what is still held.
          */
         get: operations["listHoldings"];
         put?: never;
@@ -247,7 +294,8 @@ export interface paths {
         };
         /**
          * Get
-         * @description One fund's lots (oldest first), with what was sold from each, and its SIPs.
+         * @description One fund's lots (oldest first), with what was sold from each, and its SIPs, paper
+         *     ones too.
          */
         get: operations["getHolding"];
         put?: never;
@@ -623,11 +671,32 @@ export interface paths {
         put?: never;
         /**
          * Make
-         * @description Where new cash should go: emergency top-up first, then the funds furthest below
-         *     the target split, never selling. Large amounts come with a monthly stagger
-         *     plan. Nothing is saved.
+         * @description Where new cash should go in a bucket: emergency top-up first (real buckets), then the
+         *     funds of its model furthest below their weights, never selling. Large amounts in a real
+         *     bucket come with a monthly stagger plan. Nothing is saved.
          */
         post: operations["makeCashPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/plan/paper": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Buy Paper
+         * @description Buy a paper bucket's plan for the amount: one purchase per fund that gets money, at
+         *     its latest NAV.
+         */
+        post: operations["buyPlanOnPaper"];
         delete?: never;
         options?: never;
         head?: never;
@@ -643,7 +712,7 @@ export interface paths {
         };
         /**
          * Read Settings
-         * @description Target model, emergency goal and fund, and the staggering rule.
+         * @description Emergency goal and fund, the minimum per fund and the staggering rule.
          */
         get: operations["getPlanSettings"];
         /** Change Settings */
@@ -662,7 +731,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Portfolio */
+        /**
+         * Get Portfolio
+         * @description Real money (purchases in no bucket or a real one), or one bucket's.
+         */
         get: operations["getPortfolio"];
         put?: never;
         post?: never;
@@ -682,7 +754,8 @@ export interface paths {
         /**
          * Get Portfolio History
          * @description Value, invested and the benchmark over time, from ``start`` (or the first purchase)
-         *     to the latest NAV date, with the gain and return over that range.
+         *     to the latest NAV date, with the gain and return over that range. Real money, or one
+         *     bucket.
          */
         get: operations["getPortfolioHistory"];
         put?: never;
@@ -931,6 +1004,49 @@ export interface components {
             metrics: components["schemas"]["MetricsOut"];
             /** Name */
             name: string;
+        };
+        /** BucketIn */
+        BucketIn: {
+            /** Model Id */
+            model_id?: number | null;
+            /** Name */
+            name: string;
+            /**
+             * Paper
+             * @default false
+             */
+            paper: boolean;
+        };
+        /** BucketOut */
+        BucketOut: {
+            /** Ahead Of Model */
+            ahead_of_model: string | null;
+            /** Cost */
+            cost: string;
+            /** From Fm */
+            from_fm: boolean;
+            /** Gain */
+            gain: string | null;
+            /** Id */
+            id: number;
+            model: components["schemas"]["ModelRef"] | null;
+            /** Name */
+            name: string;
+            /** Paper */
+            paper: boolean;
+            /** Purchases */
+            purchases: number;
+            /** Value */
+            value: string | null;
+        };
+        /** BucketRef */
+        BucketRef: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Paper */
+            paper: boolean;
         };
         /**
          * Candidate
@@ -1548,6 +1664,8 @@ export interface components {
         LotEditIn: {
             /** Amount */
             amount: string;
+            /** Bucket Id */
+            bucket_id?: number | null;
             /**
              * Buy Date
              * Format: date
@@ -1569,6 +1687,7 @@ export interface components {
         LotOut: {
             /** Amount */
             amount: string;
+            bucket: components["schemas"]["BucketRef"] | null;
             /**
              * Buy Date
              * Format: date
@@ -1606,6 +1725,8 @@ export interface components {
         LumpSumIn: {
             /** Amount */
             amount: string;
+            /** Bucket Id */
+            bucket_id?: number | null;
             /**
              * Buy Date
              * Format: date
@@ -1873,6 +1994,21 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /** PaperBuyIn */
+        PaperBuyIn: {
+            /** Amount */
+            amount: string;
+            /** Bucket Id */
+            bucket_id: number;
+        };
+        /** PaperBuyOut */
+        PaperBuyOut: {
+            bucket: components["schemas"]["BucketRef"];
+            /** Invested */
+            invested: string;
+            /** Purchases */
+            purchases: number;
+        };
         /** PlanFundOut */
         PlanFundOut: {
             fund: components["schemas"]["FundRef"];
@@ -1899,6 +2035,8 @@ export interface components {
         PlanIn: {
             /** Amount */
             amount?: string | null;
+            /** Bucket Id */
+            bucket_id: number;
         };
         /** PlanMonthOut */
         PlanMonthOut: {
@@ -1916,6 +2054,7 @@ export interface components {
         PlanOut: {
             /** Amount */
             amount: string;
+            bucket: components["schemas"]["BucketRef"];
             emergency: components["schemas"]["EmergencyOut"];
             /** Emergency Topup */
             emergency_topup: string;
@@ -1944,10 +2083,13 @@ export interface components {
         PortfolioOut: {
             /** Ahead */
             ahead: string | null;
+            /** Ahead Of Model */
+            ahead_of_model: string | null;
             /** Allocation */
             allocation: components["schemas"]["AssetOut"][];
             benchmark: components["schemas"]["ReturnsOut"] | null;
             benchmark_fund: components["schemas"]["FundRef"] | null;
+            bucket: components["schemas"]["BucketRef"] | null;
             cash: components["schemas"]["CashTotalsOut"];
             /** Cost */
             cost: string;
@@ -1960,6 +2102,8 @@ export interface components {
             last_sync: string | null;
             /** Missing Nav */
             missing_nav: components["schemas"]["FundRef"][];
+            model: components["schemas"]["ModelRef"] | null;
+            model_returns: components["schemas"]["ReturnsOut"] | null;
             /** Nav Newest */
             nav_newest: string | null;
             /** Nav Oldest */
@@ -1970,7 +2114,6 @@ export interface components {
             realised: string;
             returns: components["schemas"]["ReturnsOut"] | null;
             sips: components["schemas"]["SipsOut"];
-            target: components["schemas"]["TargetOut"] | null;
             /** Unrealised */
             unrealised: string | null;
         };
@@ -2160,8 +2303,6 @@ export interface components {
             stagger_months: number;
             /** Stagger Threshold */
             stagger_threshold?: string | null;
-            /** Target Model Id */
-            target_model_id?: number | null;
         };
         /** SettingsOut */
         SettingsOut: {
@@ -2175,7 +2316,6 @@ export interface components {
             stagger_months: number;
             /** Stagger Threshold */
             stagger_threshold: string | null;
-            target_model: components["schemas"]["ModelRef"] | null;
             /**
              * Updated At
              * Format: date-time
@@ -2196,6 +2336,8 @@ export interface components {
         SipEditIn: {
             /** Amount */
             amount: string;
+            /** Bucket Id */
+            bucket_id?: number | null;
             /** Day */
             day: number;
             /** End Date */
@@ -2212,6 +2354,8 @@ export interface components {
         SipIn: {
             /** Amount */
             amount: string;
+            /** Bucket Id */
+            bucket_id?: number | null;
             /** Day */
             day: number;
             /** End Date */
@@ -2232,6 +2376,7 @@ export interface components {
             active: boolean;
             /** Amount */
             amount: string;
+            bucket: components["schemas"]["BucketRef"] | null;
             /** Day */
             day: number;
             /** End Date */
@@ -2367,13 +2512,6 @@ export interface components {
              * @enum {string}
              */
             status: "ok" | "partial" | "failed";
-        };
-        /** TargetOut */
-        TargetOut: {
-            /** Id */
-            id: number;
-            /** Name */
-            name: string;
         };
         /** TrackedFundOut */
         TrackedFundOut: {
@@ -2672,6 +2810,132 @@ export interface operations {
             };
         };
     };
+    listBuckets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BucketOut"][];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    createBucket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BucketIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BucketOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    updateBucket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bucket_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BucketIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BucketOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    deleteBucket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bucket_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     getCash: {
         parameters: {
             query?: never;
@@ -2891,7 +3155,9 @@ export interface operations {
     };
     listHoldings: {
         parameters: {
-            query?: never;
+            query?: {
+                bucket_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3711,6 +3977,39 @@ export interface operations {
             };
         };
     };
+    buyPlanOnPaper: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaperBuyIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaperBuyOut"];
+                };
+            };
+            /** @description Problem details (RFC 9457) */
+            "4XX": {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     getPlanSettings: {
         parameters: {
             query?: never;
@@ -3775,7 +4074,9 @@ export interface operations {
     };
     getPortfolio: {
         parameters: {
-            query?: never;
+            query?: {
+                bucket_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3806,6 +4107,7 @@ export interface operations {
         parameters: {
             query?: {
                 start?: string | null;
+                bucket_id?: number | null;
             };
             header?: never;
             path?: never;

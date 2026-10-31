@@ -1,8 +1,10 @@
-"""Cash accounts, the plan's settings, and the cash plan for my target split.
+"""Cash accounts, the plan's settings, and the cash plan for a bucket.
 
-Emergency money is the emergency-earmarked cash plus what I hold of the emergency fund. It
-is never part of a plan: the plan only tops it up to the goal. A fund's value is its units
-held × its latest stored NAV.
+The plan moves a bucket towards its model, counting only what the bucket holds. Emergency
+money is the emergency-earmarked cash plus what I hold of the emergency fund outside paper
+buckets. It is never part of a plan: a real bucket's plan only tops it up to the goal. A
+paper bucket's plan uses the amount asked for, goes in at once, and can be bought on paper
+at each fund's latest NAV. A fund's value is its units held × its latest stored NAV.
 """
 
 from dataclasses import dataclass
@@ -12,9 +14,19 @@ from decimal import ROUND_HALF_UP, Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from friday.core.buckets.models import Bucket
 from friday.core.cash.models import EARMARKS, CashAccount, PlanSettings
 from friday.core.cash.plan import Month, Target, make_plan
-from friday.core.holdings.service import held_ids, holding, today
+from friday.core.holdings.models import Lot
+from friday.core.holdings.service import (
+    BuyInput,
+    InvalidHolding,
+    Scope,
+    create_lump_sum,
+    held_ids,
+    holding,
+    today,
+)
 from friday.core.instruments.models import Instrument
 from friday.core.models.models import Model
 from friday.core.navs.models import FundNav
@@ -110,7 +122,6 @@ def cash_total(session: Session, earmark: str) -> Decimal:
 
 @dataclass(frozen=True)
 class SettingsInput:
-    target_model_id: int | None
     emergency_goal: Decimal
     emergency_fund_id: int | None
     stagger_fund_id: int | None
@@ -145,25 +156,19 @@ def _fund(session: Session, instrument_id: int, role: str) -> Instrument:
     return instrument
 
 
-def _check_emergency_fund(model: Model | None, fund: Instrument | None) -> None:
-    if model is None or fund is None:
+def _check_emergency_fund(model: Model, fund: Instrument | None) -> None:
+    if fund is None:
         return
     if any(member.instrument_id == fund.id for member in model.funds):
         raise InvalidCash(
-            f"the emergency fund {fund.name} is in the target model {model.name}; "
+            f"the emergency fund {fund.name} is in the model {model.name}; "
             "emergency money can't be part of the split"
         )
 
 
 def update_settings(session: Session, data: SettingsInput) -> PlanSettings:
-    model = None
-    if data.target_model_id is not None:
-        model = session.get(Model, data.target_model_id)
-        if model is None:
-            raise InvalidCash(f"no model with id {data.target_model_id}")
-    emergency = None
     if data.emergency_fund_id is not None:
-        emergency = _fund(session, data.emergency_fund_id, "emergency fund")
+        _fund(session, data.emergency_fund_id, "emergency fund")
     if data.stagger_fund_id is not None:
         _fund(session, data.stagger_fund_id, "stagger fund")
     if data.emergency_goal < 0:
@@ -174,10 +179,8 @@ def update_settings(session: Session, data: SettingsInput) -> PlanSettings:
         raise InvalidCash(f"stagger over {MONTHS.start} to {MONTHS.stop - 1} months")
     if data.min_per_fund < 0:
         raise InvalidCash("the minimum per fund can't be below 0")
-    _check_emergency_fund(model, emergency)
 
     settings = get_settings(session)
-    settings.target_model_id = data.target_model_id
     settings.emergency_goal = data.emergency_goal
     settings.emergency_fund_id = data.emergency_fund_id
     settings.stagger_fund_id = data.stagger_fund_id
@@ -212,10 +215,10 @@ def latest_nav(session: Session, instrument_id: int) -> tuple[date, Decimal] | N
     return (row[0], row[1]) if row else None
 
 
-def fund_value(session: Session, instrument: Instrument) -> FundValue:
-    """What I hold of a fund at its latest stored NAV. Holding nothing is worth 0 even
-    without NAVs; holding units without a NAV is refused."""
-    units = holding(session, instrument).units
+def fund_value(session: Session, instrument: Instrument, scope: Scope = None) -> FundValue:
+    """What I hold of a fund (in ``scope``) at its latest stored NAV. Holding nothing is worth
+    0 even without NAVs; holding units without a NAV is refused."""
+    units = holding(session, instrument, scope).units
     latest = latest_nav(session, instrument.id)
     if latest is None:
         if units:
@@ -266,6 +269,7 @@ class FundPlan:
 @dataclass(frozen=True)
 class CashPlan:
     amount: Decimal
+    bucket: Bucket
     model: Model
     emergency: Emergency
     emergency_topup: Decimal
@@ -273,7 +277,7 @@ class CashPlan:
     left: Decimal
     months: list[Month]
     ignored: list[FundValue]
-    """Funds I hold outside the target split (and not the emergency fund): left out."""
+    """Funds the bucket holds outside its model (and not the emergency fund): left out."""
     settings: PlanSettings
 
     @property
@@ -285,38 +289,50 @@ class CashPlan:
         return sum((f.invest for f in self.funds), ZERO)
 
 
-def cash_plan(session: Session, amount: Decimal | None = None) -> CashPlan:
-    """Where ``amount`` should go (blank: all deployable cash)."""
+def _bucket(session: Session, bucket_id: int) -> Bucket:
+    bucket = session.get(Bucket, bucket_id)
+    if bucket is None:
+        raise InvalidCash(f"no bucket with id {bucket_id}")
+    return bucket
+
+
+def cash_plan(session: Session, bucket_id: int, amount: Decimal | None = None) -> CashPlan:
+    """Where ``amount`` should go in the bucket (blank: all deployable cash, for a real one)."""
     settings = get_settings(session)
-    model = settings.target_model
+    bucket = _bucket(session, bucket_id)
+    model = bucket.model
     if model is None:
-        raise InvalidCash("choose which model is your target split first")
+        raise InvalidCash(f"choose a model for {bucket.name} first")
     if amount is None:
+        if bucket.paper:
+            raise InvalidCash("type the amount to invest on paper")
         amount = cash_total(session, "deployable")
     if amount < 0:
         raise InvalidCash("the amount can't be below 0")
-    _check_emergency_fund(model, settings.emergency_fund)
+    if not bucket.paper:
+        _check_emergency_fund(model, settings.emergency_fund)
 
     status = emergency(session)
-    values = [(member, fund_value(session, member.instrument)) for member in model.funds]
+    values = [(m, fund_value(session, m.instrument, bucket.id)) for m in model.funds]
     plan = make_plan(
         amount,
-        status.shortfall,
+        ZERO if bucket.paper else status.shortfall,
         [Target(m.instrument_id, m.weight_pct, value.value) for m, value in values],
         minimum=settings.min_per_fund,
-        stagger_from=settings.stagger_threshold,
+        stagger_from=None if bucket.paper else settings.stagger_threshold,
         stagger_months=settings.stagger_months,
         today=today(),
     )
     planned = {m.instrument_id for m in model.funds} | {settings.emergency_fund_id}
     others = session.scalars(
         select(Instrument)
-        .where(Instrument.id.in_(set(held_ids(session)) - planned))
+        .where(Instrument.id.in_(set(held_ids(session, bucket.id)) - planned))
         .order_by(Instrument.name)
     )
-    ignored = [value for i in others if (value := fund_value(session, i)).units > 0]
+    ignored = [value for i in others if (value := fund_value(session, i, bucket.id)).units > 0]
     return CashPlan(
         amount=amount,
+        bucket=bucket,
         model=model,
         emergency=status,
         emergency_topup=plan.emergency,
@@ -329,3 +345,28 @@ def cash_plan(session: Session, amount: Decimal | None = None) -> CashPlan:
         ignored=ignored,
         settings=settings,
     )
+
+
+def buy_on_paper(session: Session, bucket_id: int, amount: Decimal) -> list[Lot]:
+    """Buy a paper bucket's plan for ``amount``: one purchase per fund that gets money, at
+    the fund's latest stored NAV and on that NAV's date."""
+    bucket = _bucket(session, bucket_id)
+    if not bucket.paper:
+        raise InvalidCash(f"{bucket.name} holds real money; buy in FM and sync")
+    plan = cash_plan(session, bucket_id, amount)
+    bought = []
+    for fund in plan.funds:
+        if fund.invest <= 0:
+            continue
+        if fund.now.nav is None or fund.now.nav_date is None:
+            raise InvalidCash(f"Friday has no NAV for {fund.now.instrument.name}; sync NAVs first")
+        data = BuyInput(
+            buy_date=fund.now.nav_date, amount=fund.invest, nav=fund.now.nav, bucket_id=bucket.id
+        )
+        try:
+            bought.append(create_lump_sum(session, fund.now.instrument.id, data))
+        except InvalidHolding as error:
+            raise InvalidCash(str(error)) from None
+    if not bought:
+        raise InvalidCash("the plan buys nothing; try a larger amount")
+    return bought
